@@ -1,0 +1,24 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "environment": "preview",
+      "env": {
+        "APPLETICS_DISTRIBUTION": "testflight"
+      },
+      "ios": {
+        "simulator": false
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {}
+    }
+  }
+}

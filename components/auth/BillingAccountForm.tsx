@@ -1,0 +1,41 @@
+import { memo } from 'react';
+import { View, TextInput, Pressable, ActivityIndicator, StyleSheet, Keyboard } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { LocalizedText as Text } from '@/components/ui/LocalizedText';
+import { useBillingAccount } from '@/hooks/useBillingAccount';
+import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
+import { Colors, Spacing, Radius, Typography } from '@/constants/theme';
+interface BillingAccountFormProps { compact?: boolean; checkout?: boolean; initialRegister?: boolean; onSignedIn?: (userId: string) => void }
+export const BillingAccountForm = memo(function BillingAccountForm({ compact = false, checkout = false, initialRegister = false, onSignedIn }: BillingAccountFormProps) {
+  const account = useBillingAccount(initialRegister, onSignedIn);
+  const { translate } = useLocalizedCopy();
+  return <View style={styles.panel}>
+    <View style={styles.heading}><MaterialIcons name="verified-user" size={24} color={Colors.welcomeDeep} /><Text style={styles.title}>{checkout ? 'Compte Appletics' : 'Compte sécurisé'}</Text></View>
+    {account.loading ? <ActivityIndicator color={Colors.welcomeDeep} /> : account.user ? <>
+      <Text verbatim style={styles.body}>{account.user.email}</Text>
+      {!compact ? <Text style={styles.body}>Cet abonnement test est rattaché à votre compte, pas au nom du profil local.</Text> : null}
+      <Pressable disabled={account.busy} accessibilityRole="button" onPress={() => { void account.logout(); }} style={({ pressed }) => [styles.secondary, pressed || account.busy ? styles.pressed : null]}><Text style={styles.secondaryText}>Se déconnecter du compte</Text></Pressable>
+    </> : <>
+      <Text style={styles.body}>{checkout ? 'Un seul compte suffit pour tous vos paiements. Déjà inscrit ? Connectez-vous, sans recréer de compte.' : 'Connectez-vous ou créez un compte pour rattacher les paiements Stripe test.'}</Text>
+      <Text style={styles.label}>Adresse e-mail</Text><TextInput accessibilityLabel={translate('Adresse e-mail')} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" value={account.email} onChangeText={account.setEmail} editable={!account.busy && !account.codeSent} style={styles.input} placeholder="coach@example.com" placeholderTextColor={Colors.textSecondary} />
+      <Text style={styles.label}>Mot de passe</Text><TextInput accessibilityLabel={translate('Mot de passe')} secureTextEntry autoCapitalize="none" autoComplete={account.register ? 'new-password' : 'current-password'} value={account.password} onChangeText={account.setPassword} editable={!account.busy && !account.codeSent} style={styles.input} />
+      {account.register ? <><Text style={styles.label}>Confirmer le mot de passe</Text><TextInput accessibilityLabel={translate('Confirmer le mot de passe')} secureTextEntry value={account.confirmation} onChangeText={account.setConfirmation} editable={!account.busy && !account.codeSent} style={styles.input} /></> : null}
+      {account.codeSent ? <><Text style={styles.label}>Code e-mail · 4 chiffres</Text><TextInput accessibilityLabel={translate('Code e-mail · 4 chiffres')} keyboardType="number-pad" autoComplete="one-time-code" maxLength={4} value={account.otp} onChangeText={account.setOtp} editable={!account.busy} style={styles.input} /></> : null}
+      <Pressable accessibilityRole="button" accessibilityLabel={translate('Fermer le clavier')} onPress={Keyboard.dismiss} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><MaterialIcons name="keyboard-hide" size={22} color={Colors.textSecondary} /><Text style={styles.secondaryText}>Fermer le clavier</Text></Pressable>
+      <Pressable disabled={account.busy} accessibilityRole="button" onPress={() => { Keyboard.dismiss(); void account.submit(); }} style={({ pressed }) => [styles.primary, pressed || account.busy ? styles.pressed : null]}>{account.busy ? <ActivityIndicator color={Colors.textOnPrimary} /> : null}<Text style={styles.primaryText}>{account.register ? account.codeSent ? 'Vérifier et créer mon compte' : 'Recevoir le code de vérification' : 'Se connecter'}</Text></Pressable>
+      <Pressable disabled={account.busy} accessibilityRole="button" onPress={account.toggleMode} style={({ pressed }) => [styles.secondary, pressed || account.busy ? styles.pressed : null]}><Text style={styles.secondaryText}>{account.register ? 'J’ai déjà un compte' : 'Créer un compte'}</Text></Pressable>
+    </>}
+    {account.error ? <View style={styles.feedback}><MaterialIcons name="error-outline" size={22} color={Colors.error} /><Text accessibilityLiveRegion="polite" style={[styles.body, styles.error]}>{account.error}</Text></View> : null}
+    {account.message ? <Text accessibilityLiveRegion="polite" style={styles.body}>{account.message}</Text> : null}
+  </View>;
+});
+const styles = StyleSheet.create({
+  panel: { padding: Spacing.md, backgroundColor: Colors.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, gap: Spacing.sm },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }, title: { flex: 1, color: Colors.textPrimary, fontSize: Typography.fontSizeMD, fontWeight: Typography.weightBold },
+  body: { flexShrink: 1, color: Colors.textSecondary, fontSize: Typography.fontSizeBase, lineHeight: 26, includeFontPadding: false }, label: { marginTop: Spacing.sm, color: Colors.textPrimary, fontSize: Typography.fontSizeBase, fontWeight: Typography.weightSemibold },
+  input: { minHeight: 52, borderWidth: 1, borderColor: Colors.textSecondary, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, fontSize: Typography.fontSizeBase, color: Colors.textPrimary, backgroundColor: Colors.background, includeFontPadding: false },
+  primary: { minHeight: 52, borderRadius: Radius.md, padding: Spacing.md, backgroundColor: Colors.welcomeDeep, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.sm },
+  primaryText: { color: Colors.textOnPrimary, textAlign: 'center', fontSize: Typography.fontSizeBase, fontWeight: Typography.weightSemibold, flexShrink: 1 },
+  secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: Spacing.sm, borderRadius: Radius.md, backgroundColor: Colors.primaryLight }, secondaryText: { color: Colors.welcomeDeep, fontSize: Typography.fontSizeBase, fontWeight: Typography.weightSemibold, textAlign: 'center' },
+  feedback: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm }, error: { color: Colors.error, flex: 1 }, pressed: { opacity: 0.7 },
+});
