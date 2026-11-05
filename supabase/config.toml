@@ -1,0 +1,10 @@
+# Public return/config endpoints. appletics-billing verifies the JWT with auth.getUser for all user actions.
+[functions.appletics-billing]
+verify_jwt = false
+
+[functions.appletics-billing-return]
+verify_jwt = false
+
+# JWT and current password are both verified inside the function; no client can choose the account to erase.
+[functions.appletics-delete-account]
+verify_jwt = false
