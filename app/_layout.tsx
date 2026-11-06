@@ -36,7 +36,12 @@ function NavigationGuard() {
     const inOnboarding = segments[0] === 'onboarding' || segments[0] === 'club-onboarding';
     const inLogin = segments[0] === 'login';
 
-    if (!onboardingDone && !inOnboarding) {
+    if (!onboardingDone && inLogin && !!auth.user && !isLocked) {
+      // Signed in from "J'ai déjà un compte" but this account has no Appletics profile yet: finish the profile.
+      hasNavigated.current = false;
+      router.replace('/onboarding');
+    } else if (!onboardingDone && !inOnboarding && !inLogin) {
+      // The login screen stays reachable before onboarding, for people who already have an account.
       hasNavigated.current = false;
       router.replace('/onboarding');
     } else if (onboardingDone && (isLocked || !auth.user) && !inLogin && !inOnboarding) {
