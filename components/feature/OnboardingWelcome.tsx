@@ -10,10 +10,10 @@ import { useWelcomeLayout } from '@/hooks/useWelcomeLayout';
 import { onboardingCopy } from '@/constants/onboarding';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { OnboardingHighlights } from '@/components/feature/OnboardingHighlights';
-interface OnboardingWelcomeProps { onContinue: () => void }
+interface OnboardingWelcomeProps { onContinue: () => void; onSignIn?: () => void }
 
 // Fixed safe-area composition: the artwork absorbs size changes, never the CTA.
-export const OnboardingWelcome = memo(function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
+export const OnboardingWelcome = memo(function OnboardingWelcome({ onContinue, onSignIn }: OnboardingWelcomeProps) {
   const { language } = useI18n();
   const layout = useWelcomeLayout();
   const copy = onboardingCopy[language];
@@ -46,6 +46,7 @@ export const OnboardingWelcome = memo(function OnboardingWelcome({ onContinue }:
         </View>
         <View style={styles.footer}>
           <Pressable accessibilityRole="button" accessibilityLabel={copy.continue} onPress={onContinue} style={({ pressed }) => [styles.button, layout.landscape ? styles.buttonLandscape : null, pressed ? styles.pressed : null]}><Text maxFontSizeMultiplier={1.2} style={styles.buttonText}>{copy.continue}</Text><MaterialIcons name="arrow-forward" size={22} color={Colors.welcomeInk} /></Pressable>
+          {onSignIn ? <Pressable accessibilityRole="button" onPress={onSignIn} style={({ pressed }) => [styles.signIn, pressed ? styles.pressed : null]}><Text maxFontSizeMultiplier={1.2} style={styles.signInText}>{copy.signIn}</Text></Pressable> : null}
           {!layout.landscape ? <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2} style={styles.audience}>{copy.footer}</Text> : null}
         </View>
       </View>
@@ -65,5 +66,6 @@ const styles = StyleSheet.create({
   trackInner: { position: 'absolute', top: 68, bottom: -140, left: 136, right: -80, borderRadius: 180, borderWidth: 2, borderColor: Colors.welcomeLine }, laneOne: { position: 'absolute', top: 36, bottom: -172, left: 104, right: -112, borderRadius: 220, borderWidth: 2, borderColor: Colors.welcomeLine }, laneTwo: { position: 'absolute', top: 4, bottom: -204, left: 72, right: -144, borderRadius: 250, borderWidth: 2, borderColor: Colors.welcomeLine }, laneThree: { position: 'absolute', top: -28, bottom: -236, left: 40, right: -176, borderRadius: 280, borderWidth: 2, borderColor: Colors.welcomeLine },
   trackMark: { position: 'absolute', top: Spacing.md, left: Spacing.md, gap: Spacing.xs }, trackBrand: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightSemibold, letterSpacing: 2, color: Colors.welcomeText, includeFontPadding: false }, laneNumbers: { position: 'absolute', bottom: Spacing.md, right: Spacing.md, flexDirection: 'row', gap: Spacing.lg }, laneNumber: { fontSize: Typography.fontSizeXXL, fontWeight: Typography.weightSemibold, fontStyle: 'italic', color: Colors.welcomeText, includeFontPadding: false },
   footer: { width: '100%', maxWidth: 440, alignSelf: 'center', gap: Spacing.sm, flexShrink: 0 }, audience: { fontSize: Typography.fontSizeBase, lineHeight: 24, textAlign: 'center', color: Colors.welcomeText, includeFontPadding: false },
+  signIn: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md }, signInText: { color: Colors.welcomeText, fontSize: Typography.fontSizeBase, fontWeight: Typography.weightSemibold, textDecorationLine: 'underline' },
   button: { minHeight: 56, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderRadius: Radius.full, backgroundColor: Colors.welcomeText, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: Spacing.md }, buttonLandscape: { minHeight: 48, paddingVertical: Spacing.sm }, buttonText: { flexShrink: 1, color: Colors.welcomeInk, fontSize: Typography.fontSizeBase, fontWeight: Typography.weightBold, textAlign: 'center', includeFontPadding: false }, pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 });
