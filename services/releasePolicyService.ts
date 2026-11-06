@@ -14,5 +14,5 @@ export function getReleasePolicy(): ReleasePolicy {
   };
 }
 export function assertExternalBillingAllowed(): void {
-  if (!getReleasePolicy().externalBillingAllowed) throw new Error('Les achats sont désactivés dans la bêta iOS. Aucun paiement ne sera lancé.');
+  if (!getReleasePolicy().externalBillingAllowed) throw new Error('Les achats ne sont pas disponibles dans l’app iPhone.');
 }

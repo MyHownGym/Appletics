@@ -15,6 +15,11 @@ import { useAthleteForm } from '@/hooks/useAthleteForm';
 import { useI18n } from '@/hooks/useI18n';
 import { EVENT_GROUPS } from '@/constants/config';
 import { useInvitation } from '@/hooks/useInvitation';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
+import { useLocalizedAlert } from '@/hooks/useLocalizedAlert';
+import { sendInvitationEmail } from '@/services/inviteEmailService';
+import { appUrl } from '@/constants/links';
+import { ActivityIndicator } from 'react-native';
 
 const STATUS_OPTIONS = [
   { id: 'active', icon: 'check-circle', color: Colors.success },
@@ -32,7 +37,11 @@ export default function AthleteAddScreen() {
     pbs, setPbs, pbEvent, setPbEvent, pbPerf, setPbPerf, handleAddPb, email, setEmail,
     phone, setPhone, birthYear, setBirthYear, club, setClub, licenseNumber, setLicenseNumber,
     avatar, setAvatar, notes, setNotes } = form;
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const shared = useSharedGroups();
+  const { showAlert } = useLocalizedAlert();
+  const [inviting, setInviting] = useState(false);
+  const mainGroup = shared.data.groups.filter(item => item.owner_id === shared.userId).sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
 
   // Tab
   const [tab, setTab] = useState<'manual' | 'invite'>('manual');
@@ -54,7 +63,23 @@ export default function AthleteAddScreen() {
 
   const handleSave = () => { if (form.save()) router.back(); };
 
-  const handleInviteEmail = () => invitation.sendEmail(inviteEmail, { name: inviteName, role: 'athlete' });
+  // Real invitation: the athlete is added to the coach's main shared group (created if needed),
+  // then the server sends the e-mail. The athlete creates an account with this address and accepts.
+  const handleInviteEmail = async () => {
+    const address = inviteEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) { showAlert('E-mail invalide', 'Veuillez saisir une adresse e-mail valide.'); return; }
+    if (inviting) return;
+    setInviting(true);
+    try {
+      const id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: inviteName.trim() || null });
+      const failure = await sendInvitationEmail(id, language);
+      if (failure) showAlert('Invitation enregistrée', `L’e-mail n’est pas parti (${failure}). Envoyez ce lien à l’athlète : ${appUrl} — il doit créer son compte avec ${address}.`);
+      else showAlert('Invitation envoyée', `${address} a reçu un e-mail. Dès qu’il aura créé son compte avec cette adresse, il rejoindra votre groupe et pourra échanger avec vous.`);
+      setInviteEmail(''); setInviteName('');
+    } catch (reason) {
+      showAlert('Invitation impossible', reason instanceof Error ? reason.message : 'Vérifiez votre connexion et réessayez.');
+    } finally { setInviting(false); }
+  };
   const handleInviteSMS = () => invitation.sendSms(invitePhone, { name: inviteName, role: 'athlete' });
 
   return (
@@ -91,7 +116,7 @@ export default function AthleteAddScreen() {
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: 960, alignSelf: 'center' }]}>
         {!canEdit ? <Text style={styles.hint}>Cette fiche est en lecture seule.</Text> : null}
-        <Text style={styles.storageHint}>Athlètes, résultats et PBs enregistrés sur cet appareil.</Text>
+        {tab === 'manual' ? <Text style={styles.storageHint}>Athlètes, résultats et PBs enregistrés sur cet appareil.</Text> : null}
         {tab === 'manual' ? (
           <>
             {/* Name */}
@@ -236,8 +261,8 @@ export default function AthleteAddScreen() {
                 <MaterialIcons name="link" size={28} color={Colors.primary} />
               </View>
               <Text style={styles.inviteCardTitle}>{t('invite_athlete')}</Text>
-              <Text verbatim selectable style={styles.inviteCardSub}>{invitation.link}</Text>
-              <Text verbatim style={styles.availability}>{invitation.availability}</Text>
+              <Text style={styles.availability}>{`L’athlète reçoit un e-mail, crée son compte avec cette adresse et rejoint votre groupe${mainGroup ? ` « ${mainGroup.name} »` : ''}. Vous pourrez ensuite partager des séances et discuter.`}</Text>
+              <Text verbatim selectable style={styles.inviteCardSub}>{appUrl}</Text>
             </View>
 
             {/* Athlete name (for invite message) */}
@@ -267,11 +292,11 @@ export default function AthleteAddScreen() {
                   autoCapitalize="none"
                 />
                 <Pressable
-                  onPress={handleInviteEmail}
-                  style={({ pressed }) => [styles.sendBtn, !inviteEmail.trim() ? styles.sendBtnDisabled : null, pressed ? styles.pressed : null]}
-                  disabled={!inviteEmail.trim()}
+                  onPress={() => { void handleInviteEmail(); }}
+                  style={({ pressed }) => [styles.sendBtn, (!inviteEmail.trim() || inviting) ? styles.sendBtnDisabled : null, pressed ? styles.pressed : null]}
+                  disabled={!inviteEmail.trim() || inviting}
                 >
-                  <MaterialIcons name="email" size={18} color="#FFF" />
+                  {inviting ? <ActivityIndicator size="small" color="#FFF" /> : <MaterialIcons name="email" size={18} color="#FFF" />}
                   <Text style={styles.sendBtnText}>{t('send')}</Text>
                 </Pressable>
               </View>

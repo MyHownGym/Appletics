@@ -20,6 +20,7 @@ import { clubRoleLabels } from '@/constants/club';
 import { HomeActivitySummary } from '@/components/feature/HomeActivitySummary';
 import { AppBrand } from '@/components/feature/AppBrand';
 import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard';
+import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
 
 interface HomeCalendarProps { schedule: ReturnType<typeof useHomeSchedule> }
@@ -75,6 +76,7 @@ export default function HomeScreen() {
         <View style={styles.heroInfo}><AppBrand /><Text style={styles.date}>{schedule.dateLabel}</Text><Text verbatim style={styles.greeting}>{t('good_morning')} {user.name.split(' ')[0]}</Text><View style={styles.roleRow}><View style={[styles.dot, { backgroundColor: accent }]} /><Text verbatim style={styles.role}>{role}{user.club ? ` · ${user.club}` : ''}</Text></View></View>
         <Pressable accessibilityLabel={t('Ouvrir mon profil')} onPress={() => router.push('/(tabs)/profile')} style={({ pressed }) => [pressed ? styles.pressed : null]}>{user.avatar ? <Image source={{ uri: user.avatar }} transition={200} contentFit="cover" style={styles.avatar} /> : <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: accent }]}><Text verbatim style={styles.initials}>{user.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text></View>}</Pressable>
       </LinearGradient>
+      <PendingInvitationsBanner horizontalPadding={screenPadding} />
       <SubscriptionPlanCard compact />
       <HomeActivitySummary horizontalPadding={screenPadding} />
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>

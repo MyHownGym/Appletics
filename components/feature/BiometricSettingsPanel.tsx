@@ -8,6 +8,8 @@ import type { useBiometricSettings } from '@/hooks/useBiometricSettings';
 interface BiometricSettingsPanelProps { biometric: ReturnType<typeof useBiometricSettings> }
 export const BiometricSettingsPanel = memo(function BiometricSettingsPanel({ biometric }: BiometricSettingsPanelProps) {
   const { capabilities, loading, busy, enabled, message, failed } = biometric;
+  // Face ID / fingerprint only exist in the installed iPhone or Android app, not in a browser.
+  if (Platform.OS === 'web') return null;
   return (
     <View style={styles.panel}>
       <View style={styles.row}>

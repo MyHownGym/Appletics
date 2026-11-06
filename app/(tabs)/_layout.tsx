@@ -179,12 +179,13 @@ const sideStyles = StyleSheet.create({
 
 // ── Layout wrapper for tablet/desktop ─────────────────────────────────────
 function ResponsiveLayout({ children }: { children: React.ReactNode }) {
-  const { isPhone } = useResponsive();
+  const { isPhone, isDesktop } = useResponsive();
   if (isPhone) return <>{children}</>;
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.background }}>
       <Sidebar />
-      <View style={{ flex: 1 }}>{children}</View>
+      {/* On a computer, tab pages keep a readable width next to the sidebar. */}
+      <View style={{ flex: 1, alignItems: 'center' }}><View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? 1080 : undefined }}>{children}</View></View>
     </View>
   );
 }

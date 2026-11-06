@@ -1,7 +1,7 @@
 // Powered by OnSpace.AI
 // Root layout v14 — deep linking from notifications, push notification listener
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { AlertProvider, AuthProvider, useAuth } from '@/template';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -100,12 +100,23 @@ function NotificationHandler() {
 
 // ── App content ──────────────────────────────────────────────────────────────
 
+// Screens opened on top of the tabs (detail pages, forms, group chat) stay readable on a computer:
+// centered column instead of stretching across the whole window.
+const FULL_WIDTH_ROUTES = new Set(['(tabs)', 'index', 'login', 'onboarding']);
+
 function AppContent() {
   useStartupProgress();
+  const { width } = useWindowDimensions();
+  const wide = width >= 1024;
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={({ route }) => ({
+        headerShown: false,
+        ...(wide && !FULL_WIDTH_ROUTES.has(route.name) ? {
+          contentStyle: { width: '100%', maxWidth: 920, alignSelf: 'center', backgroundColor: Colors.background, borderLeftWidth: 1, borderRightWidth: 1, borderColor: Colors.border },
+        } : {}),
+      })}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="browser" options={{ headerShown: false, presentation: 'modal' }} />
@@ -128,7 +139,6 @@ function AppContent() {
         <Stack.Screen name="shared-groups" options={{ headerShown: false }} />
         <Stack.Screen name="shared-group" options={{ headerShown: false }} />
         <Stack.Screen name="billing-return" options={{ headerShown: false }} />
-        <Stack.Screen name="beta-info" options={{ headerShown: false }} />
         <Stack.Screen name="analytics" options={{ headerShown: false }} />
         <Stack.Screen name="club-onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="club-admin" options={{ headerShown: false }} />

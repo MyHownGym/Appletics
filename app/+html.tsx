@@ -20,7 +20,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="Appletics" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <ScrollViewStyleReset />
-        <style dangerouslySetInnerHTML={{ __html: 'html,body{background-color:#FFFFFF;overscroll-behavior:none;}' }} />
+        <style dangerouslySetInnerHTML={{ __html: 'html,body{background-color:#F7F8FA;overscroll-behavior:none;}input,textarea{min-width:0;}' }} />
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}" }} />
       </head>
       <body>{children}</body>

@@ -21,7 +21,6 @@ import { useAppleticsLinks } from '@/hooks/useAppleticsLinks';
 import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { appleticsLinks } from '@/constants/links';
 import { AccountDeletionModal } from '@/components/auth/AccountDeletionModal';
-import { BetaFeatureNotice } from '@/components/feature/BetaFeatureNotice';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
 
 type UserRole = 'coach' | 'athlete' | 'club';
@@ -160,8 +159,7 @@ export default function SettingsScreen() {
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', paddingHorizontal: screenPadding }]}>
 
-        <BetaFeatureNotice />
-        <Text verbatim style={styles.rowValue}>{`Appletics ${release.version} · ${release.build}`}</Text>
+        <Text verbatim style={styles.rowValue}>{release.build === 'preview' ? `Appletics ${release.version}` : `Appletics ${release.version} · ${release.build}`}</Text>
         {/* ── COMPTE ──────────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Compte</Text>
         <View style={styles.card}>
@@ -194,7 +192,7 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.rowInfo}>
               <Text style={styles.rowLabel}>Abonnement & paiement</Text>
-              <Text style={styles.rowValue}>{release.externalBillingAllowed ? 'Changer de plan ou de carte bancaire' : 'Achats désactivés dans la bêta iOS'}</Text>
+              <Text style={styles.rowValue}>{release.externalBillingAllowed ? 'Changer de plan ou de carte bancaire' : 'Votre formule actuelle'}</Text>
             </View>
             <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
           </Pressable>

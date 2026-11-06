@@ -16,7 +16,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { ScreenHeader } from '@/components';
 import { ChatChannel } from '@/types';
 import { useActivityScope } from '@/hooks/useActivityScope';
-import { BetaFeatureNotice } from '@/components/feature/BetaFeatureNotice';
+import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 
 const CHANNEL_TYPE_ICONS: Record<string, string> = {
@@ -182,7 +182,7 @@ export default function ChatScreen() {
           />
         )}
         ListHeaderComponent={<View style={styles.onlineSection}>
-          <BetaFeatureNotice kind="chat" />
+          <PendingInvitationsBanner />
           <Text style={styles.sectionTitle}>Discussions de groupe en ligne</Text>
           {onlineGroups.length ? onlineGroups.map(group => (
             <Pressable key={group.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id: group.id } })}
@@ -206,7 +206,7 @@ export default function ChatScreen() {
           )}
           {channels.length ? <Text style={styles.sectionTitle}>Sur cet appareil</Text> : null}
         </View>}
-        ListEmptyComponent={
+        ListEmptyComponent={onlineGroups.length ? null :
           <View style={styles.empty}>
             <MaterialIcons name="chat-bubble-outline" size={48} color={Colors.textMuted} />
             <Text style={styles.emptyTitle}>{t('no_channels')}</Text>

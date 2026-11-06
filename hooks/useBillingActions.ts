@@ -18,7 +18,7 @@ export function useBillingActions(tier: SubscriptionTier, cycle: BillingCycle, n
   const formatDate = useCallback((value: string | null) => value ? new Date(value).toLocaleDateString(locale) : '—', [locale]);
   const cancel = useCallback(() => {
     const end = billing.state.commitmentEnd ?? billing.state.currentPeriodEnd;
-    showAlert('Programmer la résiliation ?', `L’accès est conservé jusqu’au ${formatDate(end)}. Les mensualités prévues durant l’engagement de 12 mois restent dues en mode test. Aucun paiement réel.`, [
+    showAlert('Programmer la résiliation ?', `L’accès est conservé jusqu’au ${formatDate(end)}. Les mensualités prévues durant l’engagement de 12 mois restent dues.`, [
       { text: 'Annuler', style: 'cancel' }, { text: 'Confirmer la résiliation', style: 'destructive', onPress: () => { void billing.cancel(); } },
     ]);
   }, [billing.cancel, billing.state.commitmentEnd, billing.state.currentPeriodEnd, showAlert, formatDate]);

@@ -92,7 +92,7 @@ export default function GroupChatScreen() {
           }}
         />
 
-        <Text style={styles.hint}>Appui long sur un message pour le signaler, bloquer son auteur ou supprimer le vôtre.</Text>
+        <Text style={styles.hint}>Maintenez appuyé sur un message pour le signaler, bloquer son auteur ou supprimer le vôtre.</Text>
         <View style={styles.composer}>
           <TextInput
             accessibilityLabel="Message"
