@@ -10,3 +10,6 @@ verify_jwt = false
 # JWT and current password are both verified inside the function; no client can choose the account to erase.
 [functions.appletics-delete-account]
 verify_jwt = false
+
+[functions.appletics-send-invite]
+verify_jwt = false

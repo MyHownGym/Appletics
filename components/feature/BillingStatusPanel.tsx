@@ -21,7 +21,7 @@ export const BillingStatusPanel = memo(function BillingStatusPanel({ compact = f
     {billing.configuration ? <Text style={styles.ready}>{testMode ? 'Catalogue test vérifié · 18 tarifs' : 'Paiement disponible'}</Text> : <Pressable onPress={() => { void billing.checkConfiguration(); }} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.secondaryText}>Vérifier la configuration Stripe</Text></Pressable>}
     {billing.configuration?.nativeReady && testMode ? <Text style={styles.ready}>Paiement intégré configuré · test sur appareil requis</Text> : null}
     {billing.configurationError ? <View style={styles.feedback}><MaterialIcons name="error-outline" size={22} color={Colors.error} /><Text style={[styles.body, styles.error]}>{billing.configurationError}</Text></View> : null}
-    <View style={styles.status}><Text style={styles.plan}>{state.subscribed && state.tier ? getTierConfig(state.tier).name : 'Accès local sans abonnement'}</Text><Text style={styles.body}>{label}</Text></View>
+    <View style={styles.status}><Text style={styles.plan}>{state.subscribed && state.tier ? getTierConfig(state.tier).name : 'Formule gratuite'}</Text><Text style={styles.body}>{label}</Text></View>
     {state.currentPeriodEnd ? <Text style={styles.body}>{state.cancelAt || state.cancelAtPeriodEnd ? 'Accès jusqu’au' : 'Prochaine échéance'} : {date(state.cancelAt ?? state.currentPeriodEnd)}</Text> : null}
     {state.commitmentEnd ? <Text style={styles.body}>Engagement jusqu’au : {date(state.commitmentEnd)}</Text> : null}
     {state.pendingTier ? <Text style={styles.body}>Changement programmé : {getTierConfig(state.pendingTier).name} · {date(state.pendingChangeAt)}</Text> : null}

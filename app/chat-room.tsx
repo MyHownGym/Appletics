@@ -110,7 +110,7 @@ export default function ChatRoomScreen() {
     return (
       <View style={[styles.msgWrap, item.isOwn && styles.msgWrapOwn]}>
         {showSender ? <Text verbatim style={styles.senderName}>{item.senderName}</Text> : null}
-        <View style={[styles.bubble, item.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+        <View style={[styles.bubble, item.isOwn ? styles.bubbleOwn : null]}>
           <Text verbatim style={[styles.msgText, item.isOwn && styles.msgTextOwn]}>{item.text}</Text>
           <Text style={[styles.msgTime, item.isOwn && styles.msgTimeOwn]}>{item.time}</Text>
         </View>
@@ -158,7 +158,7 @@ export default function ChatRoomScreen() {
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           renderItem={renderMessage}
-          ListHeaderComponent={<BetaFeatureNotice kind="chat" />}
+          ListHeaderComponent={<BetaFeatureNotice kind="local" />}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
               <MaterialIcons name="chat-bubble-outline" size={40} color={Colors.textMuted} />
