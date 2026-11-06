@@ -1,5 +1,6 @@
 import { View, ScrollView, Pressable, ActivityIndicator, StyleSheet, Platform, KeyboardAvoidingView } from 'react-native';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { consumeStartupUnlock } from '@/services/sessionLock';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +16,10 @@ export default function LoginScreen() {
  const lock = useLoginUnlock(); const auth = useAuth(); const { setLocked } = useApp(); const { t } = useI18n();
  const connected = !!auth.user; const enabled = connected && !!lock.user.biometricEnabled;
  const onSignedIn = useCallback((_userId: string) => setLocked(false), [setLocked]);
+ useEffect(() => {
+  if (!connected || lock.loading) return;
+  if (consumeStartupUnlock() && !lock.user.biometricEnabled) setLocked(false);
+ }, [connected, lock.loading, lock.user.biometricEnabled, setLocked]);
  return <SafeAreaView style={styles.screen} edges={['top','bottom']}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView style={styles.flex} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
   <Image source={require('@/assets/images/appletics-icon.png')} contentFit="contain" transition={200} style={styles.logo} /><Text style={styles.title}>{connected ? 'Bon retour,' : 'Votre compte Appletics'}</Text>{connected ? <Text verbatim style={styles.name}>{lock.user.name}</Text> : null}
   {connected ? <View style={styles.panel}>

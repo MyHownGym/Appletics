@@ -7,9 +7,9 @@ import { BillingAccountForm } from '@/components/auth/BillingAccountForm';
 import { useOnboardingAccount } from '@/hooks/useOnboardingAccount';
 import type { User } from '@/types';
 import { Colors, Spacing, Typography, Radius } from '@/constants/theme';
-interface OnboardingAccountProps { profile: Partial<User>; onComplete: () => void; onBack: () => void }
-export const OnboardingAccount = memo(function OnboardingAccount({ profile, onComplete, onBack }: OnboardingAccountProps) {
- const account = useOnboardingAccount(profile, onComplete);
+interface OnboardingAccountProps { profile: Partial<User>; onComplete: () => void; onBack: () => void; onExistingAccount?: () => void }
+export const OnboardingAccount = memo(function OnboardingAccount({ profile, onComplete, onBack, onExistingAccount }: OnboardingAccountProps) {
+ const account = useOnboardingAccount(profile, onComplete, onExistingAccount);
  return <SafeAreaView edges={['top','bottom']} style={styles.screen}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
   <View style={styles.header}><Pressable accessibilityRole="button" onPress={onBack} disabled={account.busy} style={({ pressed }) => [styles.back, pressed ? styles.pressed : null]}><MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} /></Pressable><Text style={styles.title}>Votre compte Appletics</Text></View>
   <ScrollView style={styles.flex} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
