@@ -6,6 +6,7 @@ import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { BillingAccountForm } from '@/components/auth/BillingAccountForm';
 import type { useBillingReview } from '@/hooks/useBillingReview';
 import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
+import { useBilling } from '@/hooks/useBilling';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 interface SummaryRowProps { label: string; value: string }
@@ -16,6 +17,7 @@ interface BillingCheckoutReviewProps { review: ReturnType<typeof useBillingRevie
 export const BillingCheckoutReview = memo(function BillingCheckoutReview({ review, name }: BillingCheckoutReviewProps) {
   const { actions, summary } = review;
   const { translate } = useLocalizedCopy();
+  const testMode = useBilling().configuration?.testMode === true;
   const consent = summary.cycle === 'annual_monthly'
     ? 'Engagement de 12 mois. Résiliation à son terme.'
     : summary.cycle === 'annual' ? 'Renouvellement annuel. Résiliation à l’échéance.' : 'Renouvellement mensuel. Résiliation à l’échéance.';
@@ -25,7 +27,7 @@ export const BillingCheckoutReview = memo(function BillingCheckoutReview({ revie
       <View style={styles.sheet} accessibilityViewIsModal>
         <View style={styles.flex}>
           <View style={styles.header}>
-            <View style={styles.headerCopy}><Text style={styles.title}>{summary.changingPlan ? 'Votre changement de formule' : 'Avant de payer'}</Text><Text style={styles.test}>TEST · aucun débit</Text></View>
+            <View style={styles.headerCopy}><Text style={styles.title}>{summary.changingPlan ? 'Votre changement de formule' : 'Avant de payer'}</Text>{testMode ? <Text style={styles.test}>TEST · aucun débit</Text> : null}</View>
             <Pressable accessibilityRole="button" accessibilityLabel={translate('Fermer le résumé')} disabled={actions.busy} onPress={review.closeReview} style={({ pressed }) => [styles.close, pressed ? styles.pressed : null]}><MaterialIcons name="close" size={24} color={Colors.textPrimary} /></Pressable>
           </View>
           <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={styles.content}>

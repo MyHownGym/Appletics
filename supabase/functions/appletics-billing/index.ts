@@ -1,7 +1,7 @@
 import Stripe from 'https://esm.sh/stripe@18.5.0?target=denonext';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2?target=denonext';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { billingCatalog, getOffer, offerForPrice } from '../_shared/billingCatalog.ts';
+import { activeCatalog, activateCatalog, getOffer, offerForPrice } from '../_shared/billingCatalog.ts';
 import { addManagementMonths, managementPeriodEnd, managementCommitmentEnd, cancellationParameters, renewalParameters, planChangeParameters, safeStripeDiagnostic } from '../_shared/billingManagement.ts';
 import { resolveBillingReturnUrl } from '../_shared/billingReturn.ts';
 
@@ -9,10 +9,9 @@ import { resolveBillingReturnUrl } from '../_shared/billingReturn.ts';
 class BillingError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
-const appId = 'appletics_test';
 const checkoutVersion = 'dynamic_methods_v2_return';
 const nativePaymentVersion = 'payment_sheet_v1';
-const nativeKeyMessage = 'Clé publiable Stripe de test manquante : configurez STRIPE_PUBLISHABLE_KEY avec une clé pk_test du même compte dans Cloud > Secrets.';
+const nativeKeyMessage = 'Clé publiable Stripe manquante : configurez STRIPE_PUBLISHABLE_KEY (pk_test_… ou pk_live_…, du même compte et du même mode que la clé secrète) dans les secrets du serveur.';
 const iso = (seconds: number | null | undefined) => seconds ? new Date(seconds * 1000).toISOString() : null;
 const idOf = (value: any): string | null => typeof value === 'string' ? value : value?.id ?? null;
 const now = () => Math.floor(Date.now() / 1000);
@@ -22,12 +21,12 @@ function returnUrl(req: Request, candidate: unknown, mode: unknown, language: un
   return resolveBillingReturnUrl(Deno.env.get('SUPABASE_URL') ?? '', req.headers.get('origin'), candidate, mode, language);
 }
 let catalogCheck: Promise<boolean> | null = null;
-async function checkCatalog(stripe: Stripe) {
+async function checkCatalog(stripe: Stripe, live: boolean) {
   if (!catalogCheck) {
-    catalogCheck = Promise.all(Object.values(billingCatalog).flatMap(cycles => Object.entries(cycles).map(async ([cycle, offer]) => {
+    catalogCheck = Promise.all(Object.values(activeCatalog()).flatMap(cycles => Object.entries(cycles).map(async ([cycle, offer]) => {
       const price = await stripe.prices.retrieve(offer.priceId);
-      if (price.livemode || !price.active || price.currency !== 'chf' || price.unit_amount !== offer.amount || price.recurring?.interval !== (cycle === 'annual' ? 'year' : 'month') || price.recurring?.interval_count !== 1) {
-        throw new BillingError('Catalogue Stripe test incompatible. Vérifiez les tarifs dans le même compte test que la clé configurée.', 409);
+      if (price.livemode !== live || !price.active || price.currency !== 'chf' || price.unit_amount !== offer.amount || price.recurring?.interval !== (cycle === 'annual' ? 'year' : 'month') || price.recurring?.interval_count !== 1) {
+        throw new BillingError(live ? 'Catalogue Stripe live incompatible. Vérifiez les tarifs Appletics dans Stripe.' : 'Catalogue Stripe test incompatible. Vérifiez les tarifs dans le même compte test que la clé configurée.', 409);
       }
     }))).then(() => true).catch(error => { catalogCheck = null; throw error; });
   }
@@ -45,27 +44,31 @@ Deno.serve(async req => {
     action = body.action ?? 'check';
     if (!['config', 'check', 'checkout', 'payment-sheet', 'discard-payment', 'portal', 'cancel', 'resume', 'change'].includes(action)) throw new BillingError('Action inconnue.');
     const key = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-    // Hard stop before any Stripe write: the application cannot use a live secret key.
-    if (!/^(sk|rk)_test_/.test(key)) throw new BillingError('Mode test requis : configurez une clé secrète Stripe de test dans Cloud > Secrets. Les clés live sont bloquées et aucun paiement réel ne peut être lancé.', 409);
+    // The secret key decides the mode: sk_test_/rk_test_ = test payments, sk_live_/rk_live_ = real payments.
+    const LIVE = /^(sk|rk)_live_/.test(key);
+    if (!LIVE && !/^(sk|rk)_test_/.test(key)) throw new BillingError('Clé Stripe manquante : configurez STRIPE_SECRET_KEY (sk_test_… pour les essais, sk_live_… pour les vrais paiements) dans les secrets du serveur.', 409);
+    const appId = LIVE ? 'appletics' : 'appletics_test';
+    const accountsTable = LIVE ? 'billing_live_accounts' : 'billing_test_accounts';
     const stripe = new Stripe(key, { apiVersion: '2025-08-27.basil', httpClient: Stripe.createFetchHttpClient() });
+    await activateCatalog(stripe, LIVE);
     const publishableKey = Deno.env.get('STRIPE_PUBLISHABLE_KEY') ?? '';
-    const nativeReady = /^pk_test_[a-zA-Z0-9]+$/.test(publishableKey);
+    const nativeReady = (LIVE ? /^pk_live_[a-zA-Z0-9]+$/ : /^pk_test_[a-zA-Z0-9]+$/).test(publishableKey);
     if (action === 'config') {
-      await checkCatalog(stripe);
+      await checkCatalog(stripe, LIVE);
       // No API key or temporary SDK credential in the public readiness response.
-      return jsonResponse({ testMode: true, catalogReady: true, nativeReady, nativeMessage: nativeReady ? undefined : nativeKeyMessage });
+      return jsonResponse({ testMode: !LIVE, catalogReady: true, nativeReady, nativeMessage: nativeReady ? undefined : nativeKeyMessage });
     }
     if (action === 'payment-sheet' && !nativeReady) throw new BillingError(nativeKeyMessage, 409);
     const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { persistSession: false, autoRefreshToken: false } });
     const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
-    if (!token) throw new BillingError('Connectez-vous pour tester les paiements.', 401);
+    if (!token) throw new BillingError('Connectez-vous pour gérer votre abonnement.', 401);
     const { data: auth, error: authError } = await admin.auth.getUser(token);
     if (authError || !auth.user?.email) throw new BillingError('Session expirée. Reconnectez-vous.', 401);
     const user = auth.user;
     const { data: profileState, error: profileStateError } = await admin.from('user_profiles').select('account_deleted_at').eq('id', user.id).maybeSingle();
     if (profileStateError) throw new BillingError('Impossible de vérifier le compte.', 503);
     if (!profileState || profileState.account_deleted_at) throw new BillingError('Ce compte a été supprimé. Aucun paiement ne peut être lancé.', 401);
-    console.log('[appletics-billing]', { action, userId: user.id, testMode: true });
+    console.log('[appletics-billing]', { action, userId: user.id, live: LIVE });
     const paymentActions = ['checkout', 'payment-sheet', 'discard-payment'];
     const managementActions = ['change', 'cancel', 'resume'];
     if (paymentActions.includes(action) || managementActions.includes(action)) {
@@ -75,27 +78,27 @@ Deno.serve(async req => {
       if (!acquired) throw new BillingError(managementActions.includes(action) ? 'Une modification est déjà en cours. Patientez puis réessayez.' : 'Un paiement est déjà en préparation. Patientez puis réessayez.', 409);
       paymentLease = { admin, userId: user.id, token: leaseToken };
     }
-    const { data: mapping, error: mappingError } = await admin.from('billing_test_accounts').select('stripe_customer_id').eq('user_id', user.id).maybeSingle();
+    const { data: mapping, error: mappingError } = await admin.from(accountsTable).select('stripe_customer_id').eq('user_id', user.id).maybeSingle();
     if (mappingError) throw new BillingError('Impossible de lire le compte de facturation.', 500);
     let customerId: string | null = mapping?.stripe_customer_id ?? null;
     if (customerId) {
       const customer = await stripe.customers.retrieve(customerId);
-      if (customer.deleted || customer.livemode || customer.metadata.app !== appId || customer.metadata.user_id !== user.id) throw new BillingError('Compte Stripe test incompatible. Aucun accès accordé.', 409);
+      if (customer.deleted || customer.livemode !== LIVE || customer.metadata.app !== appId || customer.metadata.user_id !== user.id) throw new BillingError('Compte Stripe incompatible. Aucun accès accordé.', 409);
     }
     if (!customerId && ['checkout', 'payment-sheet'].includes(action)) {
       const customer = await stripe.customers.create({ email: user.email, metadata: { app: appId, user_id: user.id } }, { idempotencyKey: `${appId}:customer:${user.id}` });
-      if (customer.livemode) throw new BillingError('Client live interdit.', 409);
+      if (customer.livemode !== LIVE) throw new BillingError('Client Stripe incompatible.', 409);
       customerId = customer.id;
-      const { error } = await admin.from('billing_test_accounts').upsert({ user_id: user.id, stripe_customer_id: customerId });
+      const { error } = await admin.from(accountsTable).upsert({ user_id: user.id, stripe_customer_id: customerId });
       if (error) throw new BillingError('Impossible de rattacher le client test à votre compte.', 500);
     }
     const allSubs = customerId ? await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 }) : { data: [] };
-    const owned = allSubs.data.filter((entry: any) => !entry.livemode && entry.metadata.app === appId && entry.metadata.user_id === user.id && offerForPrice(entry.items.data[0]?.price.id ?? ''));
+    const owned = allSubs.data.filter((entry: any) => entry.livemode === LIVE && entry.metadata.app === appId && entry.metadata.user_id === user.id && offerForPrice(entry.items.data[0]?.price.id ?? ''));
     let sub: any = owned.find((entry: any) => ['active', 'trialing', 'past_due', 'unpaid', 'paused', 'incomplete'].includes(entry.status)) ?? owned.sort((a: any, b: any) => b.created - a.created)[0] ?? null;
     if (sub && managementActions.includes(action)) {
       // Re-read after acquiring the lease: schedules and cancellation dates may have changed on another device.
       sub = await stripe.subscriptions.retrieve(sub.id);
-      if (sub.livemode || idOf(sub.customer) !== customerId || sub.metadata.app !== appId || sub.metadata.user_id !== user.id || sub.items.data.length !== 1) throw new BillingError('Abonnement Stripe incompatible. Aucun changement effectué.', 409);
+      if (sub.livemode !== LIVE || idOf(sub.customer) !== customerId || sub.metadata.app !== appId || sub.metadata.user_id !== user.id || sub.items.data.length !== 1) throw new BillingError('Abonnement Stripe incompatible. Aucun changement effectué.', 409);
     }
     const offer = sub ? offerForPrice(sub.items.data[0].price.id) : null;
     const snapshot = async (subscription: any) => {
@@ -115,13 +118,13 @@ Deno.serve(async req => {
         currentPeriodEnd: iso(end), cancelAt: iso(subscription?.cancel_at),
         commitmentEnd: subscription && selected ? iso(commitmentEnd(subscription, selected.cycle)) : null,
         cancelAtPeriodEnd: subscription?.cancel_at_period_end ?? false,
-        pendingTier, pendingCycle, pendingChangeAt, livemode: false, checkedAt: new Date().toISOString(),
+        pendingTier, pendingCycle, pendingChangeAt, livemode: LIVE, checkedAt: new Date().toISOString(),
       };
       const { error } = await admin.from('billing_test_entitlements').upsert({
         user_id: user.id, tier: result.tier, billing_cycle: result.billingCycle, status: result.status,
         stripe_subscription_id: result.subscriptionId, current_period_end: result.currentPeriodEnd,
         cancel_at: result.cancelAt, commitment_end: result.commitmentEnd,
-        cancel_at_period_end: result.cancelAtPeriodEnd, livemode: false, checked_at: result.checkedAt,
+        cancel_at_period_end: result.cancelAtPeriodEnd, livemode: LIVE, checked_at: result.checkedAt,
       });
       if (error) throw new BillingError('Stripe vérifié, mais la sauvegarde du statut a échoué. Réessayez.', 500);
       return result;
@@ -135,14 +138,14 @@ Deno.serve(async req => {
       const secret = latest.latest_invoice?.confirmation_secret?.client_secret;
       if (!secret) throw new BillingError('Vérifiez le paiement avant d’abandonner cet essai.', 409);
       const intent = await stripe.paymentIntents.retrieve(secret.split('_secret_')[0]);
-      if (idOf(intent.customer) !== customerId || intent.livemode) throw new BillingError('Paiement incompatible avec ce compte.', 409);
+      if (idOf(intent.customer) !== customerId || intent.livemode !== LIVE) throw new BillingError('Paiement incompatible avec ce compte.', 409);
       if (['processing', 'succeeded'].includes(intent.status)) return jsonResponse(await snapshot(latest));
       // This only cancels an unpaid native first-invoice attempt, never a paid subscription.
       const cancelled = await stripe.subscriptions.cancel(latest.id, { invoice_now: false, prorate: false });
       return jsonResponse(await snapshot(cancelled));
     }
     if (action === 'payment-sheet') {
-      await checkCatalog(stripe);
+      await checkCatalog(stripe, LIVE);
       const selected = getOffer(body.tier, body.billingCycle);
       if (!selected) throw new BillingError('Formule ou périodicité invalide.');
       const activeAttempt = sub && !['canceled', 'incomplete_expired'].includes(sub.status);
@@ -153,7 +156,7 @@ Deno.serve(async req => {
       if (!merchantCountryCode || !/^[A-Z]{2}$/.test(merchantCountryCode)) throw new BillingError('Pays du compte Stripe indisponible.', 409);
       const sessions = await stripe.checkout.sessions.list({ customer: customerId!, limit: 100 });
       for (const session of sessions.data) {
-        if (session.status === 'open' && session.metadata?.app === appId && !session.livemode) await stripe.checkout.sessions.expire(session.id);
+        if (session.status === 'open' && session.metadata?.app === appId && session.livemode === LIVE) await stripe.checkout.sessions.expire(session.id);
       }
       const metadata = { app: appId, user_id: user.id, tier: body.tier, billingCycle: body.billingCycle, paymentFlow: nativePaymentVersion };
       const nativeSub: any = activeAttempt
@@ -164,37 +167,37 @@ Deno.serve(async req => {
           metadata, expand: ['latest_invoice.confirmation_secret'],
         }, { idempotencyKey: `${appId}:${nativePaymentVersion}:${user.id}:${sub?.id ?? 'first'}` });
       const invoice = nativeSub.latest_invoice;
-      if (nativeSub.livemode || idOf(nativeSub.customer) !== customerId || !invoice || invoice.livemode || invoice.currency !== 'chf' || invoice.amount_due !== selected.amount) throw new BillingError('Montant ou compte Stripe incompatible. Aucun accès accordé.', 409);
+      if (nativeSub.livemode !== LIVE || idOf(nativeSub.customer) !== customerId || !invoice || invoice.livemode !== LIVE || invoice.currency !== 'chf' || invoice.amount_due !== selected.amount) throw new BillingError('Montant ou compte Stripe incompatible. Aucun accès accordé.', 409);
       const paymentIntentClientSecret = invoice.confirmation_secret?.client_secret;
       if (!paymentIntentClientSecret || nativeSub.status !== 'incomplete') throw new BillingError('Paiement déjà traité ou non disponible. Vérifiez le paiement dans l’app.', 409);
       const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customerId! }, { apiVersion: '2025-08-27.basil' });
-      if (!ephemeralKey.secret || ephemeralKey.livemode) throw new BillingError('Session temporaire Stripe indisponible.', 409);
+      if (!ephemeralKey.secret || ephemeralKey.livemode !== LIVE) throw new BillingError('Session temporaire Stripe indisponible.', 409);
       await snapshot(nativeSub);
       // pk_test is public by design. The SDK requires it; no privileged API key leaves this server.
       // Only the authenticated owner receives session-scoped credentials, with no-store headers.
-      return jsonResponse({ testMode: true, livemode: false, publishableKey, customerId, customerEphemeralKeySecret: ephemeralKey.secret, paymentIntentClientSecret, subscriptionId: nativeSub.id, amount: selected.amount, currency: 'chf', merchantCountryCode, email: user.email });
+      return jsonResponse({ testMode: !LIVE, livemode: LIVE, publishableKey, customerId, customerEphemeralKeySecret: ephemeralKey.secret, paymentIntentClientSecret, subscriptionId: nativeSub.id, amount: selected.amount, currency: 'chf', merchantCountryCode, email: user.email });
     }
     if (action === 'checkout') {
-      await checkCatalog(stripe);
+      await checkCatalog(stripe, LIVE);
       const selected = getOffer(body.tier, body.billingCycle);
       if (!selected) throw new BillingError('Formule ou périodicité invalide.');
       if (sub && !['canceled', 'incomplete_expired'].includes(sub.status)) {
         if (sub.status === 'incomplete' && sub.metadata.paymentFlow === nativePaymentVersion) throw new BillingError('Terminez ou abandonnez le paiement en attente avant de choisir une autre formule.', 409);
         if (sub.status === 'incomplete' && sub.items.data[0]?.price.id === selected.priceId) {
           const pendingSessions = await stripe.checkout.sessions.list({ customer: customerId!, limit: 100 });
-          const pending = pendingSessions.data.find(session => session.status === 'open' && idOf(session.subscription) === sub.id && session.metadata?.app === appId && !session.livemode);
-          if (pending?.url) return jsonResponse({ url: pending.url, sessionId: pending.id, testMode: true });
+          const pending = pendingSessions.data.find(session => session.status === 'open' && idOf(session.subscription) === sub.id && session.metadata?.app === appId && session.livemode === LIVE);
+          if (pending?.url) return jsonResponse({ url: pending.url, sessionId: pending.id, testMode: !LIVE });
         }
         throw new BillingError('Vous avez déjà un abonnement ou un paiement en attente. Gérez-le avant de souscrire de nouveau.', 409);
       }
       const selectedPrice = await stripe.prices.retrieve(selected.priceId);
-      if (selectedPrice.livemode || !selectedPrice.active || selectedPrice.unit_amount !== selected.amount || selectedPrice.currency !== 'chf') throw new BillingError('Tarif de test indisponible.', 409);
+      if (selectedPrice.livemode !== LIVE || !selectedPrice.active || selectedPrice.unit_amount !== selected.amount || selectedPrice.currency !== 'chf') throw new BillingError('Tarif indisponible.', 409);
       const baseReturn = returnUrl(req, body.returnUrl, body.returnMode, body.language);
       const separator = baseReturn.includes('?') ? '&' : '?';
       const sessions = await stripe.checkout.sessions.list({ customer: customerId!, limit: 100 });
       const open = sessions.data.filter(session => session.status === 'open' && session.metadata?.app === appId);
       const matching = open.find(session => session.metadata?.tier === body.tier && session.metadata?.billingCycle === body.billingCycle && session.metadata?.checkoutVersion === checkoutVersion && session.success_url?.startsWith(`${baseReturn}${separator}`));
-      if (matching?.url && !matching.livemode) return jsonResponse({ url: matching.url, sessionId: matching.id, testMode: true });
+      if (matching?.url && matching.livemode === LIVE) return jsonResponse({ url: matching.url, sessionId: matching.id, testMode: !LIVE });
       for (const previous of open) await stripe.checkout.sessions.expire(previous.id);
       const metadata = { app: appId, user_id: user.id, tier: body.tier, billingCycle: body.billingCycle, checkoutVersion };
       const session = await stripe.checkout.sessions.create({
@@ -204,18 +207,18 @@ Deno.serve(async req => {
         success_url: `${baseReturn}${separator}result=success&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${baseReturn}${separator}result=cancelled`, expires_at: now() + 30 * 60,
         custom_text: { submit: { message: body.billingCycle === 'annual_monthly' ? 'TEST : engagement renouvelable de 12 mois, facturé mensuellement. Résiliation à la fin des 12 mois. Aucun débit réel.' : 'MODE TEST : renouvellement automatique. Résiliation à la fin de la période payée. Aucun débit réel.' } },
       }, { idempotencyKey: `${appId}:checkout:${checkoutVersion}:${user.id}:${paymentLease!.token}` });
-      if (session.livemode || !session.url) throw new BillingError('Session Stripe test non disponible.', 409);
-      return jsonResponse({ url: session.url, sessionId: session.id, testMode: true });
+      if (session.livemode !== LIVE || !session.url) throw new BillingError('Session Stripe non disponible.', 409);
+      return jsonResponse({ url: session.url, sessionId: session.id, testMode: !LIVE });
     }
     if (!customerId) throw new BillingError('Aucun client Stripe test. Lancez un premier paiement.');
     if (action === 'portal') {
       const config = await stripe.billingPortal.configurations.create({
-        business_profile: { headline: 'Appletics · gestion des paiements de test' },
+        business_profile: { headline: LIVE ? 'Appletics · gestion de votre abonnement' : 'Appletics · gestion des paiements de test' },
         features: { customer_update: { enabled: true, allowed_updates: ['name', 'address', 'phone'] }, invoice_history: { enabled: true }, payment_method_update: { enabled: true }, subscription_cancel: { enabled: false }, subscription_update: { enabled: false } },
         metadata: { app: appId },
       }, { idempotencyKey: `${appId}:portal-config:v1:${Math.floor(now() / 86400)}` });
       const portal = await stripe.billingPortal.sessions.create({ customer: customerId, configuration: config.id, return_url: returnUrl(req, body.returnUrl, body.returnMode, body.language) });
-      return jsonResponse({ url: portal.url, testMode: true });
+      return jsonResponse({ url: portal.url, testMode: !LIVE });
     }
     if (!sub || !offer || !['active', 'past_due', 'unpaid', 'trialing'].includes(sub.status)) throw new BillingError('Aucun abonnement modifiable.');
     if (action === 'resume') {
@@ -237,7 +240,7 @@ Deno.serve(async req => {
       return jsonResponse(await snapshot(updated));
     }
     if (action === 'change') {
-      await checkCatalog(stripe);
+      await checkCatalog(stripe, LIVE);
       const next = getOffer(body.tier, body.billingCycle);
       if (!next) throw new BillingError('Formule invalide.');
       if (sub.status !== 'active') throw new BillingError('Régularisez le paiement avant de changer de formule.');
@@ -250,7 +253,7 @@ Deno.serve(async req => {
       const schedule: any = hadSchedule
         ? await stripe.subscriptionSchedules.retrieve(idOf(sub.schedule)!)
         : await stripe.subscriptionSchedules.create({ from_subscription: sub.id }, { idempotencyKey: `${appId}:schedule:v2:${sub.id}:${paymentLease!.token}` });
-      if (schedule.livemode || idOf(schedule.customer) !== customerId || idOf(schedule.subscription) !== sub.id) throw new BillingError('Calendrier Stripe incompatible. Aucun changement effectué.', 409);
+      if (schedule.livemode !== LIVE || idOf(schedule.customer) !== customerId || idOf(schedule.subscription) !== sub.id) throw new BillingError('Calendrier Stripe incompatible. Aucun changement effectué.', 409);
       try {
         const parameters = planChangeParameters(schedule, sub, next.priceId, body.billingCycle, effectiveAt, { app: appId, user_id: user.id, tier: body.tier, billingCycle: body.billingCycle });
         await stripe.subscriptionSchedules.update(schedule.id, parameters as Stripe.SubscriptionScheduleUpdateParams, { idempotencyKey: `${appId}:schedule-update:v2:${paymentLease!.token}` });

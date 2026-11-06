@@ -1,13 +1,18 @@
 {
   "expo": {
     "name": "Appletics",
-    "slug": "onspace-app",
-    "version": "1.0.0",
+    "slug": "appletics",
+    "version": "1.0.1",
     "orientation": "default",
     "icon": "./assets/images/appletics-icon.png",
-    "scheme": ["onspaceapp", "appletics"],
+    "scheme": [
+      "onspaceapp",
+      "appletics"
+    ],
     "userInterfaceStyle": "automatic",
-    "extra": { "distribution": "testflight" },
+    "extra": {
+      "distribution": "testflight"
+    },
     "ios": {
       "supportsTablet": true,
       "buildNumber": "1",
@@ -16,7 +21,12 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSFaceIDUsageDescription": "Appletics utilise Face ID pour déverrouiller votre session en toute sécurité.",
         "CFBundleAllowMixedLocalizations": true,
-        "CFBundleLocalizations": ["fr", "de", "it", "en"]
+        "CFBundleLocalizations": [
+          "fr",
+          "de",
+          "it",
+          "en"
+        ]
       }
     },
     "android": {

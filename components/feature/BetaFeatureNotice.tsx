@@ -7,7 +7,7 @@ import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 interface BetaFeatureNoticeProps { kind?: 'overview' | 'chat' | 'club' | 'billing'; }
 const descriptions = {
   overview: 'Bêta de test : utilisez des données fictives. Certaines données restent sur cet appareil ; consultez les limites avant de tester.',
-  chat: 'Ces discussions sont locales : aucun message n’est envoyé à un autre téléphone. Le partage Cloud des performances se trouve dans Groupes partagés.',
+  chat: 'Les discussions de vos groupes partagés sont en ligne : tous les membres du groupe les reçoivent. Les autres conversations restent sur cet appareil.',
   club: 'Cet annuaire est local. Il ne crée aucun compte et ne donne aucun accès Cloud aux coachs. Utilisez Groupes partagés pour travailler ensemble.',
   billing: 'Les achats sont désactivés dans la bêta iOS. Aucun paiement ne sera lancé ; les abonnements numériques Apple seront intégrés séparément.',
 };

@@ -1,0 +1,7 @@
+# Web app Appletics : Netlify reconstruit et publie automatiquement à chaque modification sur GitHub (branche main).
+[build]
+  command = "npx expo export --platform web --output-dir dist"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

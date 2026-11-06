@@ -1,3 +1,5 @@
+project_id = "appletics"
+
 # Public return/config endpoints. appletics-billing verifies the JWT with auth.getUser for all user actions.
 [functions.appletics-billing]
 verify_jwt = false

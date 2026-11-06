@@ -13,7 +13,7 @@ export interface BillingState {
   pendingTier?: SubscriptionTier | null;
   pendingCycle?: BillingCycle | null;
   pendingChangeAt?: string | null;
-  livemode: false;
+  livemode: boolean;
   checkedAt: string | null;
 }
 export const emptyBillingState: BillingState = {
@@ -22,7 +22,7 @@ export const emptyBillingState: BillingState = {
   livemode: false, checkedAt: null,
 };
 export interface BillingConfiguration {
-  testMode: true;
+  testMode: boolean;
   catalogReady: boolean;
   nativeReady?: boolean;
   nativeMessage?: string;
@@ -30,8 +30,8 @@ export interface BillingConfiguration {
 }
 // Session-scoped SDK credentials: never persist, log, or place in public configuration.
 export interface BillingPaymentSheet {
-  testMode: true;
-  livemode: false;
+  testMode: boolean;
+  livemode: boolean;
   publishableKey: string;
   customerId: string;
   customerEphemeralKeySecret: string;

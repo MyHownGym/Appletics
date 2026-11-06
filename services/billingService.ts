@@ -30,7 +30,8 @@ async function invokeBilling<T>(action: string, parameters: Record<string, unkno
       return { data: null, error: message };
     }
     if (!data || data.error) return { data: null, error: data?.error ?? 'Réponse Stripe vide.' };
-    if (data.livemode === true || data.testMode === false) return { data: null, error: 'Paiements réels bloqués : mode Stripe test requis.' };
+    // Mode is set by the server's Stripe key. Reject only inconsistent responses.
+    if (typeof data.livemode === 'boolean' && typeof data.testMode === 'boolean' && data.livemode === data.testMode) return { data: null, error: 'Configuration Stripe incohérente. Réessayez plus tard.' };
     return { data: data as T, error: null };
   } catch (reason) { return { data: null, error: reason instanceof Error ? reason.message : 'Impossible de joindre Stripe. Vérifiez votre connexion puis réessayez.' }; }
 }
@@ -46,7 +47,7 @@ export function subscribeBillingSession(onChange: () => void) {
 export function getBillingConfiguration() { return invokeBilling<BillingConfiguration>('config'); }
 export function checkBillingSubscription() { return invokeBilling<BillingState>('check'); }
 export function createBillingCheckout(tier: SubscriptionTier, billingCycle: BillingCycle, returnUrl: string | null, language: Language = 'fr') {
-  return invokeBilling<{ url: string; testMode: true; sessionId: string }>('checkout', { tier, billingCycle, returnUrl, returnMode: getBillingBrowserReturnMode(), language });
+  return invokeBilling<{ url: string; testMode: boolean; sessionId: string }>('checkout', { tier, billingCycle, returnUrl, returnMode: getBillingBrowserReturnMode(), language });
 }
 export function createBillingPaymentSheet(tier: SubscriptionTier, billingCycle: BillingCycle) {
   return invokeBilling<BillingPaymentSheet>('payment-sheet', { tier, billingCycle });
@@ -54,7 +55,7 @@ export function createBillingPaymentSheet(tier: SubscriptionTier, billingCycle: 
 export function discardBillingPayment(subscriptionId: string) {
   return invokeBilling<BillingState>('discard-payment', { subscriptionId });
 }
-export function createBillingPortal(returnUrl: string | null, language: Language = 'fr') { return invokeBilling<{ url: string; testMode: true }>('portal', { returnUrl, returnMode: getBillingBrowserReturnMode(), language }); }
+export function createBillingPortal(returnUrl: string | null, language: Language = 'fr') { return invokeBilling<{ url: string; testMode: boolean }>('portal', { returnUrl, returnMode: getBillingBrowserReturnMode(), language }); }
 export function cancelBillingSubscription() { return invokeBilling<BillingState>('cancel'); }
 export function resumeBillingSubscription() { return invokeBilling<BillingState>('resume'); }
 export function changeBillingSubscription(tier: SubscriptionTier, billingCycle: BillingCycle) { return invokeBilling<BillingState>('change', { tier, billingCycle }); }

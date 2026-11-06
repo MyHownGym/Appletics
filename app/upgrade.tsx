@@ -19,6 +19,7 @@ import { BillingPaymentActions } from '@/components/feature/BillingPaymentAction
 import { BillingTestGuide } from '@/components/feature/BillingTestGuide';
 import { BetaBillingScreen } from '@/components/feature/BetaBillingScreen';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
+import { useBilling } from '@/hooks/useBilling';
 
 export default function UpgradeScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function UpgradeScreen() {
   const { screenPadding } = useResponsive();
   const scrollRef = useRef<ScrollView>(null);
   const release = useReleasePolicy();
+  const testMode = useBilling().configuration?.testMode === true;
   useEffect(() => { scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [offer.focusId]);
   if (offer.isAthlete) return <Redirect href="/(tabs)/profile" />;
   if (!release.externalBillingAllowed) return <BetaBillingScreen currentLabel={offer.currentLabel} />;
@@ -35,7 +37,7 @@ export default function UpgradeScreen() {
     <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={t('back')} onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed ? styles.pressed : null]}><MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} /></Pressable><Text style={styles.headerTitle}>Abonnement</Text><AppBrand compact /></View>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView keyboardShouldPersistTaps="handled" ref={scrollRef} style={styles.flex} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingHorizontal: screenPadding }]}>
-        <View style={styles.intro}><View style={styles.introTop}><Text style={styles.eyebrow}>{offer.isClub ? 'POUR VOTRE CLUB' : 'POUR VOTRE COACHING'}</Text><Text style={styles.testBadge}>TEST</Text></View><Text style={styles.title}>Choisissez votre formule.</Text><Text style={styles.current}>{`Formule actuelle : ${offer.currentLabel}`}</Text></View>
+        <View style={styles.intro}><View style={styles.introTop}><Text style={styles.eyebrow}>{offer.isClub ? 'POUR VOTRE CLUB' : 'POUR VOTRE COACHING'}</Text>{testMode ? <Text style={styles.testBadge}>TEST</Text> : null}</View><Text style={styles.title}>Choisissez votre formule.</Text><Text style={styles.current}>{`Formule actuelle : ${offer.currentLabel}`}</Text></View>
         {offer.reason ? <View style={styles.reason}><MaterialIcons name="lock-outline" size={20} color={Colors.welcomeDeep} /><Text style={styles.reasonText}>{offer.reason}</Text></View> : null}
         <View style={styles.tabs}>{offer.tiers.map(item => {
           const selected = item.id === plan.id;
@@ -55,9 +57,9 @@ export default function UpgradeScreen() {
           {offer.isClub ? <View style={styles.notice}><MaterialIcons name="admin-panel-settings" size={22} color={Colors.clubDeep} /><Text style={styles.body}>Les places comité sont prévues dans l’offre. Les comptes partagés et permissions distantes ne sont pas encore connectés.</Text></View> : null}
           <Text style={styles.detailNote}>Votre historique reste conservé si vous choisissez une formule plus petite. Seule la création au-delà des quotas est bloquée ; vous pouvez toujours modifier vos données.</Text>
         </SubscriptionDisclosure>
-        <SubscriptionDisclosure title="Aide et tests Stripe">
+        <SubscriptionDisclosure title={testMode ? 'Aide et tests Stripe' : 'Paiement et abonnement'}>
           <BillingStatusPanel />
-          <BillingTestGuide />
+          {testMode ? <BillingTestGuide /> : null}
         </SubscriptionDisclosure>
       </ScrollView>
     </KeyboardAvoidingView>

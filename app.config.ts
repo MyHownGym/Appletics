@@ -28,7 +28,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
   return {
     ...config,
     name: 'Appletics',
-    slug: config.slug ?? 'onspace-app',
+    slug: config.slug ?? 'appletics',
     version: config.version ?? '1.0.0',
     extra: { ...config.extra, distribution },
     plugins,

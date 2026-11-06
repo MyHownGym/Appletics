@@ -20,7 +20,7 @@ export function useBillingAccount(initialRegister = false, onSignedIn?: (userId:
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) { setError('Vérifiez votre adresse e-mail.'); return; }
     if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
     if (register && password !== confirmation) { setError('Les mots de passe ne correspondent pas.'); return; }
-    if (register && codeSent && !/^\d{4}$/.test(otp)) { setError('Saisissez le code à 4 chiffres reçu par e-mail.'); return; }
+    if (register && codeSent && !/^\d{4,8}$/.test(otp)) { setError('Saisissez le code reçu par e-mail.'); return; }
     pending.current = true; setBusy(true);
     try {
       if (register && !codeSent) {

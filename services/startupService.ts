@@ -23,7 +23,7 @@ export function startupDiagnostic(version: string, build: string, phase: Startup
 }
 export async function openStartupSupport(diagnostic: string): Promise<boolean> {
   try {
-    await Linking.openURL(`mailto:contact@onspace.ai?subject=${encodeURIComponent('Appletics — démarrage bloqué')}&body=${encodeURIComponent(diagnostic)}`);
+    await Linking.openURL(`mailto:contact@appletics.ch?subject=${encodeURIComponent('Appletics — démarrage bloqué')}&body=${encodeURIComponent(diagnostic)}`);
     return true;
   } catch { return false; }
 }

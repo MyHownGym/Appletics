@@ -17,6 +17,7 @@ import { ScreenHeader } from '@/components';
 import { ChatChannel } from '@/types';
 import { useActivityScope } from '@/hooks/useActivityScope';
 import { BetaFeatureNotice } from '@/components/feature/BetaFeatureNotice';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
 
 const CHANNEL_TYPE_ICONS: Record<string, string> = {
   staff: 'supervisor-account', group: 'people', admin: 'admin-panel-settings',
@@ -115,6 +116,8 @@ export default function ChatScreen() {
   const { t } = useI18n();
   const [tab, setTab] = useState('all');
   const { screenPadding, isPhone } = useResponsive();
+  const shared = useSharedGroups();
+  const onlineGroups = shared.data.groups;
 
   const channelTabs = isAthlete ? [{ id: 'all', label: t('all') }, { id: 'group', label: t('groups') }] : [
     { id: 'all', label: t('all') },
@@ -178,7 +181,31 @@ export default function ChatScreen() {
             onDelete={() => handleDelete(item)}
           />
         )}
-        ListHeaderComponent={<BetaFeatureNotice kind="chat" />}
+        ListHeaderComponent={<View style={styles.onlineSection}>
+          <BetaFeatureNotice kind="chat" />
+          <Text style={styles.sectionTitle}>Discussions de groupe en ligne</Text>
+          {onlineGroups.length ? onlineGroups.map(group => (
+            <Pressable key={group.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id: group.id } })}
+              style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
+              <View style={styles.onlineIcon}><MaterialIcons name="forum" size={20} color="#FFF" /></View>
+              <View style={styles.channelInfo}>
+                <Text verbatim style={styles.channelName} numberOfLines={1}>{group.name}</Text>
+                <Text style={styles.lastMsg}>{`${shared.data.members.filter(member => member.group_id === group.id).length} membre(s) · en ligne`}</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
+            </Pressable>
+          )) : (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/shared-groups')} style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
+              <View style={styles.onlineIcon}><MaterialIcons name="group-add" size={20} color="#FFF" /></View>
+              <View style={styles.channelInfo}>
+                <Text style={styles.channelName}>Créer ou rejoindre un groupe partagé</Text>
+                <Text style={styles.lastMsg}>Chaque groupe a sa discussion en ligne.</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
+            </Pressable>
+          )}
+          {channels.length ? <Text style={styles.sectionTitle}>Sur cet appareil</Text> : null}
+        </View>}
         ListEmptyComponent={
           <View style={styles.empty}>
             <MaterialIcons name="chat-bubble-outline" size={48} color={Colors.textMuted} />
@@ -198,6 +225,10 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
+  onlineSection: { gap: Spacing.sm, marginBottom: Spacing.sm },
+  sectionTitle: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightBold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: Spacing.sm },
+  onlineRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, borderRadius: Radius.lg, backgroundColor: Colors.surfaceCard, borderWidth: 1, borderColor: Colors.border },
+  onlineIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary },
   screen: { flex: 1, backgroundColor: Colors.background },
   tabRow: {
     flexDirection: 'row', paddingHorizontal: Spacing.screenPadding,
