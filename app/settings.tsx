@@ -1,6 +1,8 @@
 // Powered by OnSpace.AI
 // Settings screen v3 — biometrics, notifications, role change, delete account, payment mgmt
 import React, { useCallback, useState } from 'react';
+import { useAuth } from '@/template';
+import { markManualLock } from '@/services/sessionLock';
 import {
   View, ScrollView, Pressable, StyleSheet, Switch,
   Modal, Linking,
@@ -60,6 +62,7 @@ const NOTIF_GROUPS = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const auth = useAuth();
   const { showAlert } = useLocalizedAlert();
   const { user, updateUser, notifSettings, setNotifSettings, setLocked, setOnboardingDone, setSubscription } = useApp();
   const { t } = useI18n();
@@ -110,7 +113,15 @@ export default function SettingsScreen() {
 
   const allOn = NOTIF_GROUPS.every(g => g.items.every(item => notifSettings[item.key] !== false));
 
+  const handleLogout = () => {
+    showAlert('Se déconnecter ?', 'Vous pourrez vous reconnecter avec votre e-mail et votre mot de passe.', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Se déconnecter', style: 'destructive', onPress: () => { markManualLock(); void auth.logout(); } },
+    ]);
+  };
+
   const handleLockNow = () => {
+    markManualLock();
     setLocked(true);
     router.replace('/login');
   };
@@ -211,6 +222,17 @@ export default function SettingsScreen() {
             <View style={styles.rowInfo}>
               <Text style={styles.rowLabel}>Verrouiller maintenant</Text>
               <Text style={styles.rowValue}>Retour à l'écran de connexion</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
+          </Pressable>
+          <View style={styles.divider} />
+          <Pressable style={styles.row} onPress={handleLogout}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.error + '14' }]}>
+              <MaterialIcons name="logout" size={20} color={Colors.error} />
+            </View>
+            <View style={styles.rowInfo}>
+              <Text style={[styles.rowLabel, { color: Colors.error }]}>Se déconnecter</Text>
+              <Text style={styles.rowValue}>Vos données restent sur votre compte</Text>
             </View>
             <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
           </Pressable>

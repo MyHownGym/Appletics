@@ -215,7 +215,7 @@ export default function OnboardingScreen() {
     return { title: s[slide.titleKey] || slide.titleKey, sub: s[slide.subtitleKey] || slide.subtitleKey };
   };
 
-  if (step === 'account') return <OnboardingAccount profile={{ firstName: firstName.trim(), lastName: lastName.trim(), userType, club: club.trim(), role: userType === 'coach' ? coachRole : 'Athlete', accountType: 'indie', isClubAdmin: false, avatar: photo.avatar, coachAthleteCount: userType === 'coach' ? athleteCount.value : undefined }} onBack={() => setStep('profile')} onComplete={() => { setStep('slides'); setSlideIndex(0); }} />;
+  if (step === 'account') return <OnboardingAccount profile={{ firstName: firstName.trim(), lastName: lastName.trim(), userType, club: club.trim(), role: userType === 'coach' ? coachRole : 'Athlete', accountType: 'indie', isClubAdmin: false, avatar: photo.avatar, coachAthleteCount: userType === 'coach' ? athleteCount.value : undefined }} onBack={() => setStep('profile')} onComplete={() => { setStep('slides'); setSlideIndex(0); }} onExistingAccount={() => { setOnboardingDone(true); setLocked(false); router.replace('/(tabs)'); }} />;
 
   if (step === 'welcome') return <OnboardingWelcome onContinue={() => setStep('select')} onSignIn={() => router.push('/login')} />;
 
