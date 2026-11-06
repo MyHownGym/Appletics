@@ -11,13 +11,15 @@ export const BillingStatusPanel = memo(function BillingStatusPanel({ compact = f
   const billing = useBilling();
   const { locale } = useI18n();
   const { state } = billing;
+  // Test labels only when the server confirms test mode: never tell a real customer that nothing is charged.
+  const testMode = billing.configuration?.testMode === true;
   const date = (value: string | null) => value ? new Date(value).toLocaleDateString(locale) : '—';
   const label = state.status === 'active' ? 'Actif' : state.status === 'past_due' ? 'Paiement en retard' : state.status === 'incomplete' ? 'Paiement à terminer' : state.status === 'canceled' ? 'Résilié' : state.status === 'unpaid' ? 'Paiement impayé' : 'Aucun abonnement confirmé';
   return <View style={styles.panel}>
-    <View style={styles.heading}><MaterialIcons name="science" size={24} color={Colors.welcomeDeep} /><Text style={styles.title}>Stripe · mode test</Text></View>
-    <Text style={styles.body}>Aucun débit réel. Utilisez uniquement les cartes de test Stripe.</Text>
-    {billing.configuration ? <Text style={styles.ready}>Catalogue test vérifié · 18 tarifs</Text> : <Pressable onPress={() => { void billing.checkConfiguration(); }} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.secondaryText}>Vérifier la configuration Stripe</Text></Pressable>}
-    {billing.configuration?.nativeReady ? <Text style={styles.ready}>Paiement intégré configuré · test sur appareil requis</Text> : null}
+    <View style={styles.heading}><MaterialIcons name={testMode ? 'science' : 'lock'} size={24} color={Colors.welcomeDeep} /><Text style={styles.title}>{testMode ? 'Stripe · mode test' : 'Paiement sécurisé · Stripe'}</Text></View>
+    {testMode ? <Text style={styles.body}>Aucun débit réel. Utilisez uniquement les cartes de test Stripe.</Text> : null}
+    {billing.configuration ? <Text style={styles.ready}>{testMode ? 'Catalogue test vérifié · 18 tarifs' : 'Paiement disponible'}</Text> : <Pressable onPress={() => { void billing.checkConfiguration(); }} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.secondaryText}>Vérifier la configuration Stripe</Text></Pressable>}
+    {billing.configuration?.nativeReady && testMode ? <Text style={styles.ready}>Paiement intégré configuré · test sur appareil requis</Text> : null}
     {billing.configurationError ? <View style={styles.feedback}><MaterialIcons name="error-outline" size={22} color={Colors.error} /><Text style={[styles.body, styles.error]}>{billing.configurationError}</Text></View> : null}
     <View style={styles.status}><Text style={styles.plan}>{state.subscribed && state.tier ? getTierConfig(state.tier).name : 'Accès local sans abonnement'}</Text><Text style={styles.body}>{label}</Text></View>
     {state.currentPeriodEnd ? <Text style={styles.body}>{state.cancelAt || state.cancelAtPeriodEnd ? 'Accès jusqu’au' : 'Prochaine échéance'} : {date(state.cancelAt ?? state.currentPeriodEnd)}</Text> : null}

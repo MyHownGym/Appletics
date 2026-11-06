@@ -121,6 +121,7 @@ function AppContent() {
         <Stack.Screen name="competition-detail" options={{ headerShown: false }} />
         <Stack.Screen name="create-channel" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="chat-room" options={{ headerShown: false }} />
+        <Stack.Screen name="group-chat" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="upgrade" options={{ headerShown: false }} />

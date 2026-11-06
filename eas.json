@@ -9,15 +9,26 @@
       "autoIncrement": true,
       "environment": "preview",
       "env": {
-        "APPLETICS_DISTRIBUTION": "testflight"
+        "APPLETICS_DISTRIBUTION": "testflight",
+        "APPLETICS_IOS_BUNDLE_IDENTIFIER": "app.onspace.appletics"
       },
       "ios": {
         "simulator": false
+      }
+    },
+    "production": {
+      "extends": "testflight",
+      "env": {
+        "APPLETICS_DISTRIBUTION": "testflight",
+        "APPLETICS_IOS_BUNDLE_IDENTIFIER": "app.onspace.appletics"
       }
     }
   },
   "submit": {
     "testflight": {
+      "ios": {}
+    },
+    "production": {
       "ios": {}
     }
   }

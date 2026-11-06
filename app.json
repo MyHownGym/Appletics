@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "Appletics",
+    "slug": "appletics",
+    "version": "1.0.1",
+    "orientation": "default",
+    "icon": "./assets/images/appletics-icon.png",
+    "scheme": [
+      "onspaceapp",
+      "appletics"
+    ],
+    "userInterfaceStyle": "automatic",
+    "extra": {
+      "distribution": "testflight"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDisplayName": "Appletics",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Appletics utilise Face ID pour déverrouiller votre session en toute sécurité.",
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": [
+          "fr",
+          "de",
+          "it",
+          "en"
+        ]
+      }
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/appletics-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/appletics-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/appletics-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-web-browser",
+      "expo-notifications",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.appletics.payments",
+          "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Appletics accède à vos photos pour choisir votre photo de profil ou le logo de votre club.",
+          "cameraPermission": "Appletics utilise la caméra pour prendre votre photo de profil.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Appletics utilise Face ID pour déverrouiller votre session en toute sécurité."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

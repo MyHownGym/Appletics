@@ -1,0 +1,38 @@
+import { memo } from 'react';
+import { View, FlatList, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { LocalizedText as Text } from '@/components/ui/LocalizedText';
+import { useSharedPerformance } from '@/hooks/useSharedPerformance';
+import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
+import { MiniCalendar } from '@/components/ui/MiniCalendar';
+import { sharedStyles as styles } from '@/constants/sharedStyles';
+import { Colors } from '@/constants/theme';
+import type { SessionMetric } from '@/types';
+interface SharedSessionWorkspaceProps { sessionId: string; initialMetrics?: SessionMetric[]; initialDate?: string; initialNotes?: string }
+export const SharedSessionWorkspace = memo(function SharedSessionWorkspace({ sessionId, initialMetrics, initialDate, initialNotes }: SharedSessionWorkspaceProps) {
+ const perf = useSharedPerformance(sessionId, initialMetrics, initialDate, initialNotes); const { translate } = useLocalizedCopy();
+ if (!perf.session) return null;
+ return <View style={styles.card}>
+  <Text style={styles.heading}>Performances partagées</Text><Text style={styles.body}>Visible par les coachs de ce groupe et l’athlète concerné.</Text>
+  {perf.message ? <Text accessibilityLiveRegion="polite" style={[styles.body,styles.success]}>{perf.message}</Text> : null}
+  {perf.syncError ? <View style={styles.errorRow}><MaterialIcons name="error-outline" size={22} color={Colors.error} /><Text style={[styles.body,styles.error]}>{perf.syncError}</Text></View> : null}
+  <FlatList scrollEnabled={false} data={perf.performances} keyExtractor={item => item.id} ListEmptyComponent={<Text style={styles.body}>Aucune performance partagée.</Text>} renderItem={({ item }) => <View style={styles.card}>
+   <View style={styles.row}><Text verbatim style={[styles.heading,styles.flex]}>{perf.athletes.find(athlete => athlete.id === item.athlete_id)?.name ?? ''}</Text><Pressable disabled={perf.busy} accessibilityLabel={translate('Modifier la performance')} onPress={() => perf.begin(item)} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="edit" size={22} color={Colors.welcomeDeep} /></Pressable><Pressable disabled={perf.busy} accessibilityLabel={translate('Supprimer')} onPress={() => perf.remove(item)} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="delete-outline" size={22} color={Colors.error} /></Pressable></View>
+   <Text style={styles.subtle}>{item.performed_on}</Text><Text style={styles.subtle}>{perf.athletes.find(athlete => athlete.id === item.athlete_id)?.user_id === item.created_by ? 'Enregistré par l’athlète' : 'Enregistré par un coach'}</Text>
+   <FlatList scrollEnabled={false} data={item.metrics} keyExtractor={(_,index) => String(index)} renderItem={({ item: metric }) => <View style={styles.row}><Text verbatim style={[styles.body,styles.flex]}>{metric.label}</Text><Text verbatim style={styles.amount}>{metric.value} {metric.unit}</Text></View>} />
+   {item.notes ? <Text verbatim style={styles.body}>{item.notes}</Text> : null}<View style={styles.row}><Text style={styles.subtle}>Dernière modification par</Text><Text verbatim style={styles.subtle}>{perf.author(item.updated_by)}</Text></View>
+  </View>} />
+  {perf.athletes.length ? <Pressable disabled={perf.busy} onPress={() => perf.begin()} style={({ pressed }) => [styles.button,pressed || perf.busy ? styles.pressed : null]}><MaterialIcons name="add" size={22} color={Colors.textOnPrimary} /><Text style={styles.buttonText}>{initialMetrics ? 'Partager cette performance' : 'Enregistrer une performance'}</Text></Pressable> : <Text style={styles.body}>Choisissez votre fiche dans le groupe.</Text>}
+  <Modal visible={perf.open} animationType="slide" onRequestClose={perf.close}>
+   <SafeAreaView style={styles.screen} edges={['top','bottom']}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={styles.header}><Text style={styles.title}>{perf.version ? 'Modifier la performance' : 'Enregistrer une performance'}</Text><Pressable disabled={perf.busy} accessibilityLabel={translate('Fermer')} onPress={perf.close} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="close" size={24} color={Colors.textPrimary} /></Pressable></View>
+    <FlatList data={perf.metrics} keyExtractor={(_,index) => String(index)} style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} showsVerticalScrollIndicator={false}
+     ListHeaderComponent={<><Text verbatim style={styles.heading}>{perf.session.title}</Text><Text style={styles.label}>Sélectionner un athlète</Text><View style={styles.chips}><FlatList horizontal data={perf.athletes} keyExtractor={item => item.id} showsHorizontalScrollIndicator={false} renderItem={({ item }) => <Pressable disabled={perf.busy} accessibilityState={{ selected: perf.target === item.id }} onPress={() => perf.chooseAthlete(item.id)} style={({ pressed }) => [styles.chip,perf.target === item.id ? styles.selected : null,pressed ? styles.pressed : null]}><Text verbatim style={styles.chipText}>{item.name}</Text></Pressable>} /></View><Text style={styles.label}>Date de la performance</Text><MiniCalendar value={perf.date} onChange={perf.setDate} /></>}
+     renderItem={({ item,index }) => <View style={styles.card}><Text style={styles.label}>Épreuve / mesure</Text><TextInput accessibilityLabel={translate('Épreuve / mesure')} value={item.label} onChangeText={value => perf.updateMetric(index,'label',value)} style={styles.input} maxLength={100} editable={!perf.busy} /><Text style={styles.label}>Valeur</Text><TextInput accessibilityLabel={translate('Valeur')} value={item.value} onChangeText={value => perf.updateMetric(index,'value',value)} keyboardType="decimal-pad" style={styles.input} maxLength={40} editable={!perf.busy} /><Text style={styles.label}>Unité</Text><TextInput accessibilityLabel={translate('Unité')} value={item.unit} onChangeText={value => perf.updateMetric(index,'unit',value)} style={styles.input} maxLength={20} editable={!perf.busy} />{perf.metrics.length > 1 ? <Pressable disabled={perf.busy} onPress={() => perf.removeMetric(index)} style={({ pressed }) => [styles.secondary,pressed ? styles.pressed : null]}><Text style={[styles.link,styles.error]}>Supprimer</Text></Pressable> : null}</View>}
+     ListFooterComponent={<View style={styles.card}><Pressable disabled={perf.busy || perf.metrics.length >= 30} onPress={perf.addMetric} style={({ pressed }) => [styles.secondary,pressed ? styles.pressed : null]}><Text style={styles.link}>Ajouter une mesure</Text></Pressable><Text style={styles.label}>Notes</Text><TextInput accessibilityLabel={translate('Notes')} value={perf.notes} onChangeText={perf.setNotes} multiline maxLength={5000} editable={!perf.busy} style={styles.input} />{perf.error ? <View style={styles.errorRow}><MaterialIcons name="error-outline" size={22} color={Colors.error} /><Text style={[styles.body,styles.error]}>{perf.error}</Text></View> : null}<Pressable disabled={!perf.valid || perf.busy} onPress={() => { void perf.save(); }} style={({ pressed }) => [styles.button,pressed || !perf.valid || perf.busy ? styles.pressed : null]}>{perf.busy ? <ActivityIndicator color={Colors.textOnPrimary} /> : null}<Text style={styles.buttonText}>Enregistrer</Text></Pressable></View>}
+    />
+   </KeyboardAvoidingView></SafeAreaView>
+  </Modal>
+ </View>;
+});
