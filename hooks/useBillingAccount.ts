@@ -1,3 +1,4 @@
+import { getSupabaseClient } from '@/template';
 import { useCallback, useState, useRef } from 'react';
 import { useAuth } from '@/template';
 export function useBillingAccount(initialRegister = false, onSignedIn?: (userId: string) => void) {
@@ -24,6 +25,10 @@ export function useBillingAccount(initialRegister = false, onSignedIn?: (userId:
     pending.current = true; setBusy(true);
     try {
       if (register && !codeSent) {
+        // One account per e-mail: an existing address must sign in, not register again
+        // (registering again would replace that account's password).
+        const { data: exists, error: lookupError } = await getSupabaseClient().rpc('appletics_email_registered', { p_email: normalized });
+        if (!lookupError && exists === true) { setError('Un compte est déjà associé à cet e-mail. Connectez-vous avec votre mot de passe.'); setRegister(false); setConfirmation(''); return; }
         const result = await auth.sendOTP(normalized);
         if (result.error) { setError(result.error); return; }
         setCodeSent(true); setMessage('Code de vérification envoyé par e-mail.'); return;
