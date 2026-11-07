@@ -182,7 +182,7 @@ export default function OnboardingScreen() {
       email: email || '',
       avatar: photo.avatar,
       coachAthleteCount: userType === 'coach' ? athleteCount.value : undefined,
-      club: club || 'Athletics Club',
+      club: club.trim(),
       role: userType === 'coach' ? coachRole : 'Athlete',
       accountType: 'indie',
       isClubAdmin: false,

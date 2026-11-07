@@ -17,6 +17,7 @@ import { ScreenHeader } from '@/components';
 import { ChatChannel } from '@/types';
 import { useActivityScope } from '@/hooks/useActivityScope';
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
+import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 
 const CHANNEL_TYPE_ICONS: Record<string, string> = {
@@ -183,6 +184,7 @@ export default function ChatScreen() {
         )}
         ListHeaderComponent={<View style={styles.onlineSection}>
           <PendingInvitationsBanner />
+          {onlineGroups.length ? <PushNotificationsPrompt /> : null}
           <Text style={styles.sectionTitle}>Discussions de groupe en ligne</Text>
           {onlineGroups.length ? onlineGroups.map(group => (
             <Pressable key={group.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id: group.id } })}

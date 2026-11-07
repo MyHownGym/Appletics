@@ -12,6 +12,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useApp } from '@/hooks/useApp';
 import { CompactTabBar } from '@/components/layout/CompactTabBar';
+import { useCoachCloudSync } from '@/hooks/useCoachCloudSync';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
 function AnimatedTabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
@@ -185,13 +186,14 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.background }}>
       <Sidebar />
       {/* On a computer, tab pages keep a readable width next to the sidebar. */}
-      <View style={{ flex: 1, alignItems: 'center' }}><View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? 1080 : undefined }}>{children}</View></View>
+      <View style={{ flex: 1, alignItems: 'center' }}><View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? 1320 : undefined }}>{children}</View></View>
     </View>
   );
 }
 
 // ── Root tab layout ────────────────────────────────────────────────────────
 export default function TabLayout() {
+  useCoachCloudSync();
   const { t } = useI18n();
 
   return (

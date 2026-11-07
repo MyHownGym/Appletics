@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.appletics-send-invite]
 verify_jwt = false
+
+[functions.appletics-notify-message]
+verify_jwt = false

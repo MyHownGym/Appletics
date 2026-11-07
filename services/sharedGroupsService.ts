@@ -19,6 +19,8 @@ export async function loadSharedData(): Promise<SharedData> {
 export async function sharedOperation<T = unknown>(name: string, parameters: Record<string, unknown>): Promise<T> {
   const { data, error } = await getSupabaseClient().rpc(name, parameters);
   if (error) {
+    // Server function absent (database not updated yet): callers may fall back to an older version.
+    if (error.code === 'PGRST202') throw new Error('function_missing');
     if (error.code === '23505' || error.message.includes('Performance changed')) throw new Error('Cette donnée a changé. Actualisez avant de modifier.');
     if (error.message.includes('Access denied')) throw new Error('Vous ne disposez pas de cet accès.');
     if (error.message.includes('Invitation expired')) throw new Error('Invitation expirée ou indisponible.');
