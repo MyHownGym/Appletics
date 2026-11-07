@@ -39,14 +39,24 @@ export async function enablePush(): Promise<PushState> {
   const reg = await registration();
   if (!reg) return 'unsupported';
   await navigator.serviceWorker.ready;
-  const subscription = (await reg.pushManager.getSubscription()) ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
+  let subscription: PushSubscription;
+  try {
+    subscription = (await reg.pushManager.getSubscription()) ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
+  } catch (reason) {
+    throw new Error(`Le téléphone a refusé l’abonnement (${reason instanceof Error ? reason.name || reason.message : 'inconnu'}). Réessayez après avoir rouvert l’app.`);
+  }
   const data = subscription.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!data.endpoint || !data.keys?.p256dh || !data.keys?.auth) return 'off';
-  const { error } = await getSupabaseClient().from('push_subscriptions').upsert(
-    { endpoint: data.endpoint, p256dh: data.keys.p256dh, auth: data.keys.auth, user_agent: navigator.userAgent.slice(0, 200) },
-    { onConflict: 'endpoint' },
-  );
-  if (error) throw new Error('Activation impossible. Réessayez.');
+  const row = { endpoint: data.endpoint, p256dh: data.keys.p256dh, auth: data.keys.auth, user_agent: navigator.userAgent.slice(0, 200) };
+  const client = getSupabaseClient();
+  let { error } = await client.from('push_subscriptions').insert(row);
+  // Already registered (same phone): refresh the keys of this account's row.
+  if (error?.code === '23505') ({ error } = await client.from('push_subscriptions').update(row).eq('endpoint', data.endpoint));
+  if (error) {
+    // Table missing: the database update (SQL file) has not been applied yet.
+    if (error.code === '42P01' || error.code === 'PGRST205' || /push_subscriptions/.test(error.message)) throw new Error('Le serveur n’est pas encore prêt pour les notifications (fichier SQL à appliquer dans Supabase).');
+    throw new Error(`Activation impossible (${error.code || error.message}).`);
+  }
   return 'on';
 }
 
