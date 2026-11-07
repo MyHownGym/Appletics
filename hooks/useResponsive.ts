@@ -34,7 +34,7 @@ function getInfo(rawWidth: number, rawHeight: number): ResponsiveInfo {
     isDesktop: size === 'desktop',
     cols: size === 'desktop' ? 3 : size === 'tablet' ? 2 : 1,
     screenPadding: size === 'phone' ? 20 : size === 'tablet' ? 32 : 48,
-    maxContentWidth: size === 'desktop' ? 960 : width,
+    maxContentWidth: size === 'desktop' ? Math.min(1240, width - 320) : width,
   };
 }
 

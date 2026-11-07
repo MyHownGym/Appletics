@@ -54,7 +54,7 @@ function buildEmail(lang: Lang, coach: string, group: string, role: string, emai
   const html = `<!doctype html><html><body style="margin:0;background:#f5f5f5;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden">
-<tr><td style="background:#FF4F17;padding:20px 28px;color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:1px">APPLETICS</td></tr>
+<tr><td style="background:#FF4F17;padding:18px 28px"><table cellpadding="0" cellspacing="0"><tr><td style="padding-right:12px"><img src="${url}/icons/icon-192.png" width="44" height="44" alt="Appletics" style="display:block;border:0;border-radius:10px"></td><td style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:1px">APPLETICS</td></tr></table></td></tr>
 <tr><td style="padding:28px">
 <p style="font-size:17px;line-height:1.5;margin:0 0 18px">${text.intro(c, g)}</p>
 <p style="font-size:14px;color:#555;margin:0 0 18px">${text.email} : ${escapeHtml(roleLabel)}</p>
@@ -107,11 +107,10 @@ Deno.serve(async request => {
     const coachName = (me.display_name || user.email?.split('@')[0] || 'Votre coach').slice(0, 80);
     const mail = buildEmail(lang, coachName, invitation.group_name || 'Appletics', invitation.role, invitation.email, appUrl);
     const client = new SMTPClient({ connection: { hostname: host, port, tls: port === 465, auth: { username, password } } });
-    try {
-      await client.send({ from: `Appletics <${from}>`, to: invitation.email, replyTo: user.email ?? undefined, subject: mail.subject, content: mail.plain, html: mail.html });
-    } finally {
-      await client.close().catch(() => {});
-    }
+    // Once the server accepted the message, it is sent: an error while closing the connection
+    // (frequent with some mail servers) must not be reported as a failed invitation.
+    await client.send({ from: `Appletics <${from}>`, to: invitation.email, replyTo: user.email ?? undefined, subject: mail.subject, content: mail.plain, html: mail.html });
+    try { await client.close(); } catch (closeError) { console.warn('[appletics-send-invite] close', closeError instanceof Error ? closeError.message : closeError); }
     return json({ sent: true });
   } catch (error) {
     console.error('[appletics-send-invite]', error instanceof Error ? error.message : error);

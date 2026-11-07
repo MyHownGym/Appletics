@@ -21,6 +21,7 @@ import { HomeActivitySummary } from '@/components/feature/HomeActivitySummary';
 import { AppBrand } from '@/components/feature/AppBrand';
 import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard';
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
+import { CoachSessionsCard } from '@/components/feature/CoachSessionsCard';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
 
 interface HomeCalendarProps { schedule: ReturnType<typeof useHomeSchedule> }
@@ -63,7 +64,9 @@ export default function HomeScreen() {
   const isAthlete = user.userType === 'athlete';
   const isClub = user.accountType === 'club';
   const accent = isClub ? Colors.club : isAthlete ? Colors.info : Colors.primary;
-  const role = isAthlete ? t('Athlète') : isClub ? t(clubRoleLabels[user.role] ?? user.role) : roleLabel(user.role);
+  // A coach whose stored role is still the athlete default (older profiles) is shown as head coach.
+  const role = isAthlete ? t('Athlète') : isClub ? t(clubRoleLabels[user.role] ?? user.role) : roleLabel(!user.role || user.role === 'Athlete' ? 'Head Coach' : user.role);
+  const clubName = user.club && user.club !== 'Athletics Club' ? user.club : '';
   const quickActions = [
     { id: 'plan', icon: 'add-chart', label: t('new_plan'), color: Colors.info, route: '/plan-create' },
     { id: 'competition', icon: 'emoji-events', label: t('add_meet'), color: Colors.warning, route: '/competition-create' },
@@ -73,10 +76,11 @@ export default function HomeScreen() {
   return <SafeAreaView style={styles.screen} edges={['top']}>
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { maxWidth: maxContentWidth }]}>
       <LinearGradient colors={[accent + '12', Colors.background]} style={[styles.hero, { paddingHorizontal: screenPadding }]}>
-        <View style={styles.heroInfo}><AppBrand /><Text style={styles.date}>{schedule.dateLabel}</Text><Text verbatim style={styles.greeting}>{t('good_morning')} {user.name.split(' ')[0]}</Text><View style={styles.roleRow}><View style={[styles.dot, { backgroundColor: accent }]} /><Text verbatim style={styles.role}>{role}{user.club ? ` · ${user.club}` : ''}</Text></View></View>
+        <View style={styles.heroInfo}><AppBrand /><Text style={styles.date}>{schedule.dateLabel}</Text><Text verbatim style={styles.greeting}>{t('good_morning')} {user.name.split(' ')[0]}</Text><View style={styles.roleRow}><View style={[styles.dot, { backgroundColor: accent }]} /><Text verbatim style={styles.role}>{role}{clubName ? ` · ${clubName}` : ''}</Text></View></View>
         <Pressable accessibilityLabel={t('Ouvrir mon profil')} onPress={() => router.push('/(tabs)/profile')} style={({ pressed }) => [pressed ? styles.pressed : null]}>{user.avatar ? <Image source={{ uri: user.avatar }} transition={200} contentFit="cover" style={styles.avatar} /> : <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: accent }]}><Text verbatim style={styles.initials}>{user.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text></View>}</Pressable>
       </LinearGradient>
       <PendingInvitationsBanner horizontalPadding={screenPadding} />
+      <CoachSessionsCard horizontalPadding={screenPadding} />
       <SubscriptionPlanCard compact />
       <HomeActivitySummary horizontalPadding={screenPadding} />
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>

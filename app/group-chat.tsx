@@ -7,6 +7,7 @@ import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useLocalizedAlert } from '@/hooks/useLocalizedAlert';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { useGroupChat } from '@/hooks/useGroupChat';
+import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import type { GroupMessage } from '@/services/groupChatService';
 
@@ -74,6 +75,7 @@ export default function GroupChatScreen() {
           data={chat.messages}
           keyExtractor={item => item.id}
           keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={<PushNotificationsPrompt />}
           ListEmptyComponent={!chat.loading ? <View style={styles.empty}>
             <MaterialIcons name="forum" size={44} color={Colors.textMuted} />
             <Text style={styles.emptyText}>Aucun message pour l’instant. Écrivez le premier au groupe.</Text>

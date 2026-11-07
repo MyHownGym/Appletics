@@ -16,6 +16,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { EVENT_GROUPS } from '@/constants/config';
 import { useInvitation } from '@/hooks/useInvitation';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
+import { useApp } from '@/hooks/useApp';
 import { useLocalizedAlert } from '@/hooks/useLocalizedAlert';
 import { sendInvitationEmail } from '@/services/inviteEmailService';
 import { appUrl } from '@/constants/links';
@@ -39,6 +40,7 @@ export default function AthleteAddScreen() {
     avatar, setAvatar, notes, setNotes } = form;
   const { t, language } = useI18n();
   const shared = useSharedGroups();
+  const { athletes, addAthlete } = useApp();
   const { showAlert } = useLocalizedAlert();
   const [inviting, setInviting] = useState(false);
   const mainGroup = shared.data.groups.filter(item => item.owner_id === shared.userId).sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
@@ -71,7 +73,18 @@ export default function AthleteAddScreen() {
     if (inviting) return;
     setInviting(true);
     try {
-      const id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: inviteName.trim() || null });
+      // The athlete also appears right away in the coach's list (plans can be assigned before they accept).
+      const displayName = inviteName.trim() || address.split('@')[0];
+      const existingLocal = athletes.find(item => (item.email ?? '').toLowerCase() === address);
+      const localId = existingLocal?.id ?? `a-${Date.now()}`;
+      if (!existingLocal) addAthlete({ id: localId, name: displayName, email: address, events: [], group: 'sprints', pb: {}, status: 'active' });
+      let id: string;
+      try { id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: displayName, p_source: `${shared.userId}:${localId}` }); }
+      catch (first) {
+        // Server not updated yet (older two-argument version): invite without the link.
+        if (!(first instanceof Error) || !/function|schema cache|argument/i.test(first.message)) throw first;
+        id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: displayName });
+      }
       const failure = await sendInvitationEmail(id, language);
       if (failure) showAlert('Invitation enregistrée', `L’e-mail n’est pas parti (${failure}). Envoyez ce lien à l’athlète : ${appUrl} — il doit créer son compte avec ${address}.`);
       else showAlert('Invitation envoyée', `${address} a reçu un e-mail. Dès qu’il aura créé son compte avec cette adresse, il rejoindra votre groupe et pourra échanger avec vous.`);

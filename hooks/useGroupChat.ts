@@ -5,6 +5,7 @@ import {
   blockUser, deleteGroupMessage, loadBlockedUsers, loadGroupMessages, markGroupRead,
   reportGroupMessage, sendGroupMessage, subscribeGroupMessages, type GroupMessage,
 } from '@/services/groupChatService';
+import { notifyGroupMessage } from '@/services/pushService';
 
 // State of one online group conversation: initial load, realtime updates, send, report and block.
 export function useGroupChat(groupId: string) {
@@ -57,6 +58,7 @@ export function useGroupChat(groupId: string) {
     try {
       const sent = await sendGroupMessage(groupId, text, user.name || authUser?.email || '');
       upsert(sent); setDraft('');
+      notifyGroupMessage(sent.id);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Message non envoyé.');
     } finally { setSending(false); }
