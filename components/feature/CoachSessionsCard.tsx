@@ -26,8 +26,8 @@ export const CoachSessionsCard = memo(function CoachSessionsCard({ horizontalPad
   return <View style={[styles.wrap, { paddingHorizontal: horizontalPadding }]}>
     <Text style={styles.heading}>Séances de mon coach</Text>
     {upcoming.length ? upcoming.map(item => (
-      <Pressable key={item.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/shared-group', params: { id: item.group_id } })} style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}>
-        <View style={styles.dateBadge}><MaterialIcons name="event" size={20} color={Colors.primary} /></View>
+      <Pressable key={item.id} accessibilityRole="button" onPress={() => (item.kind ?? 'session') === 'competition' ? router.push({ pathname: '/competition-detail', params: { id: `shared-comp-${item.id}` } }) : router.push({ pathname: '/session-edit', params: { planId: `shared-plan-${item.group_id}`, sessionId: `ss-${item.id}` } })} style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}>
+        <View style={styles.dateBadge}><MaterialIcons name={(item.kind ?? 'session') === 'competition' ? 'emoji-events' : 'event'} size={20} color={Colors.primary} /></View>
         <View style={styles.text}>
           <Text verbatim style={styles.date}>{label(item.session_date)}</Text>
           <Text verbatim style={styles.title} numberOfLines={1}>{item.title}</Text>

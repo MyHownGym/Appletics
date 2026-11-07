@@ -13,6 +13,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useApp } from '@/hooks/useApp';
 import { CompactTabBar } from '@/components/layout/CompactTabBar';
 import { useCoachCloudSync } from '@/hooks/useCoachCloudSync';
+import { useAthleteCloudSync } from '@/hooks/useAthleteCloudSync';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
 function AnimatedTabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
@@ -194,6 +195,7 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 // ── Root tab layout ────────────────────────────────────────────────────────
 export default function TabLayout() {
   useCoachCloudSync();
+  useAthleteCloudSync();
   const { t } = useI18n();
 
   return (
