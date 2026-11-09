@@ -25,6 +25,7 @@ import { appleticsLinks } from '@/constants/links';
 import { AccountDeletionModal } from '@/components/auth/AccountDeletionModal';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
+import { SwipeSheet } from '@/components/ui/SwipeSheet';
 
 type UserRole = 'coach' | 'athlete' | 'club';
 
@@ -454,7 +455,7 @@ export default function SettingsScreen() {
       {/* ── ROLE MODAL ───────────────────────────────────────── */}
       <Modal visible={roleModal} transparent animationType="slide" onRequestClose={() => setRoleModal(false)}>
         <Pressable style={styles.overlay} onPress={() => setRoleModal(false)}>
-          <View style={styles.sheet}>
+          <SwipeSheet onClose={() => setRoleModal(false)} style={styles.sheet}>
             <View style={styles.handle} />
             <Text style={styles.sheetTitle}>Changer de profil</Text>
             <Text style={styles.sheetSub}>Cela relancera l'onboarding pour configurer votre nouveau rôle.</Text>
@@ -482,7 +483,7 @@ export default function SettingsScreen() {
             <Text style={styles.sheetNote}>
               Le changement de rôle relancera l'onboarding complet.
             </Text>
-          </View>
+          </SwipeSheet>
         </Pressable>
       </Modal>
     </SafeAreaView>

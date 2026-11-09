@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
+import { SwipeSheet } from '@/components/ui/SwipeSheet';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { webScroll } from '@/constants/webScroll';
@@ -31,7 +32,8 @@ export const GroupChatAddPeople = memo(function GroupChatAddPeople({ groupId, vi
   };
   return <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
     <View style={styles.backdrop}>
-      <SafeAreaView edges={['bottom']} style={styles.sheet}>
+      <Pressable accessibilityLabel="Fermer" onPress={onClose} style={StyleSheet.absoluteFill} />
+      <SwipeSheet onClose={onClose} style={styles.sheet}><SafeAreaView edges={['bottom']} style={{ flexShrink: 1 }}>
         <View style={styles.head}>
           <Text style={styles.title}>Ajouter à la discussion</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose} style={styles.close}><MaterialIcons name="close" size={22} color={Colors.textPrimary} /></Pressable>
@@ -51,7 +53,7 @@ export const GroupChatAddPeople = memo(function GroupChatAddPeople({ groupId, vi
             <MaterialIcons name="mail-outline" size={20} color={Colors.primary} /><Text style={styles.inviteText}>Inviter un nouvel athlète par e-mail</Text>
           </Pressable>
         </ScrollView>
-      </SafeAreaView>
+      </SafeAreaView></SwipeSheet>
     </View>
   </Modal>;
 });
