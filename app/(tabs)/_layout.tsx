@@ -68,10 +68,10 @@ function Sidebar() {
       isDesktop ? sideStyles.sidebarWide : sideStyles.sidebarNarrow,
     ]}>
       {/* Logo / Brand */}
-      <View style={sideStyles.brand}>
+      <Pressable accessibilityRole="link" accessibilityLabel="Accueil" onPress={() => router.push('/(tabs)/' as any)} style={({ pressed }) => [sideStyles.brand, pressed && { opacity: 0.7 }]}>
         <Image source={require('@/assets/images/appletics-icon.png')} contentFit="contain" transition={200} style={sideStyles.brandLogo} />
         {isDesktop ? <Text style={sideStyles.brandText}>Appletics</Text> : null}
-      </View>
+      </Pressable>
 
       <View style={sideStyles.divider} />
 
