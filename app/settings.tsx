@@ -111,6 +111,7 @@ export default function SettingsScreen() {
     setNotifSettings(all);
   };
 
+  const [showNotifications, setShowNotifications] = useState(false);
   const allOn = NOTIF_GROUPS.every(g => g.items.every(item => notifSettings[item.key] !== false));
 
   const handleLogout = () => {
@@ -238,9 +239,20 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        {/* ── NOTIFICATIONS ──────────────────────────────────── */}
+        {/* ── NOTIFICATIONS (folded: one row, the details open on tap) ── */}
+        <Text style={styles.sectionLabel}>Notifications</Text>
+        <View style={styles.card}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: showNotifications }} style={styles.row} onPress={() => setShowNotifications(value => !value)}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.primary + '18' }]}>
+              <MaterialIcons name="notifications" size={18} color={Colors.primary} />
+            </View>
+            <Text style={styles.notifLabel}>{allOn ? 'Toutes activées' : 'Personnalisées'}</Text>
+            <MaterialIcons name={showNotifications ? 'expand-less' : 'expand-more'} size={22} color={Colors.textMuted} />
+          </Pressable>
+        </View>
+        {showNotifications ? <>
         <View style={styles.notifHeader}>
-          <Text style={styles.sectionLabel}>Notifications locales</Text>
+          <Text style={styles.sectionLabel}>Rappels et alertes</Text>
           <Pressable
             style={[styles.allToggleBtn, { backgroundColor: allOn ? Colors.primary + '15' : Colors.background }]}
             onPress={() => handleAllToggle(!allOn)}
@@ -279,6 +291,8 @@ export default function SettingsScreen() {
             </View>
           </View>
         ))}
+
+        </> : null}
 
         {/* ── SWISS ATHLETICS ─────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Swiss Athletics</Text>
