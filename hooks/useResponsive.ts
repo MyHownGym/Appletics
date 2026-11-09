@@ -33,8 +33,9 @@ function getInfo(rawWidth: number, rawHeight: number): ResponsiveInfo {
     isTablet: size === 'tablet',
     isDesktop: size === 'desktop',
     cols: size === 'desktop' ? 3 : size === 'tablet' ? 2 : 1,
-    screenPadding: size === 'phone' ? 20 : size === 'tablet' ? 32 : 48,
-    maxContentWidth: size === 'desktop' ? Math.min(1240, width - 320) : width,
+    screenPadding: size === 'phone' ? 20 : size === 'tablet' ? 32 : 40,
+    // Computer: almost the whole width next to the sidebar (220 px), capped only on very large screens.
+    maxContentWidth: size === 'desktop' ? Math.min(1680, Math.max(0, width - 220)) : width,
   };
 }
 

@@ -189,7 +189,7 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: Colors.background }}>
       <Sidebar />
       {/* On a computer, tab pages keep a readable width next to the sidebar. */}
-      <View style={{ flex: 1, alignItems: 'center' }}><View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? 1320 : undefined }}>{children}</View></View>
+      <View style={{ flex: 1, alignItems: 'center' }}><View style={{ flex: 1, width: '100%', maxWidth: isDesktop ? 1680 : undefined }}>{children}</View></View>
     </View>
   );
 }

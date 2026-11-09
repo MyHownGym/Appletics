@@ -94,7 +94,7 @@ export default function PlansScreen() {
         keyExtractor={item => item.id}
         numColumns={isPhone ? 1 : cols}
         key={isPhone ? 'phone' : `cols-${cols}`}
-        contentContainerStyle={[styles.list, { paddingHorizontal: screenPadding }]}
+        contentContainerStyle={[styles.list, { paddingHorizontal: Spacing.screenPadding }]}
         columnWrapperStyle={!isPhone && cols > 1 ? { gap: Spacing.md } : undefined}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
