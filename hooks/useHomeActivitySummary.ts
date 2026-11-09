@@ -21,7 +21,7 @@ export function useHomeActivitySummary() {
     planCount: isClub ? activePlans : scope.trainingPlans.length,
     competitionCount: isAthlete ? scope.competitions.length : scope.competitions.filter(competition => competition.status === 'upcoming').length,
     // Online group chats (one per group) + chats kept on this device.
-    chatCount: scope.channels.length + shared.data.groups.length,
+    chatCount: shared.data.groups.length,
     openAthletes: useCallback(() => router.push({ pathname: '/(tabs)/profile', params: { section: 'athletes', focusId: String(Date.now()) } }), [router]),
     openCoaches: useCallback(() => router.push('/club-admin'), [router]),
     openPlans: useCallback(() => router.push('/(tabs)/plans'), [router]),

@@ -147,6 +147,7 @@ function AppContent() {
         <Stack.Screen name="shared-groups" options={{ headerShown: false }} />
         <Stack.Screen name="shared-group" options={{ headerShown: false }} />
         <Stack.Screen name="import-results" options={{ headerShown: false }} />
+        <Stack.Screen name="training-log" options={{ headerShown: false }} />
         <Stack.Screen name="billing-return" options={{ headerShown: false }} />
         <Stack.Screen name="analytics" options={{ headerShown: false }} />
         <Stack.Screen name="club-onboarding" options={{ headerShown: false, gestureEnabled: false }} />
