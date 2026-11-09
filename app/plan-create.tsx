@@ -17,7 +17,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useApp } from '@/hooks/useApp';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useI18n } from '@/hooks/useI18n';
-import { TrainingPlan, TrainingSession } from '@/types';
+import { TrainingPlan } from '@/types';
 import { EVENT_GROUPS } from '@/constants/config';
 import { MiniCalendar } from '@/components/ui/MiniCalendar';
 import { useSubscriptionQuota } from '@/hooks/useSubscriptionQuota';
@@ -122,13 +122,6 @@ export default function PlanCreateScreen() {
     const numWeeks = parseInt(effectiveWeeks) || 4;
     const computedEnd = endDate || addWeeks(startDate, numWeeks);
 
-    const defaultSessions: TrainingSession[] = [
-      { id: `s-${Date.now()}-1`, day: 'Lun', title: t('todays_training'), type: 'track', intensity: 'moderate', duration: 60, details: '' },
-      { id: `s-${Date.now()}-2`, day: 'Mer', title: 'Gym / Force', type: 'gym', intensity: 'moderate', duration: 60, details: '' },
-      { id: `s-${Date.now()}-3`, day: 'Ven', title: 'Vitesse', type: 'track', intensity: 'hard', duration: 75, details: '' },
-      { id: `s-${Date.now()}-4`, day: 'Sam', title: 'Endurance', type: 'road', intensity: 'easy', duration: 45, details: '' },
-      { id: `s-${Date.now()}-5`, day: 'Dim', title: t('rest_day'), type: 'rest', intensity: 'rest', duration: 0, details: '' },
-    ];
 
     if (existing && updateTrainingPlan) {
       updateTrainingPlan({
@@ -147,14 +140,15 @@ export default function PlanCreateScreen() {
       const newPlan: TrainingPlan = {
         id: `tp-${Date.now()}`,
         title: title.trim(),
-        description: description.trim() || t('plan_description'),
+        description: description.trim(),
         phase,
         group,
         athleteIds: selectedAthletes,
         startDate,
         endDate: computedEnd,
         weeks: numWeeks,
-        sessions: defaultSessions,
+        // Empty plan: the coach adds the sessions.
+        sessions: [],
       };
       addTrainingPlan(newPlan);
       notifyNewPlan(newPlan.title, newPlan.id).catch(() => {});

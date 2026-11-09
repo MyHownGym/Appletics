@@ -64,8 +64,10 @@ export function coachDesiredItems(plans: TrainingPlan[], competitions: Competiti
 }
 
 // Published rows that should no longer exist (athlete removed, session deleted). Past sessions are kept.
-export function staleRows(rows: SharedSession[], desired: Set<string>, linkedShared: Set<string>, today = todayKey()): string[] {
-  return rows.filter(row => row.source_key && row.athlete_id && linkedShared.has(row.athlete_id)
+// superseded: older records of a linked person in another group (athlete moved to « Sprint »…). What this coach
+// published there is withdrawn too, otherwise the athlete would receive every session twice.
+export function staleRows(rows: SharedSession[], desired: Set<string>, linkedShared: Set<string>, today = todayKey(), coachId = '', superseded: Set<string> = new Set()): string[] {
+  return rows.filter(row => row.source_key && row.athlete_id && (linkedShared.has(row.athlete_id) || (!!coachId && row.created_by === coachId && superseded.has(row.athlete_id)))
     && (row.source_key.startsWith('plan:') || row.source_key.startsWith('comp:'))
     && row.session_date >= today && !desired.has(row.source_key)).map(row => row.id);
 }

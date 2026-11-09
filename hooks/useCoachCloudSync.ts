@@ -143,7 +143,10 @@ export function useCoachCloudSync() {
           }
           for (const [sharedAthlete, counter] of fresh) notifyNewItems(sharedAthlete, counter.sessions, counter.competitions, counter.firstTitle);
           // 2b. Withdraw what is no longer assigned (upcoming only, never anything with a result).
-          const stale = staleRows(rows, new Set(desired.map(item => item.source)), new Set(links.values()));
+          const linkedIds = new Set(links.values());
+          const linkedUsers = new Set(groupAthletes.filter(item => linkedIds.has(item.id) && item.user_id).map(item => item.user_id));
+          const superseded = new Set(groupAthletes.filter(item => !linkedIds.has(item.id) && item.user_id && linkedUsers.has(item.user_id)).map(item => item.id));
+          const stale = staleRows(rows, new Set(desired.map(item => item.source)), linkedIds, undefined, uid, superseded);
           if (stale.length) { const { error } = await client.rpc('shared_delete_published', { p_ids: stale }); if (!error) cloudChanged = true; }
 
           // 3. Athletes' entries → coach's stats.
@@ -207,5 +210,5 @@ export function useCoachCloudSync() {
       })();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [isCoach, uid, links, localOf, trainingPlans, competitions, results, sessionPerformances, athletes, shared.data.sessions, shared.data.performances, shared.refresh, addResult, updateResult, addSessionPerformance]);
+  }, [isCoach, uid, links, localOf, groupAthletes, trainingPlans, competitions, results, sessionPerformances, athletes, shared.data.sessions, shared.data.performances, shared.refresh, addResult, updateResult, addSessionPerformance]);
 }

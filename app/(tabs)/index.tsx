@@ -21,7 +21,6 @@ import { HomeActivitySummary } from '@/components/feature/HomeActivitySummary';
 import { AppBrand } from '@/components/feature/AppBrand';
 import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard';
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
-import { CoachSessionsCard } from '@/components/feature/CoachSessionsCard';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
 import { TrainingLogList } from '@/components/feature/TrainingLogList';
 
@@ -81,7 +80,6 @@ export default function HomeScreen() {
         <Pressable accessibilityLabel={t('Ouvrir mon profil')} onPress={() => router.push('/(tabs)/profile')} style={({ pressed }) => [pressed ? styles.pressed : null]}>{user.avatar ? <Image source={{ uri: user.avatar }} transition={200} contentFit="cover" style={styles.avatar} /> : <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: accent }]}><Text verbatim style={styles.initials}>{user.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text></View>}</Pressable>
       </LinearGradient>
       <PendingInvitationsBanner horizontalPadding={screenPadding} />
-      <CoachSessionsCard horizontalPadding={screenPadding} />
       {!isAthlete ? <TrainingLogList title="Derniers entraînements de vos athlètes" limit={5} horizontalPadding={screenPadding} /> : null}
       <SubscriptionPlanCard compact />
       <HomeActivitySummary horizontalPadding={screenPadding} />
