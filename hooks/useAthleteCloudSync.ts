@@ -6,7 +6,7 @@ import { useSharedGroups } from '@/hooks/useSharedGroups';
 import type { CompResult } from '@/types';
 import type { SharedSession } from '@/types/sharedGroups';
 import {
-  athleteCompetitionFor, athletePlanFor, canonical, competitionSignature, performanceToResults, performanceToSession,
+  athleteCompetitionFor, athletePlanIdFor, athletePlansFor, canonical, competitionSignature, performanceToResults, performanceToSession,
   planSignature, resultsToPerformance,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyResult } from '@/services/pushService';
@@ -42,11 +42,23 @@ export function useAthleteCloudSync() {
     if (!active) return;
     for (const [groupId] of myGroups) {
       const groupName = shared.data.groups.find(group => group.id === groupId)?.name ?? 'Coach';
-      const planId = `shared-plan-${groupId}`;
-      const existing = trainingPlans.find(plan => plan.id === planId);
-      const next = athletePlanFor(groupId, groupName, rows.filter(row => row.group_id === groupId), uid, existing);
-      if (!next) { if (existing && !sessionPerformances.some(item => item.planId === planId)) deleteTrainingPlan(planId); continue; }
-      if (!existing) addTrainingPlan(next); else if (planSignature(existing) !== planSignature(next)) updateTrainingPlan(next);
+      const nextPlans = athletePlansFor(groupId, groupName, rows.filter(row => row.group_id === groupId), uid);
+      const planOfSession = new Map(nextPlans.flatMap(plan => plan.sessions.map(session => [session.id, plan.id] as const)));
+      for (const next of nextPlans) {
+        const existing = trainingPlans.find(plan => plan.id === next.id);
+        if (!existing) addTrainingPlan(next); else if (planSignature(existing) !== planSignature(next)) updateTrainingPlan(next);
+      }
+      // Entries already made follow their session into its new plan; plans no longer sent disappear.
+      for (const performance of sessionPerformances) {
+        const target = planOfSession.get(performance.sessionId);
+        if (target && performance.planId !== target && performance.planId.startsWith(`shared-plan-${groupId}`)) addSessionPerformance({ ...performance, planId: target });
+      }
+      const keep = new Set(nextPlans.map(plan => plan.id));
+      for (const plan of trainingPlans) {
+        if (!plan.id.startsWith(`shared-plan-${groupId}`) || keep.has(plan.id)) continue;
+        const orphan = sessionPerformances.some(item => item.planId === plan.id && !planOfSession.has(item.sessionId));
+        if (!orphan) deleteTrainingPlan(plan.id);
+      }
     }
     // Same competition received several times (older duplicates): shown once, the copy with a result first.
     const byKey = new Map<string, SharedSession>();
@@ -70,7 +82,7 @@ export function useAthleteCloudSync() {
       if (keep && competitions.some(other => other.id === keep)) { mergeCompetitions(keep, [item.id]); continue; }
       if (item.id.startsWith('shared-comp-') && !results.some(result => result.competitionId === item.id)) deleteCompetition(item.id);
     }
-  }, [active, uid, rows, myGroups, shared.data.groups, shared.data.performances, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition, mergeCompetitions]);
+  }, [active, uid, rows, myGroups, shared.data.groups, shared.data.performances, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition, mergeCompetitions, addSessionPerformance]);
 
   // 2-3. Performances and results, both ways.
   useEffect(() => {
@@ -99,7 +111,7 @@ export function useAthleteCloudSync() {
                 if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result);
               }
             } else {
-              addSessionPerformance(performanceToSession(performance, `ss-${row.id}`, `shared-plan-${row.group_id}`, uid, user.name));
+              addSessionPerformance(performanceToSession(performance, `ss-${row.id}`, athletePlanIdFor(row), uid, user.name));
             }
             cache[key] = signature; cacheChanged = true;
           }

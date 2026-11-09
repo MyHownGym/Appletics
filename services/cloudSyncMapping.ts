@@ -42,7 +42,7 @@ export function coachDesiredItems(plans: TrainingPlan[], competitions: Competiti
         source: `plan:${plan.id}:${session.id}:${date}:${sharedAthlete}`, sharedAthlete, kind: 'session', date,
         title: session.title.trim().slice(0, 200) || 'Séance',
         details: [`Programme : ${plan.title}`, `${session.duration ? `${session.duration} min · ` : ''}Intensité : ${INTENSITY[session.intensity] ?? session.intensity}`, session.details?.trim()].filter(Boolean).join('\n'),
-        meta: { planId: plan.id, planTitle: plan.title, sessionId: session.id, type: session.type, intensity: session.intensity, duration: session.duration ?? 0, phase: plan.phase },
+        meta: { planId: plan.id, planTitle: plan.title, planGroup: plan.group ?? 'all', planDescription: (plan.description ?? '').slice(0, 300), sessionId: session.id, type: session.type, intensity: session.intensity, duration: session.duration ?? 0, phase: plan.phase },
       });
     }
   }
@@ -128,20 +128,39 @@ export function parseSource(source: string | null | undefined) {
 }
 
 // ── Cloud → athlete: the coach's items as the athlete's own plan and competitions ─────────
-export function athletePlanFor(groupId: string, groupName: string, rows: SharedSession[], athleteId: string, existing?: TrainingPlan): TrainingPlan | null {
-  const sessionRows = rows.filter(row => (row.kind ?? 'session') === 'session').sort((a, b) => a.session_date.localeCompare(b.session_date));
-  if (!sessionRows.length) return null;
-  const sessions: TrainingSession[] = sessionRows.map(row => {
-    const meta = row.meta ?? {};
-    return {
-      id: `ss-${row.id}`, day: WEEKDAYS_FR[weekdayIndex(row.session_date)], sessionDate: row.session_date, title: row.title,
-      type: (meta.type as TrainingSession['type']) || 'track', intensity: (meta.intensity as TrainingSession['intensity']) || 'moderate',
-      duration: Number(meta.duration ?? 0) || 0, details: row.details ?? '',
-    };
-  });
-  const startDate = sessionRows[0].session_date, endDate = sessionRows[sessionRows.length - 1].session_date;
-  const weeks = Math.max(1, Math.ceil((new Date(`${endDate}T12:00:00`).getTime() - new Date(`${startDate}T12:00:00`).getTime()) / (7 * 864e5)) + 1);
-  return { id: `shared-plan-${groupId}`, title: existing?.title ?? `Programme · ${groupName}`, phase: existing?.phase ?? 'Saison', group: existing?.group ?? 'all', athleteIds: [athleteId], startDate, endDate, weeks, description: 'Séances envoyées par votre coach.', sessions };
+export const athletePlanIdFor = (row: SharedSession) => (typeof row.meta?.planId === 'string' && row.meta.planId ? `shared-plan-${row.group_id}-${slug(row.meta.planId)}` : `shared-plan-${row.group_id}`);
+
+// One plan per coach plan, with the coach's name, phase and group ("Pedro novembre"), sessions of the next weeks.
+// Sessions sent without a plan (older items) go to « Programme · <groupe> ».
+export function athletePlansFor(groupId: string, groupName: string, rows: SharedSession[], athleteId: string): TrainingPlan[] {
+  const byPlan = new Map<string, SharedSession[]>();
+  for (const row of rows.filter(item => (item.kind ?? 'session') === 'session')) {
+    const planId = typeof row.meta?.planId === 'string' ? row.meta.planId : '';
+    byPlan.set(planId, [...(byPlan.get(planId) ?? []), row]);
+  }
+  const plans: TrainingPlan[] = [];
+  for (const [planId, list] of byPlan) {
+    const sessionRows = [...list].sort((a, b) => a.session_date.localeCompare(b.session_date));
+    const meta = sessionRows[sessionRows.length - 1].meta ?? {};
+    const sessions: TrainingSession[] = sessionRows.map(row => {
+      const item = row.meta ?? {};
+      return {
+        id: `ss-${row.id}`, day: WEEKDAYS_FR[weekdayIndex(row.session_date)], sessionDate: row.session_date, title: row.title,
+        type: (item.type as TrainingSession['type']) || 'track', intensity: (item.intensity as TrainingSession['intensity']) || 'moderate',
+        duration: Number(item.duration ?? 0) || 0, details: row.details ?? '',
+      };
+    });
+    const startDate = sessionRows[0].session_date, endDate = sessionRows[sessionRows.length - 1].session_date;
+    const weeks = Math.max(1, Math.ceil((new Date(`${endDate}T12:00:00`).getTime() - new Date(`${startDate}T12:00:00`).getTime()) / (7 * 864e5)) + 1);
+    plans.push({
+      id: athletePlanIdFor(sessionRows[0]),
+      title: (planId && typeof meta.planTitle === 'string' && meta.planTitle.trim()) || `Programme · ${groupName}`,
+      phase: (typeof meta.phase === 'string' && meta.phase) || 'Saison', group: (typeof meta.planGroup === 'string' && meta.planGroup) || 'all',
+      athleteIds: [athleteId], startDate, endDate, weeks,
+      description: (typeof meta.planDescription === 'string' && meta.planDescription.trim()) || 'Séances envoyées par votre coach.', sessions,
+    });
+  }
+  return plans;
 }
 
 export function athleteCompetitionFor(row: SharedSession, athleteId: string): Competition {
@@ -155,5 +174,5 @@ export function athleteCompetitionFor(row: SharedSession, athleteId: string): Co
   };
 }
 
-export const planSignature = (plan: TrainingPlan) => hash(JSON.stringify([plan.title, plan.startDate, plan.endDate, plan.sessions.map(item => [item.id, item.sessionDate, item.title, item.details, item.type, item.intensity, item.duration])]));
+export const planSignature = (plan: TrainingPlan) => hash(JSON.stringify([plan.title, plan.phase, plan.group, plan.description, plan.startDate, plan.endDate, plan.sessions.map(item => [item.id, item.sessionDate, item.title, item.details, item.type, item.intensity, item.duration])]));
 export const competitionSignature = (competition: Competition) => hash(JSON.stringify([competition.name, competition.date, competition.venue, competition.location, competition.endDate, competition.events, competition.type, competition.teammates ?? []]));
