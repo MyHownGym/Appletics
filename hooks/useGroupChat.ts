@@ -4,6 +4,7 @@ import { useApp } from '@/hooks/useApp';
 import {
   blockUser, deleteGroupMessage, loadBlockedUsers, loadGroupMessages, markGroupRead,
   reportGroupMessage, sendGroupMessage, subscribeGroupMessages, type GroupMessage,
+  loadReactions, setReaction, sendGroupAttachment, withAttachmentUrls, type GroupReaction,
 } from '@/services/groupChatService';
 import { notifyGroupMessage } from '@/services/pushService';
 
@@ -18,6 +19,7 @@ export function useGroupChat(groupId: string) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [draft, setDraft] = useState('');
+  const [reactions, setReactions] = useState<GroupReaction[]>([]);
   const active = useRef(groupId);
   active.current = groupId;
 
@@ -46,7 +48,7 @@ export function useGroupChat(groupId: string) {
     if (!groupId || !userId) { setLoading(false); return; }
     void reload();
     const unsubscribe = subscribeGroupMessages(groupId,
-      message => { upsert(message); void markGroupRead(groupId).catch(() => {}); },
+      message => { if (message.attachment_path) void withAttachmentUrls([message]).then(([signed]) => upsert(signed)); else upsert(message); void markGroupRead(groupId).catch(() => {}); },
       id => setMessages(previous => previous.filter(item => item.id !== id)));
     return unsubscribe;
   }, [groupId, userId, reload, upsert]);
@@ -79,6 +81,33 @@ export function useGroupChat(groupId: string) {
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Blocage impossible.'); return false; }
   }, []);
 
+  // Reactions: loaded with the messages and refreshed every few seconds while the conversation is open.
+  const ids = messages.map(item => item.id).join(',');
+  const refreshReactions = useCallback(async () => { if (ids) setReactions(await loadReactions(ids.split(','))); else setReactions([]); }, [ids]);
+  useEffect(() => {
+    void refreshReactions();
+    const timer = setInterval(() => { void refreshReactions(); }, 8000);
+    return () => clearInterval(timer);
+  }, [refreshReactions]);
+  const react = useCallback(async (messageId: string, emoji: string) => {
+    const mine = reactions.find(item => item.message_id === messageId && item.user_id === userId);
+    const next = mine?.emoji === emoji ? null : emoji;
+    setReactions(previous => [...previous.filter(item => !(item.message_id === messageId && item.user_id === userId)), ...(next ? [{ message_id: messageId, user_id: userId, emoji: next }] : [])]);
+    try { await setReaction(messageId, next); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Réaction non enregistrée.'); void refreshReactions(); }
+  }, [reactions, userId, refreshReactions]);
+
+  const sendFile = useCallback(async (file: { uri: string; name: string; type: string; size?: number; file?: Blob }) => {
+    if (sending) return;
+    setSending(true); setError('');
+    try {
+      const sent = await sendGroupAttachment(groupId, file, draft, user.name || authUser?.email || '');
+      upsert(sent); setDraft('');
+      notifyGroupMessage(sent.id);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Fichier non envoyé.');
+    } finally { setSending(false); }
+  }, [sending, groupId, draft, user.name, authUser?.email, upsert]);
+
   const visible = messages.filter(message => !blocked.includes(message.sender_id));
-  return { userId, messages: visible, loading, sending, error, draft, setDraft, send, remove, report, block, reload };
+  return { userId, messages: visible, loading, sending, error, draft, setDraft, send, remove, report, block, reload, reactions, react, sendFile };
 }

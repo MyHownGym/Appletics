@@ -26,3 +26,10 @@ export function withAutomaticCompetitionStatus(competition: Competition, today: 
   const status = getCompetitionStatus(competition, today);
   return status === competition.status ? competition : { ...competition, status };
 }
+
+// Display only: an upcoming competition is « en cours » from its first to its last day.
+export function isCompetitionOngoing(competition: Pick<Competition, 'date' | 'endDate' | 'status'>, today: string = getLocalDateKey()): boolean {
+  if (competition.status === 'cancelled' || !isValidDateKey(competition.date)) return false;
+  const lastDay = competition.endDate && isValidDateKey(competition.endDate) && competition.endDate >= competition.date ? competition.endDate : competition.date;
+  return competition.date <= today && today <= lastDay;
+}

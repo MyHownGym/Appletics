@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,6 +13,8 @@ import type { GroupMessage } from '@/services/groupChatService';
 import { markGroupRead } from '@/services/unreadStore';
 import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { GroupChatAddPeople } from '@/components/feature/GroupChatAddPeople';
+import * as DocumentPicker from 'expo-document-picker';
+import { Image } from 'expo-image';
 
 function timeLabel(iso: string) {
   const date = new Date(iso);
@@ -34,6 +36,15 @@ export default function GroupChatScreen() {
   const chat = useGroupChat(groupId);
   const isCoach = data.members.some(item => item.group_id === groupId && item.user_id === userId && item.role === 'coach');
   const [adding, setAdding] = useState(false);
+  const [picker, setPicker] = useState<GroupMessage | null>(null);
+  const openFile = (url?: string | null) => { if (url) void Linking.openURL(url); };
+  // Image from the photo library or any file (PDF, programme…), sent with the text being typed as caption.
+  const pickFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf', '*/*'], multiple: false, copyToCacheDirectory: true });
+    const asset = result.canceled ? null : result.assets?.[0];
+    if (!asset) return;
+    await chat.sendFile({ uri: asset.uri, name: asset.name, type: asset.mimeType ?? '', size: asset.size ?? undefined, file: (asset as { file?: Blob }).file });
+  };
   const list = useRef<FlatList<GroupMessage>>(null);
 
   // Opens on the latest messages and stays at the bottom while new ones arrive (unless the user scrolled up).
@@ -100,23 +111,50 @@ export default function GroupChatScreen() {
           renderItem={({ item }) => {
             const own = item.sender_id === chat.userId;
             return (
-              <Pressable onLongPress={() => openActions(item)} delayLongPress={350} style={[styles.row, own ? styles.rowOwn : null, !own ? { flexDirection: 'row', alignItems: 'flex-end', gap: 6 } : null]}>
+              <Pressable onLongPress={() => setPicker(item)} delayLongPress={300} style={[styles.row, own ? styles.rowOwn : null, !own ? { flexDirection: 'row', alignItems: 'flex-end', gap: 6 } : null]}>
                 {!own ? <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' }}>
                   <Text verbatim style={{ fontSize: 11, fontWeight: '700', color: Colors.primary }}>{(item.sender_name || 'M').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text>
                   <AvatarPhoto uri={data.members.find(member => member.group_id === groupId && member.user_id === item.sender_id)?.avatar} />
                 </View> : null}
-                <View style={[styles.bubble, own ? styles.bubbleOwn : styles.bubbleOther]}>
+                <View style={[styles.bubble, own ? styles.bubbleOwn : styles.bubbleOther, chat.reactions.some(reaction => reaction.message_id === item.id) ? { marginBottom: 14 } : null]}>
                   {!own ? <Text verbatim style={styles.sender}>{item.sender_name || 'Membre'}</Text> : null}
-                  <Text verbatim style={[styles.body, own ? styles.bodyOwn : null]}>{item.body}</Text>
+                  {item.attachment_path ? (item.attachment_type?.startsWith('image/') && item.attachment_url
+                    ? <Pressable accessibilityRole="imagebutton" accessibilityLabel={item.attachment_name ?? 'Image'} onPress={() => openFile(item.attachment_url)}><Image source={{ uri: item.attachment_url }} contentFit="cover" style={styles.image} /></Pressable>
+                    : <Pressable accessibilityRole="link" onPress={() => openFile(item.attachment_url)} style={[styles.file, own ? styles.fileOwn : null]}>
+                        <MaterialIcons name={item.attachment_type === 'application/pdf' ? 'picture-as-pdf' : 'insert-drive-file'} size={22} color={own ? '#FFF' : Colors.primary} />
+                        <Text verbatim numberOfLines={1} style={[styles.fileName, own ? styles.bodyOwn : null]}>{item.attachment_name || 'Fichier'}</Text>
+                      </Pressable>) : null}
+                  {item.body ? <Text verbatim style={[styles.body, own ? styles.bodyOwn : null]}>{item.body}</Text> : null}
                   <Text verbatim style={[styles.time, own ? styles.timeOwn : null]}>{timeLabel(item.created_at)}</Text>
+                  {(() => {
+                    const list = chat.reactions.filter(reaction => reaction.message_id === item.id);
+                    if (!list.length) return null;
+                    const counts = [...new Set(list.map(reaction => reaction.emoji))].map(emoji => ({ emoji, count: list.filter(reaction => reaction.emoji === emoji).length, mine: list.some(reaction => reaction.emoji === emoji && reaction.user_id === chat.userId) }));
+                    return <View style={[styles.reactions, own ? { right: 8 } : { left: 8 }]}>{counts.map(entry => (
+                      <Pressable key={entry.emoji} accessibilityRole="button" accessibilityLabel={`Réaction ${entry.emoji}`} onPress={() => { void chat.react(item.id, entry.emoji); }} style={[styles.reaction, entry.mine ? styles.reactionMine : null]}>
+                        <Text verbatim style={styles.reactionText}>{entry.count > 1 ? `${entry.emoji} ${entry.count}` : entry.emoji}</Text>
+                      </Pressable>
+                    ))}</View>;
+                  })()}
                 </View>
               </Pressable>
             );
           }}
         />
 
-        <Text style={styles.hint}>Maintenez appuyé sur un message pour le signaler, bloquer son auteur ou supprimer le vôtre.</Text>
+        {picker ? <View style={styles.picker}>
+          {REACTIONS.map(emoji => (
+            <Pressable key={emoji} accessibilityRole="button" accessibilityLabel={`Réagir ${emoji}`} onPress={() => { void chat.react(picker.id, emoji); setPicker(null); }} style={({ pressed }) => [styles.pickerEmoji, pressed ? styles.pressed : null]}>
+              <Text verbatim style={{ fontSize: 26 }}>{emoji}</Text>
+            </Pressable>
+          ))}
+          <Pressable accessibilityRole="button" accessibilityLabel="Plus d’actions" onPress={() => { const message = picker; setPicker(null); openActions(message); }} style={styles.pickerEmoji}><MaterialIcons name="more-horiz" size={26} color={Colors.textSecondary} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={() => setPicker(null)} style={styles.pickerEmoji}><MaterialIcons name="close" size={22} color={Colors.textMuted} /></Pressable>
+        </View> : <Text style={styles.hint}>Maintenez appuyé sur un message pour réagir, le signaler ou le supprimer.</Text>}
         <View style={styles.composer}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Joindre une image ou un fichier" disabled={chat.sending} onPress={() => { void pickFile(); }} style={({ pressed }) => [styles.attach, pressed ? styles.pressed : null]}>
+            <MaterialIcons name="attach-file" size={24} color={Colors.textSecondary} />
+          </Pressable>
           <TextInput
             accessibilityLabel="Message"
             value={chat.draft}
@@ -138,7 +176,19 @@ export default function GroupChatScreen() {
   );
 }
 
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏'];
 const styles = StyleSheet.create({
+  image: { width: 220, height: 220, borderRadius: Radius.md, marginBottom: 4, backgroundColor: Colors.border },
+  file: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 10, borderRadius: Radius.md, backgroundColor: Colors.primaryLight, marginBottom: 4, maxWidth: 240 },
+  fileOwn: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  fileName: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  reactions: { position: 'absolute', bottom: -14, flexDirection: 'row', gap: 4 },
+  reaction: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  reactionMine: { borderColor: Colors.primary, backgroundColor: Colors.primaryLight },
+  reactionText: { fontSize: 13 },
+  picker: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 2, paddingVertical: 6, marginHorizontal: 12, marginBottom: 4, borderRadius: 999, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  pickerEmoji: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  attach: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
