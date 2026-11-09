@@ -46,7 +46,13 @@ export function useAthleteCloudSync() {
       if (!next) { if (existing && !sessionPerformances.some(item => item.planId === planId)) deleteTrainingPlan(planId); continue; }
       if (!existing) addTrainingPlan(next); else if (planSignature(existing) !== planSignature(next)) updateTrainingPlan(next);
     }
-    const competitionRows = rows.filter(row => row.kind === 'competition');
+    // Same competition received several times (older duplicates): shown once, the copy with a result first.
+    const byKey = new Map<string, SharedSession>();
+    for (const row of rows.filter(item => item.kind === 'competition').sort((x, y) => Number(shared.data.performances.some(p => p.session_id === y.id)) - Number(shared.data.performances.some(p => p.session_id === x.id)) || x.id.localeCompare(y.id))) {
+      const key = `${row.title.trim().toLowerCase()}|${row.session_date}`;
+      if (!byKey.has(key)) byKey.set(key, row);
+    }
+    const competitionRows = [...byKey.values()];
     for (const row of competitionRows) {
       const next = athleteCompetitionFor(row, uid);
       const existing = competitions.find(item => item.id === next.id);
@@ -56,7 +62,7 @@ export function useAthleteCloudSync() {
     for (const item of competitions) {
       if (item.id.startsWith('shared-comp-') && !present.has(item.id) && !results.some(result => result.competitionId === item.id)) deleteCompetition(item.id);
     }
-  }, [active, uid, rows, myGroups, shared.data.groups, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition]);
+  }, [active, uid, rows, myGroups, shared.data.groups, shared.data.performances, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition]);
 
   // 2-3. Performances and results, both ways.
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabaseClient } from '@/template';
 import { useApp } from '@/hooks/useApp';
@@ -17,7 +17,7 @@ import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
 // 4. results the coach enters for them are sent to the athletes.
 export function useCoachCloudSync() {
   const app = useApp();
-  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance } = app;
+  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance, mergeAthletes } = app;
   const shared = useSharedGroups();
   const uid = shared.userId;
   const isCoach = !!uid && user.userType !== 'athlete';
@@ -27,39 +27,65 @@ export function useCoachCloudSync() {
   const groupNames = useMemo(() => new Map(shared.data.groups.map(group => [group.id, group.name])), [shared.data.groups]);
   const groupAthletes = useMemo(() => shared.data.athletes.filter(item => coachGroups.has(item.group_id)), [shared.data.athletes, coachGroups]);
 
-  // local athlete id → shared athlete id (explicit link from an invitation, or created by this sync)
+  // Remembered links (shared athlete → local athlete), kept on the device.
+  const [storedLinks, setStoredLinks] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!uid) return;
+    void AsyncStorage.getItem(`@appletics_athlete_links:${uid}`).then(raw => setStoredLinks(JSON.parse(raw || '{}'))).catch(() => {});
+  }, [uid]);
+
+  // local athlete id → shared athlete id
   const links = useMemo(() => {
     const map = new Map<string, string>();
     for (const item of groupAthletes) {
-      if (item.source_id?.startsWith(`${uid}:`)) map.set(item.source_id.slice(uid.length + 1), item.id);
+      if (item.source_id?.startsWith(`${uid}:`)) { const local = item.source_id.slice(uid.length + 1); if (athletes.some(a => a.id === local)) map.set(local, item.id); }
       if (athletes.some(local => local.id === `shared-${item.id}`)) map.set(`shared-${item.id}`, item.id);
+      const remembered = storedLinks[item.id];
+      if (remembered && athletes.some(local => local.id === remembered)) map.set(remembered, item.id);
     }
     return map;
-  }, [groupAthletes, athletes, uid]);
+  }, [groupAthletes, athletes, uid, storedLinks]);
   const localOf = useMemo(() => new Map([...links].map(([local, sharedId]) => [sharedId, local])), [links]);
 
-  // 1. Missing athletes → added once (an athlete the coach deletes does not come back).
+  // 1. Each group athlete ↔ exactly one athlete in the coach's list: linked by invitation, e-mail or name,
+  //    added once if missing, and duplicates (same person recorded twice) merged with all their data.
   useEffect(() => {
     if (!isCoach || !groupAthletes.length) return;
     let cancelled = false;
     void (async () => {
-      const key = `@appletics_synced_athletes:${uid}`;
-      const known = new Set<string>(JSON.parse((await AsyncStorage.getItem(key).catch(() => null)) || '[]'));
+      const knownKey = `@appletics_synced_athletes:${uid}`, linkKey = `@appletics_athlete_links:${uid}`;
+      const known = new Set<string>(JSON.parse((await AsyncStorage.getItem(knownKey).catch(() => null)) || '[]'));
+      const stored: Record<string, string> = JSON.parse((await AsyncStorage.getItem(linkKey).catch(() => null)) || '{}');
+      if (cancelled) return;
+      const norm = (text?: string) => (text ?? '').trim().toLowerCase();
+      const referenced = (id: string) => results.filter(item => item.athleteId === id).length + trainingPlans.filter(plan => plan.athleteIds.includes(id)).length + competitions.filter(item => item.athleteIds.includes(id)).length;
+      const taken = new Set<string>();
       let changed = false;
       for (const item of groupAthletes) {
-        if (cancelled || known.has(item.id)) continue;
-        const linkedLocal = item.source_id?.startsWith(`${uid}:`) ? item.source_id.slice(uid.length + 1) : '';
-        if (!athletes.some(local => local.id === `shared-${item.id}` || (linkedLocal && local.id === linkedLocal))) {
-          const email = shared.data.invitations.find(invite => invite.athlete_id === item.id)?.email;
-          const athlete: Athlete = { id: `shared-${item.id}`, name: item.name, events: [], group: 'sprints', pb: {}, status: 'active', ...(email ? { email } : {}), notes: `Groupe partagé : ${groupNames.get(item.group_id) ?? ''}` };
-          addAthlete(athlete);
+        const email = norm(shared.data.invitations.find(invite => invite.athlete_id === item.id)?.email);
+        const sourceLocal = item.source_id?.startsWith(`${uid}:`) ? item.source_id.slice(uid.length + 1) : '';
+        const matches = athletes.filter(local => !taken.has(local.id) && (
+          local.id === `shared-${item.id}` || local.id === sourceLocal || local.id === stored[item.id]
+          || (email && norm(local.email) === email) || norm(local.name) === norm(item.name)));
+        if (!matches.length) {
+          if (!known.has(item.id)) {
+            const athlete: Athlete = { id: `shared-${item.id}`, name: item.name, events: [], group: 'sprints', pb: {}, status: 'active', ...(email ? { email } : {}), notes: `Groupe : ${groupNames.get(item.group_id) ?? ''}` };
+            addAthlete(athlete); stored[item.id] = athlete.id; taken.add(athlete.id); known.add(item.id); changed = true;
+          }
+          continue;
         }
-        known.add(item.id); changed = true;
+        const keeper = [...matches].sort((a, b) => Number(a.id.startsWith('shared-')) - Number(b.id.startsWith('shared-')) || referenced(b.id) - referenced(a.id))[0];
+        if (matches.length > 1) mergeAthletes(keeper.id, matches.filter(local => local.id !== keeper.id).map(local => local.id));
+        matches.forEach(local => taken.add(local.id));
+        if (stored[item.id] !== keeper.id || !known.has(item.id)) { stored[item.id] = keeper.id; known.add(item.id); changed = true; }
       }
-      if (changed && !cancelled) await AsyncStorage.setItem(key, JSON.stringify([...known])).catch(() => {});
+      if (changed && !cancelled) {
+        await AsyncStorage.multiSet([[knownKey, JSON.stringify([...known])], [linkKey, JSON.stringify(stored)]]).catch(() => {});
+        setStoredLinks({ ...stored });
+      }
     })();
     return () => { cancelled = true; };
-  }, [isCoach, uid, groupAthletes, shared.data.invitations, athletes, addAthlete, groupNames]);
+  }, [isCoach, uid, groupAthletes, shared.data.invitations, athletes, results, trainingPlans, competitions, addAthlete, mergeAthletes, groupNames]);
 
   // 2-4. Two-way sync of plans, competitions and results, a few seconds after any change.
   useEffect(() => {

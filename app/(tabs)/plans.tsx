@@ -32,9 +32,11 @@ export default function PlansScreen() {
   const isAthlete = user.userType === 'athlete';
   const { screenPadding, cols, isPhone } = useResponsive();
 
+  // A group shows its own plans, plans for everyone, and plans assigned to one of its athletes.
   const filteredPlans = selectedGroup === 'all'
     ? trainingPlans
-    : trainingPlans.filter(p => p.group === selectedGroup);
+    : trainingPlans.filter(p => p.group === selectedGroup || p.group === 'all'
+      || p.athleteIds.some(id => athletes.find(a => a.id === id)?.group === selectedGroup));
 
   const handleExportPDF = async (planId: string) => {
     if (!hasFeature('pdf_export')) {

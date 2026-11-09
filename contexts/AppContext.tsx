@@ -30,6 +30,7 @@ interface AppContextType {
  addSessionPerformance: (performance: SessionPerformance) => void; deleteSessionPerformance: (id: string) => void;
  addCompetition: (competition: Competition) => void; updateCompetition: (competition: Competition) => void; deleteCompetition: (id: string) => void;
  addResult: (result: CompResult) => void; updateResult: (result: CompResult) => void;
+ mergeAthletes: (keepId: string, duplicateIds: string[]) => void;
  addAthlete: (athlete: Athlete) => void; updateAthlete: (athlete: Athlete) => void; deleteAthlete: (id: string) => void;
  addChannel: (channel: ChatChannel) => void; updateChannel: (channel: ChatChannel) => void; deleteChannel: (id: string) => void;
  sendMessage: (channelId: string,text: string) => void; markChannelRead: (id: string) => void;
@@ -99,7 +100,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await claimLegacyWorkspace(account.id);
     if (adopt) workspaceData = { ...emptyLocalWorkspace(),...workspace.legacy };
    }
-   workspaceData = { ...workspaceData,athletes:reconcileAthletes(workspaceData.athletes,workspaceData.results) };
+   // Same id stored twice (older sync versions): keep one copy.
+   const unique = <T extends { id: string }>(list: T[]) => list.filter((item, index) => list.findIndex(other => other.id === item.id) === index);
+   workspaceData = { ...workspaceData,trainingPlans:unique(workspaceData.trainingPlans),competitions:unique(workspaceData.competitions),results:unique(workspaceData.results),athletes:reconcileAthletes(unique(workspaceData.athletes),workspaceData.results) };
    // Commit only after every read succeeds. The persistence effect saves once ready;
    // a failed/timed-out/cancelled restore must never save an empty replacement.
    if (cancelled) return;
@@ -136,7 +139,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const setOnboardingDone = useCallback((done:boolean) => { setDone(done); void AsyncStorage.setItem(onboardingKey,String(done)); },[]);
  const setSubscription = useCallback((_tier:SubscriptionTier) => {},[]);
  const setNotifSettings = useCallback((settings:NotifSettings) => { setNotifications(settings); if (identity.current) void AsyncStorage.setItem(`@appletics_notif:${identity.current}`,JSON.stringify(settings)); },[]);
- const addTrainingPlan = useCallback((plan:TrainingPlan) => change(previous => ({ ...previous,trainingPlans:[plan,...previous.trainingPlans] })),[change]);
+ // Adding an id that already exists replaces it (never two copies of the same plan, competition or athlete).
+ const addTrainingPlan = useCallback((plan:TrainingPlan) => change(previous => ({ ...previous,trainingPlans:[plan,...previous.trainingPlans.filter(item => item.id !== plan.id)] })),[change]);
  const updateTrainingPlan = useCallback((plan:TrainingPlan) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === plan.id ? plan : item) })),[change]);
  const deleteTrainingPlan = useCallback((id:string) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.filter(item => item.id !== id) })),[change]);
  const addSession = useCallback((planId:string,session:TrainingSession) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === planId ? { ...item,sessions:[...item.sessions,session] } : item) })),[change]);
@@ -144,7 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const deleteSession = useCallback((planId:string,id:string) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === planId ? { ...item,sessions:item.sessions.filter(row => row.id !== id) } : item) })),[change]);
  const addSessionPerformance = useCallback((performance:SessionPerformance) => change(previous => ({ ...previous,sessionPerformances:[performance,...previous.sessionPerformances.filter(item => !(item.sessionId === performance.sessionId && item.athleteId === performance.athleteId))] })),[change]);
  const deleteSessionPerformance = useCallback((id:string) => change(previous => ({ ...previous,sessionPerformances:previous.sessionPerformances.filter(item => item.id !== id) })),[change]);
- const addCompetition = useCallback((competition:Competition) => change(previous => ({ ...previous,competitions:[withAutomaticCompetitionStatus(competition),...previous.competitions] })),[change]);
+ const addCompetition = useCallback((competition:Competition) => change(previous => ({ ...previous,competitions:[withAutomaticCompetitionStatus(competition),...previous.competitions.filter(item => item.id !== competition.id)] })),[change]);
  const updateCompetition = useCallback((competition:Competition) => change(previous => ({ ...previous,competitions:previous.competitions.map(item => item.id === competition.id ? withAutomaticCompetitionStatus(competition) : item) })),[change]);
  const deleteCompetition = useCallback((id:string) => change(previous => {
   const results = previous.results.filter(item => item.competitionId !== id);
@@ -163,9 +167,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
  }),[change]);
  const addResult = useCallback((result:CompResult) => storeResult(result,false),[storeResult]);
  const updateResult = useCallback((result:CompResult) => storeResult(result,true),[storeResult]);
- const addAthlete = useCallback((athlete:Athlete) => change(previous => ({ ...previous,athletes:reconcileAthletes([athlete,...previous.athletes],previous.results) })),[change]);
+ const addAthlete = useCallback((athlete:Athlete) => change(previous => ({ ...previous,athletes:reconcileAthletes([athlete,...previous.athletes.filter(item => item.id !== athlete.id)],previous.results) })),[change]);
  const updateAthlete = useCallback((athlete:Athlete) => change(previous => ({ ...previous,athletes:reconcileAthletes(previous.athletes.map(item => item.id === athlete.id ? athlete : item),previous.results),channels:previous.channels.map(item => ({ ...item,members:item.members.map(member => member.id === athlete.id ? { ...member,name:athlete.name } : member) })),sessionPerformances:previous.sessionPerformances.map(item => item.athleteId === athlete.id ? { ...item,athleteName:athlete.name } : item) })),[change]);
  const deleteAthlete = useCallback((id:string) => change(previous => ({ ...previous,athletes:previous.athletes.filter(item => item.id !== id) })),[change]);
+ // Same person recorded twice: everything attached to the duplicates moves to the kept record, then the duplicates go.
+ const mergeAthletes = useCallback((keepId:string,duplicateIds:string[]) => change(previous => {
+  const dup = new Set(duplicateIds.filter(id => id !== keepId));
+  if (!dup.size || !previous.athletes.some(item => item.id === keepId)) return previous;
+  const swap = (ids:string[]) => [...new Set(ids.map(id => dup.has(id) ? keepId : id))];
+  const results = previous.results.map(item => dup.has(item.athleteId) ? { ...item,athleteId:keepId } : item);
+  const performances = previous.sessionPerformances.map(item => dup.has(item.athleteId) ? { ...item,athleteId:keepId } : item)
+   .filter((item,index,list) => list.findIndex(other => other.sessionId === item.sessionId && other.athleteId === item.athleteId) === index);
+  const kept = previous.athletes.find(item => item.id === keepId)!;
+  const extra = previous.athletes.filter(item => dup.has(item.id));
+  const merged = { ...kept,email:kept.email || extra.find(item => item.email)?.email,events:[...new Set([...kept.events,...extra.flatMap(item => item.events)])],pb:{ ...Object.assign({},...extra.map(item => item.pb)),...kept.pb } };
+  return { ...previous,results,sessionPerformances:performances,
+   trainingPlans:previous.trainingPlans.map(plan => plan.athleteIds.some(id => dup.has(id)) ? { ...plan,athleteIds:swap(plan.athleteIds) } : plan),
+   competitions:previous.competitions.map(item => item.athleteIds.some(id => dup.has(id)) ? { ...item,athleteIds:swap(item.athleteIds) } : item),
+   athletes:reconcileAthletes(previous.athletes.filter(item => !dup.has(item.id)).map(item => item.id === keepId ? merged : item),results) };
+ }),[change]);
  const addChannel = useCallback((channel:ChatChannel) => change(previous => ({ ...previous,channels:[channel,...previous.channels],messages:{ ...previous.messages,[channel.id]:[] } })),[change]);
  const updateChannel = useCallback((channel:ChatChannel) => change(previous => ({ ...previous,channels:previous.channels.map(item => item.id === channel.id ? channel : item) })),[change]);
  const deleteChannel = useCallback((id:string) => change(previous => { const messages = { ...previous.messages }; delete messages[id]; return { ...previous,messages,channels:previous.channels.filter(item => item.id !== id) }; }),[change]);
@@ -202,5 +222,5 @@ export function AppProvider({ children }: { children: ReactNode }) {
    if (cleanup.some(result => result.status === 'rejected')) showAlert('Compte supprimé','Le compte Cloud est supprimé. Une partie du nettoyage sur cet appareil a échoué ; fermez l’app et effacez ses données locales si nécessaire.');
   } finally { deleting.current = false; }
  },[showAlert]);
- return <AppContext.Provider value={{ user,athletes,trainingPlans,competitions,results:data.results,channels:data.channels,messages:data.messages,sessionPerformances:data.sessionPerformances,onboardingDone,onboardingLoading,accountProfileLoading,startupError,startupAwaitingConsent,isLocked,subscription,notifSettings,setOnboardingDone,setSubscription,setLocked,setNotifSettings,addTrainingPlan,updateTrainingPlan,deleteTrainingPlan,addSession,updateSession,deleteSession,addSessionPerformance,deleteSessionPerformance,addCompetition,updateCompetition,deleteCompetition,addResult,updateResult,addAthlete,updateAthlete,deleteAthlete,addChannel,updateChannel,deleteChannel,sendMessage,markChannelRead,updateUser,deleteAccount }}>{children}</AppContext.Provider>;
+ return <AppContext.Provider value={{ user,athletes,trainingPlans,competitions,results:data.results,channels:data.channels,messages:data.messages,sessionPerformances:data.sessionPerformances,onboardingDone,onboardingLoading,accountProfileLoading,startupError,startupAwaitingConsent,isLocked,subscription,notifSettings,setOnboardingDone,setSubscription,setLocked,setNotifSettings,addTrainingPlan,updateTrainingPlan,deleteTrainingPlan,addSession,updateSession,deleteSession,addSessionPerformance,deleteSessionPerformance,addCompetition,updateCompetition,deleteCompetition,addResult,updateResult,mergeAthletes,addAthlete,updateAthlete,deleteAthlete,addChannel,updateChannel,deleteChannel,sendMessage,markChannelRead,updateUser,deleteAccount }}>{children}</AppContext.Provider>;
 }
