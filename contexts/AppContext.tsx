@@ -15,6 +15,8 @@ import { eraseCloudAccount, clearDeletedAccountSession } from '@/services/accoun
 import { clearAccountClubCoaches } from '@/services/clubCoachService';
 import { cancelAccountDeviceNotifications } from '@/services/deviceCleanupService';
 import { withStartupDeadline } from '@/services/startupService';
+import { markWorkspaceDirty, mergeWorkspaces, reconcileWithCloud, saveCloudWorkspace } from '@/services/workspaceCloudService';
+import { Platform } from 'react-native';
 import { emptyLocalWorkspace, loadLocalWorkspace, saveLocalWorkspace, claimLegacyWorkspace, clearLocalWorkspace, type LocalWorkspace } from '@/services/localWorkspaceService';
 const onboardingKey = '@appletics_onboarding_done';
 const legacyUserKey = '@appletics_user';
@@ -66,6 +68,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const authId = auth.user?.id ?? '';
  const identity = useRef(authId); identity.current = authId;
  const deleting = useRef(false);
+ // Online backup: ready once this device has been reconciled with it; then every change is backed up.
+ const [cloudReadyFor,setCloudReadyFor] = useState('');
+ const storedRef = useRef(stored); storedRef.current = stored;
+ const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+ const skipNextPush = useRef(false);
+ const cloudBase = useRef<LocalWorkspace | null>(null); // data already identical online
  const accountProfileLoading = auth.loading || (!!authId && readyFor !== authId);
  // Derive an empty view immediately on logout/account change, before asynchronous effects.
  const data = stored.owner === authId && authId ? stored.data : emptyLocalWorkspace();
@@ -144,6 +152,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
   if (deleting.current || !authId || readyFor !== authId || stored.owner !== authId) return;
   void saveLocalWorkspace(authId,stored.data).catch(() => showAlert('Enregistrement local','Les changements restent visibles, mais leur sauvegarde sur cet appareil a échoué.'));
  },[stored,authId,readyFor]);
+ // Online backup — 1. reconcile this device with it (startup, and when the app comes back to the foreground).
+ const syncWithCloud = useCallback(async (owner: string) => {
+  const snapshot = storedRef.current;
+  if (snapshot.owner !== owner || deleting.current) return;
+  const result = await reconcileWithCloud(owner,snapshot.data).catch(() => null);
+  if (!result || identity.current !== owner || deleting.current) { setCloudReadyFor(owner); return; }
+  if (result.changed) {
+   const tidy = (data: LocalWorkspace) => ({ ...data,athletes:reconcileAthletes(data.athletes,data.results),results:uniqueResults(data.results) });
+   if (!result.needsPush) skipNextPush.current = true;
+   setStored(previous => previous.owner !== owner ? previous : { owner,data:tidy(previous.data === snapshot.data ? result.data : mergeWorkspaces(previous.data,result.data)) });
+  }
+  if (result.needsPush && !result.changed) void saveCloudWorkspace(owner,snapshot.data).catch(() => {});
+  cloudBase.current = result.changed ? null : snapshot.data;
+  setCloudReadyFor(owner);
+ },[]);
+ useEffect(() => {
+  if (!authId || readyFor !== authId) return;
+  void syncWithCloud(authId);
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+  let last = Date.now();
+  const onVisible = () => {
+   if (document.visibilityState === 'hidden' && pushTimer.current) {
+    clearTimeout(pushTimer.current); pushTimer.current = null;
+    void saveCloudWorkspace(authId,storedRef.current.data).catch(() => {});
+   }
+   if (document.visibilityState === 'visible' && Date.now() - last > 20000) { last = Date.now(); void syncWithCloud(authId); }
+  };
+  document.addEventListener('visibilitychange',onVisible);
+  return () => document.removeEventListener('visibilitychange',onVisible);
+ },[authId,readyFor,syncWithCloud]);
+ // 2. back up every change a few seconds after it happens.
+ useEffect(() => {
+  if (deleting.current || !authId || readyFor !== authId || cloudReadyFor !== authId || stored.owner !== authId) return;
+  if (skipNextPush.current) { skipNextPush.current = false; return; }
+  if (stored.data === cloudBase.current) return;
+  void markWorkspaceDirty(authId);
+  if (pushTimer.current) clearTimeout(pushTimer.current);
+  pushTimer.current = setTimeout(() => { pushTimer.current = null; if (!deleting.current && identity.current === authId) void saveCloudWorkspace(authId,storedRef.current.data).catch(() => {}); },2500);
+ },[stored,authId,readyFor,cloudReadyFor]);
  const change = useCallback((transform: (previous:LocalWorkspace) => LocalWorkspace) => {
   const owner = identity.current;
   if (!owner || deleting.current) return;
