@@ -9,6 +9,7 @@ import {
   athleteCompetitionFor, athletePlanFor, canonical, competitionSignature, performanceToResults, performanceToSession,
   planSignature, resultsToPerformance,
 } from '@/services/cloudSyncMapping';
+import { isRecent, notifyResult } from '@/services/pushService';
 
 // Athlete side, in the background:
 // 1. sessions and competitions sent by the coach become the athlete's own plan and competitions
@@ -96,7 +97,7 @@ export function useAthleteCloudSync() {
             const key = `perf:${row.id}:${sharedAthlete}`;
             if (cache[key] === signature) return;
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: date, p_metrics: metrics.slice(0, 30), p_notes: notes, p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[key] = signature; cacheChanged = true; cloudChanged = true; }
+            if (!error) { cache[key] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(date)) notifyResult(row.id, sharedAthlete); }
           };
           for (const performance of sessionPerformances) {
             if (!performance.sessionId.startsWith('ss-') || performance.athleteId !== uid) continue;

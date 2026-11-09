@@ -8,6 +8,7 @@ import {
   canonical, coachDesiredItems, hash, parseSource, performanceToResults, performanceToSession,
   resultsToPerformance, staleRows,
 } from '@/services/cloudSyncMapping';
+import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
 
 // Coach side, in the background (the coach's device data stays the source for what the coach creates):
 // 1. athletes of the coach's shared groups appear in the coach's athlete list;
@@ -76,14 +77,23 @@ export function useCoachCloudSync() {
         try {
           // 2a. Send plans and competitions (only what changed).
           const desired = coachDesiredItems(trainingPlans, competitions, links);
+          const today = new Date().toISOString().slice(0, 10);
+          const fresh = new Map<string, { sessions: number; competitions: number; firstTitle: string }>();
           for (const item of desired) {
             const signature = hash(JSON.stringify([item.kind, item.title, item.date, item.details, item.meta]));
             // Already sent with this content: never sent again (no loop even if the cloud copy is slow to appear).
             if (cache[`pub:${item.source}`] === signature) continue;
             const { error } = await client.rpc('shared_publish_athlete_item', { p_athlete: item.sharedAthlete, p_kind: item.kind, p_title: item.title, p_date: item.date, p_details: item.details, p_meta: item.meta, p_source: item.source });
             if (error) { if (error.code === 'PGRST202') return; continue; } // database not updated yet: retry later
+            const isNew = !rowBySource.has(item.source) && !cache[`pub:${item.source}`];
+            if (isNew && item.date >= today) {
+              const counter = fresh.get(item.sharedAthlete) ?? { sessions: 0, competitions: 0, firstTitle: item.title };
+              if (item.kind === 'competition') counter.competitions++; else counter.sessions++;
+              fresh.set(item.sharedAthlete, counter);
+            }
             cache[`pub:${item.source}`] = signature; cacheChanged = true; cloudChanged = true;
           }
+          for (const [sharedAthlete, counter] of fresh) notifyNewItems(sharedAthlete, counter.sessions, counter.competitions, counter.firstTitle);
           // 2b. Withdraw what is no longer assigned (upcoming only, never anything with a result).
           const stale = staleRows(rows, new Set(desired.map(item => item.source)), new Set(links.values()));
           if (stale.length) { const { error } = await client.rpc('shared_delete_published', { p_ids: stale }); if (!error) cloudChanged = true; }
@@ -127,7 +137,7 @@ export function useCoachCloudSync() {
             const cacheId = `perf:${row.id}:${sharedAthlete}`;
             if (cache[cacheId] === signature) continue;
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: row.session_date, p_metrics: metrics, p_notes: notes, p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; }
+            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(row.session_date)) notifyResult(row.id, sharedAthlete); }
           }
           for (const performance of sessionPerformances) {
             const sharedAthlete = links.get(performance.athleteId);
@@ -139,7 +149,7 @@ export function useCoachCloudSync() {
             const cacheId = `perf:${row.id}:${sharedAthlete}`;
             if (cache[cacheId] === signature) continue;
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: performance.date, p_metrics: performance.metrics.slice(0, 30), p_notes: performance.notes ?? '', p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; }
+            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(performance.date, 3)) notifyResult(row.id, sharedAthlete); }
           }
         } finally {
           if (cacheChanged) await AsyncStorage.setItem(cacheKey, JSON.stringify(cache)).catch(() => {});

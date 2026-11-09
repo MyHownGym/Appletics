@@ -64,3 +64,19 @@ export async function enablePush(): Promise<PushState> {
 export function notifyGroupMessage(messageId: string) {
   void getSupabaseClient().functions.invoke('appletics-notify-message', { body: { messageId } }).catch(() => {});
 }
+
+// New sessions / competitions sent to an athlete (called once per sync, only for brand-new items).
+export function notifyNewItems(athleteId: string, sessions: number, competitions: number, firstTitle: string) {
+  if (!sessions && !competitions) return;
+  void getSupabaseClient().functions.invoke('appletics-notify-message', { body: { event: 'items', athleteId, sessions, competitions, firstTitle } }).catch(() => {});
+}
+
+// A result / performance was just saved for this athlete on this shared session or competition.
+export function notifyResult(sessionId: string, athleteId: string) {
+  void getSupabaseClient().functions.invoke('appletics-notify-message', { body: { event: 'result', sessionId, athleteId } }).catch(() => {});
+}
+
+// Only recent results are announced (older data synced for the first time stays silent).
+export function isRecent(date: string, days = 14) {
+  return new Date(`${date.slice(0, 10)}T12:00:00`).getTime() >= Date.now() - days * 864e5;
+}
