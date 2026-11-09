@@ -18,7 +18,7 @@ import { localGroupFor } from '@/services/trainingGroups';
 // 2. what the athlete enters on them (performances, results) is sent to the coach;
 // 3. results the coach enters for the athlete come back into the athlete's stats.
 export function useAthleteCloudSync() {
-  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition, addResult, updateResult, addSessionPerformance } = useApp();
+  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition, addResult, updateResult, addSessionPerformance, mergeCompetitions } = useApp();
   const shared = useSharedGroups();
   const uid = shared.userId;
   const running = useRef(false);
@@ -61,10 +61,16 @@ export function useAthleteCloudSync() {
       if (!existing) addCompetition(next); else if (competitionSignature(existing) !== competitionSignature(next)) updateCompetition({ ...existing, ...next, status: existing.status === 'cancelled' ? existing.status : next.status });
     }
     const present = new Set(competitionRows.map(row => `shared-comp-${row.id}`));
+    const keyOf = (name: string, date: string) => `${name.trim().toLowerCase()}|${date.slice(0, 10)}`;
+    const presentByKey = new Map(competitionRows.map(row => [keyOf(row.title, row.session_date), `shared-comp-${row.id}`]));
     for (const item of competitions) {
-      if (item.id.startsWith('shared-comp-') && !present.has(item.id) && !results.some(result => result.competitionId === item.id)) deleteCompetition(item.id);
+      if (present.has(item.id)) continue;
+      // Older copy of a competition received from the coach, or the same one entered here: merged into it.
+      const keep = presentByKey.get(keyOf(item.name, item.date));
+      if (keep && competitions.some(other => other.id === keep)) { mergeCompetitions(keep, [item.id]); continue; }
+      if (item.id.startsWith('shared-comp-') && !results.some(result => result.competitionId === item.id)) deleteCompetition(item.id);
     }
-  }, [active, uid, rows, myGroups, shared.data.groups, shared.data.performances, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition]);
+  }, [active, uid, rows, myGroups, shared.data.groups, shared.data.performances, trainingPlans, competitions, results, sessionPerformances, addTrainingPlan, updateTrainingPlan, deleteTrainingPlan, addCompetition, updateCompetition, deleteCompetition, mergeCompetitions]);
 
   // 2-3. Performances and results, both ways.
   useEffect(() => {
