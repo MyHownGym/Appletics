@@ -3,7 +3,8 @@
 import type { Competition, CompResult, SessionMetric, SessionPerformance, TrainingPlan, TrainingSession } from '@/types';
 import type { SharedPerformance, SharedSession } from '@/types/sharedGroups';
 
-export const WINDOW_DAYS = 14;
+// Sessions are sent for the whole plan (a plan starting next month is visible right away), up to 16 weeks ahead.
+export const WINDOW_DAYS = 112;
 const WEEKDAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const WEEKDAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const INTENSITY: Record<string, string> = { easy: 'Facile', moderate: 'Modérée', hard: 'Difficile', race: 'Compétition', rest: 'Repos' };
