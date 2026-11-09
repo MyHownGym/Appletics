@@ -651,34 +651,35 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView ref={sectionNav.scrollRef} onContentSizeChange={sectionNav.onContentSizeChange} style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' }]}>
         <View style={styles.brandHeader}><AppBrand /></View>
-        <View style={[styles.profileCard, Shadow.card]}>
-          <View style={styles.profileTop}>
+        <View style={[styles.profileCard, Shadow.card, { padding: 0, overflow: 'hidden' }]}>
+          {/* Orange header like the sidebar and the logo. */}
+          <LinearGradient colors={['#E2461A', '#FF5722', '#FF8A65']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.profileTop, { padding: Spacing.md, marginBottom: 0 }]}>
             <Pressable onPress={() => router.push('/edit-profile')}>
               {user.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatarImage} contentFit="cover" />
+                <Image source={{ uri: user.avatar }} style={[styles.avatarImage, { borderColor: '#FFFFFF' }]} contentFit="cover" />
               ) : (
-                <View style={[styles.avatarCircle, { backgroundColor: Colors.primary + '20', borderColor: Colors.primary + '50' }]}>
+                <View style={[styles.avatarCircle, { backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.7)' }]}>
                   <Text style={[styles.avatarInitials, { color: Colors.primary }]}>{initials}</Text>
                 </View>
               )}
             </Pressable>
             <View style={styles.profileInfo}>
-              <Text verbatim style={styles.coachName}>{user.name}</Text>
+              <Text verbatim style={[styles.coachName, { color: '#FFFFFF' }]}>{user.name}</Text>
               <View style={styles.roleRow}>
-                <View style={[styles.rolePill, { backgroundColor: Colors.primary + '15', borderColor: Colors.primary + '40' }]}>
+                <View style={[styles.rolePill, { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}>
                   <MaterialIcons name="sports" size={12} color={Colors.primary} />
                   <Text style={[styles.roleText, { color: Colors.primary }]}>{roleLabel(user.role)}</Text>
                 </View>
-                <View style={[styles.subBadge, { backgroundColor: subConfig.color + '18', borderColor: subConfig.color + '50' }]}>
+                <View style={[styles.subBadge, { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}>
                   <MaterialIcons name={subConfig.icon as any} size={11} color={subConfig.color} />
                   <Text style={[styles.subBadgeText, { color: subConfig.color }]}>{subConfig.badge}</Text>
                 </View>
               </View>
-              <Text verbatim style={styles.clubText}>{user.club}</Text>
-              {user.email ? <Text verbatim style={styles.emailText}>{user.email}</Text> : null}
+              {user.club ? <Text verbatim style={[styles.clubText, { color: 'rgba(255,255,255,0.92)' }]}>{user.club}</Text> : null}
+              {user.email ? <Text verbatim style={[styles.emailText, { color: 'rgba(255,255,255,0.85)' }]}>{user.email}</Text> : null}
             </View>
-          </View>
-          <AthleteStatusSummary />
+          </LinearGradient>
+          <View style={{ paddingHorizontal: Spacing.md, paddingBottom: Spacing.md }}><AthleteStatusSummary /></View>
         </View>
 
         <SubscriptionPlanCard />
