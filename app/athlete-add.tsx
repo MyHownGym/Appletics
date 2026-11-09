@@ -21,6 +21,8 @@ import { useLocalizedAlert } from '@/hooks/useLocalizedAlert';
 import { sendInvitationEmail } from '@/services/inviteEmailService';
 import { appUrl } from '@/constants/links';
 import { ActivityIndicator } from 'react-native';
+import { DisciplineChips } from '@/components/ui/DisciplineChips';
+import { coachGroups, createTrainingGroup, disciplineLabel, disciplineOf, inviteAthleteToGroup, localGroupFor } from '@/services/trainingGroups';
 
 const STATUS_OPTIONS = [
   { id: 'active', icon: 'check-circle', color: Colors.success },
@@ -43,7 +45,13 @@ export default function AthleteAddScreen() {
   const { athletes, addAthlete } = useApp();
   const { showAlert } = useLocalizedAlert();
   const [inviting, setInviting] = useState(false);
-  const mainGroup = shared.data.groups.filter(item => item.owner_id === shared.userId).sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+  const myGroups = coachGroups(shared.data, shared.userId);
+  // Training group chosen for the invitation ('new' = create one now).
+  const [targetGroup, setTargetGroup] = useState<string>('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDiscipline, setNewGroupDiscipline] = useState('sprints');
+  const selectedGroupId = targetGroup && targetGroup !== 'new' && myGroups.some(item => item.id === targetGroup) ? targetGroup : (targetGroup === 'new' || !myGroups.length ? 'new' : myGroups[0].id);
+  const selectedGroup = myGroups.find(item => item.id === selectedGroupId);
 
   // Tab
   const [tab, setTab] = useState<'manual' | 'invite'>('manual');
@@ -71,28 +79,32 @@ export default function AthleteAddScreen() {
     const address = inviteEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) { showAlert('E-mail invalide', 'Veuillez saisir une adresse e-mail valide.'); return; }
     if (inviting) return;
+    if (selectedGroupId === 'new' && !newGroupName.trim()) { showAlert('Nom du groupe', 'Donnez un nom au nouveau groupe (par exemple « Sprint » ou « Demi-fond »).'); return; }
     setInviting(true);
     try {
+      // Chosen training group (created now if needed).
+      let groupId = selectedGroupId === 'new' ? '' : selectedGroupId;
+      let discipline = disciplineOf(selectedGroup);
+      if (selectedGroupId === 'new') {
+        groupId = await createTrainingGroup(shared.operate, newGroupName, newGroupDiscipline);
+        discipline = newGroupDiscipline; setTargetGroup(groupId); setNewGroupName('');
+      }
       // The athlete also appears right away in the coach's list (plans can be assigned before they accept).
       const displayName = inviteName.trim() || address.split('@')[0];
       const existingLocal = athletes.find(item => (item.email ?? '').toLowerCase() === address);
       const localId = existingLocal?.id ?? `a-${Date.now()}`;
-      if (!existingLocal) addAthlete({ id: localId, name: displayName, email: address, events: [], group: 'sprints', pb: {}, status: 'active' });
-      let id: string;
-      try { id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: displayName, p_source: `${shared.userId}:${localId}` }); }
-      catch (first) {
-        // Server not updated yet (older two-argument version): invite without the link.
-        if (!(first instanceof Error) || !/function|schema cache|argument/i.test(first.message)) throw first;
-        id = await shared.operate<string>('shared_invite_athlete_quick', { p_email: address, p_name: displayName });
-      }
+      if (!existingLocal) addAthlete({ id: localId, name: displayName, email: address, events: [], group: localGroupFor(discipline), pb: {}, status: 'active' });
+      const id = await inviteAthleteToGroup(shared.operate, address, displayName, `${shared.userId}:${localId}`, groupId || undefined);
+      void shared.refresh();
       const failure = await sendInvitationEmail(id, language);
       if (failure) showAlert('Invitation enregistrée', `L’e-mail n’est pas parti (${failure}). Envoyez ce lien à l’athlète : ${appUrl} — il doit créer son compte avec ${address}.`);
-      else showAlert('Invitation envoyée', `${address} a reçu un e-mail. Dès qu’il aura créé son compte avec cette adresse, il rejoindra votre groupe et pourra échanger avec vous.`);
+      else showAlert('Invitation envoyée', `${address} a reçu un e-mail. Dès qu’il aura créé son compte avec cette adresse, il rejoindra le groupe${groupLabelFor(groupId)} et pourra échanger avec vous.`);
       setInviteEmail(''); setInviteName('');
     } catch (reason) {
       showAlert('Invitation impossible', reason instanceof Error ? reason.message : 'Vérifiez votre connexion et réessayez.');
     } finally { setInviting(false); }
   };
+  function groupLabelFor(id: string) { const found = shared.data.groups.find(item => item.id === id); return found ? ` « ${found.name} »` : ''; }
   const handleInviteSMS = () => invitation.sendSms(invitePhone, { name: inviteName, role: 'athlete' });
 
   return (
@@ -274,8 +286,31 @@ export default function AthleteAddScreen() {
                 <MaterialIcons name="link" size={28} color={Colors.primary} />
               </View>
               <Text style={styles.inviteCardTitle}>{t('invite_athlete')}</Text>
-              <Text style={styles.availability}>{`L’athlète reçoit un e-mail, crée son compte avec cette adresse et rejoint votre groupe${mainGroup ? ` « ${mainGroup.name} »` : ''}. Vous pourrez ensuite partager des séances et discuter.`}</Text>
+              <Text style={styles.availability}>L’athlète reçoit un e-mail, crée son compte avec cette adresse et rejoint le groupe choisi. Tous les coachs du groupe voient ses séances, compétitions et résultats.</Text>
               <Text verbatim selectable style={styles.inviteCardSub}>{appUrl}</Text>
+            </View>
+
+            {/* Training group */}
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Groupe</Text>
+              <View style={styles.chipRow}>
+                {myGroups.map(item => (
+                  <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ selected: selectedGroupId === item.id }} onPress={() => setTargetGroup(item.id)}
+                    style={[styles.chip, selectedGroupId === item.id ? { backgroundColor: Colors.primary, borderColor: Colors.primary } : { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+                    <Text verbatim style={[styles.chipLabel, { color: selectedGroupId === item.id ? '#FFF' : Colors.textSecondary }]}>{item.name}</Text>
+                    {disciplineOf(item) !== 'all' && !item.name.toLowerCase().includes(disciplineLabel(disciplineOf(item)).toLowerCase()) ? <Text style={[styles.chipLabel, { color: selectedGroupId === item.id ? '#FFF' : Colors.textMuted, fontWeight: '400' }]}>{`· ${disciplineLabel(disciplineOf(item))}`}</Text> : null}
+                  </Pressable>
+                ))}
+                <Pressable accessibilityRole="radio" accessibilityState={{ selected: selectedGroupId === 'new' }} onPress={() => setTargetGroup('new')}
+                  style={[styles.chip, selectedGroupId === 'new' ? { backgroundColor: Colors.primary, borderColor: Colors.primary } : { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+                  <MaterialIcons name="add" size={16} color={selectedGroupId === 'new' ? '#FFF' : Colors.textSecondary} />
+                  <Text style={[styles.chipLabel, { color: selectedGroupId === 'new' ? '#FFF' : Colors.textSecondary }]}>Nouveau groupe</Text>
+                </Pressable>
+              </View>
+              {selectedGroupId === 'new' ? <View style={{ gap: Spacing.sm, marginTop: Spacing.sm }}>
+                <TextInput style={styles.input} accessibilityLabel="Nom du groupe" value={newGroupName} onChangeText={setNewGroupName} maxLength={100} placeholder="Ex. Sprint, Demi-fond, Sprint U18" placeholderTextColor={Colors.textMuted} />
+                <DisciplineChips value={newGroupDiscipline} onChange={setNewGroupDiscipline} />
+              </View> : null}
             </View>
 
             {/* Athlete name (for invite message) */}
