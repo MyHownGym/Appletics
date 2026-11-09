@@ -10,6 +10,7 @@ import { useGroupChat } from '@/hooks/useGroupChat';
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import type { GroupMessage } from '@/services/groupChatService';
+import { markGroupRead } from '@/services/unreadStore';
 
 function timeLabel(iso: string) {
   const date = new Date(iso);
@@ -25,13 +26,18 @@ export default function GroupChatScreen() {
   const groupId = typeof params.id === 'string' ? params.id : '';
   const router = useRouter();
   const { showAlert } = useLocalizedAlert();
-  const { data } = useSharedGroups();
+  const { data, userId } = useSharedGroups();
   const group = data.groups.find(item => item.id === groupId);
   const memberCount = data.members.filter(item => item.group_id === groupId).length;
   const chat = useGroupChat(groupId);
   const list = useRef<FlatList<GroupMessage>>(null);
 
-  useEffect(() => { if (chat.messages.length) setTimeout(() => list.current?.scrollToEnd({ animated: true }), 50); }, [chat.messages.length]);
+  // Opens on the latest messages and stays at the bottom while new ones arrive (unless the user scrolled up).
+  const atBottom = useRef(true);
+  // Open conversation: its messages count as read (chat list, tab bar, app icon).
+  const latest = chat.messages[chat.messages.length - 1]?.created_at;
+  useEffect(() => { if (userId && groupId) void markGroupRead(userId, groupId, latest); }, [userId, groupId, latest]);
+  useEffect(() => { if (chat.messages.length && atBottom.current) setTimeout(() => list.current?.scrollToEnd({ animated: false }), 50); }, [chat.messages.length]);
 
   const openActions = (message: GroupMessage) => {
     const own = message.sender_id === chat.userId;
@@ -74,6 +80,10 @@ export default function GroupChatScreen() {
           contentContainerStyle={styles.list}
           data={chat.messages}
           keyExtractor={item => item.id}
+          initialNumToRender={400}
+          onContentSizeChange={() => { if (atBottom.current) list.current?.scrollToEnd({ animated: false }); }}
+          onScroll={event => { const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent; atBottom.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 120; }}
+          scrollEventThrottle={100}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={<PushNotificationsPrompt />}
           ListEmptyComponent={!chat.loading ? <View style={styles.empty}>

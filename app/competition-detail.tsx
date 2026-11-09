@@ -377,7 +377,7 @@ export default function CompetitionDetailScreen() {
           <View style={[styles.scoreCard, Shadow.card]}>
             <View style={styles.scoreItem}><MaterialIcons name="emoji-events" size={24} color={Colors.primary} /><Text style={styles.scoreVal}>{competition.teamScore}</Text><Text style={styles.scoreLbl}>{t('team_score')}</Text></View>
             <View style={styles.scoreDivider} />
-            <View style={styles.scoreItem}><MaterialIcons name="leaderboard" size={24} color={Colors.success} /><Text style={[styles.scoreVal, { color: Colors.success }]}>#{competition.teamRank}</Text><Text style={styles.scoreLbl}>{t('team_rank')}</Text></View>
+            <View style={styles.scoreItem}><MaterialIcons name="leaderboard" size={24} color={Colors.success} /><Text verbatim style={[styles.scoreVal, { color: Colors.success }]}>{(() => { const best = competition.teamRank || Math.min(...compResults.map(r => r.rank || Infinity)); return Number.isFinite(best) && best > 0 ? (best === 1 ? '1er' : `${best}e`) : '—'; })()}</Text><Text style={styles.scoreLbl}>{competition.teamRank ? t('team_rank') : 'Meilleure place'}</Text></View>
             <View style={styles.scoreDivider} />
             <View style={styles.scoreItem}><MaterialIcons name="star" size={24} color={Colors.warning} /><Text style={styles.scoreVal}>{compResults.filter(r => r.pb).length}</Text><Text style={styles.scoreLbl}>{t('pbs_set')}</Text></View>
           </View>

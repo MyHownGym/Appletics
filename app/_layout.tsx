@@ -1,6 +1,7 @@
 // Powered by OnSpace.AI
 // Root layout v14 — deep linking from notifications, push notification listener
 import React, { useEffect, useRef } from 'react';
+import { useWebPushNavigation } from '@/hooks/useWebPushNavigation';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { AlertProvider, AuthProvider, useAuth } from '@/template';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -63,6 +64,8 @@ function NavigationGuard() {
 function NotificationHandler() {
   const router = useRouter();
   const { isLocked, onboardingDone } = useApp();
+  const auth = useAuth();
+  useWebPushNavigation(onboardingDone && !isLocked && !!auth.user);
 
   useEffect(() => {
     const timers = new Set<ReturnType<typeof setTimeout>>();

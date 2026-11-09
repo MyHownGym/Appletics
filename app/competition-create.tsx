@@ -69,7 +69,7 @@ export default function CompetitionCreateScreen() {
     if (!name.trim()) { showAlert(t('error'), t('plan_title')); return; }
     if (!date) { showAlert(t('error'), t('start_date')); return; }
     if (dateError) { showAlert(t('error'), dateError); return; }
-    if (selectedEvents.length === 0) { showAlert(t('error'), t('results')); return; }
+    if (selectedEvents.length === 0) { showAlert(t('error'), 'Choisissez au moins une discipline.'); return; }
 
     const payload = {
       name: name.trim(), type, date, endDate: endDate || date,
@@ -252,7 +252,7 @@ export default function CompetitionCreateScreen() {
 
           {/* Épreuves */}
           <View style={styles.field}>
-            <Text style={styles.label}>{t('results')} ({selectedEvents.length}) *</Text>
+            <Text style={styles.label}>{`Disciplines (${selectedEvents.length}) *`}</Text>
             <View style={styles.eventsGrid}>
               {TRACK_EVENTS.map(event => {
                 const isSelected = selectedEvents.includes(event);

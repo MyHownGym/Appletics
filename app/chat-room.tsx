@@ -26,6 +26,7 @@ export default function ChatRoomScreen() {
   const [inputText, setInputText] = useState('');
   const [showMembers, setShowMembers] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const atBottom = useRef(true); // opens on the latest messages
 
   const channel = channels.find(c => c.id === channelId);
   const channelMessages = messages[channelId] || [];
@@ -36,8 +37,8 @@ export default function ChatRoomScreen() {
   }, [channelId]);
 
   useEffect(() => {
-    if (channelMessages.length > 0) {
-      const timer = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    if (channelMessages.length > 0 && atBottom.current) {
+      const timer = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
       return () => clearTimeout(timer);
     }
   }, [channelMessages.length]);
@@ -155,6 +156,10 @@ export default function ChatRoomScreen() {
           ref={flatListRef}
           data={channelMessages}
           keyExtractor={item => item.id}
+          initialNumToRender={400}
+          onContentSizeChange={() => { if (atBottom.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
+          onScroll={event => { const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent; atBottom.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 120; }}
+          scrollEventThrottle={100}
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           renderItem={renderMessage}
