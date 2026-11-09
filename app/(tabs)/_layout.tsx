@@ -14,6 +14,8 @@ import { useApp } from '@/hooks/useApp';
 import { CompactTabBar } from '@/components/layout/CompactTabBar';
 import { useCoachCloudSync } from '@/hooks/useCoachCloudSync';
 import { useAthleteCloudSync } from '@/hooks/useAthleteCloudSync';
+import { useUnreadWatcher } from '@/hooks/useUnreadWatcher';
+import { useUnreadCounts, unreadTotal } from '@/services/unreadStore';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
 function AnimatedTabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
@@ -196,6 +198,8 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 export default function TabLayout() {
   useCoachCloudSync();
   useAthleteCloudSync();
+  useUnreadWatcher();
+  const unread = unreadTotal(useUnreadCounts());
   const { t } = useI18n();
 
   return (
@@ -227,6 +231,7 @@ export default function TabLayout() {
         options={{
           title: t('nav_chat'),
           tabBarIcon: ({ color, focused }) => <AnimatedTabIcon name="chat" color={color} focused={focused} />,
+          tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined,
         }}
       />
       <Tabs.Screen

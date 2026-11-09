@@ -18,7 +18,7 @@ import { localGroupFor } from '@/services/trainingGroups';
 // 4. results the coach enters for them are sent to the athletes.
 export function useCoachCloudSync() {
   const app = useApp();
-  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance, mergeAthletes, updateAthlete } = app;
+  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance, mergeAthletes, updateAthlete, addCompetition } = app;
   const shared = useSharedGroups();
   const uid = shared.userId;
   const isCoach = !!uid && user.userType !== 'athlete';
@@ -151,17 +151,32 @@ export function useCoachCloudSync() {
 
           // 3. Athletes' entries → coach's stats.
           const rowById = new Map(rows.map(row => [row.id, row]));
+          const created = new Set<string>();
           for (const performance of shared.data.performances) {
             const row = rowById.get(performance.session_id); const source = parseSource(row?.source_key);
             const localId = localOf.get(performance.athlete_id);
             if (!row || !source || !localId) continue;
             const signature = canonical(performance.performed_on, performance.metrics, performance.notes ?? '');
             const key = `perf:${row.id}:${performance.athlete_id}`;
-            if (cache[key] === signature) continue;
+            // Already received — unless the results are missing here (lost copy on this device): received again.
+            const missingHere = source.kind === 'comp' && performance.metrics.length > 0 && !results.some(item => item.competitionId === source.competitionId && item.athleteId === localId);
+            if (cache[key] === signature && !missingHere) continue;
             const athlete = athletes.find(item => item.id === localId);
             if (source.kind === 'plan') {
               addSessionPerformance(performanceToSession(performance, source.sessionId, source.planId, localId, athlete?.name ?? ''));
-            } else if (competitions.some(item => item.id === source.competitionId)) {
+            } else {
+              // The coach's copy of the competition is missing on this device (other phone, browser…): rebuilt from
+              // what was sent, so the athlete's results always reach the coach's stats.
+              if (!competitions.some(item => item.id === source.competitionId) && !created.has(source.competitionId)) {
+                const meta = row.meta ?? {};
+                addCompetition({
+                  id: source.competitionId, name: row.title, type: String(meta.type ?? 'outdoor'), date: row.session_date, venue: String(meta.venue ?? ''),
+                  ...(meta.location ? { location: String(meta.location) } : {}), ...(meta.endDate ? { endDate: String(meta.endDate) } : {}),
+                  status: row.session_date < new Date().toISOString().slice(0, 10) ? 'completed' : 'upcoming', events: Array.isArray(meta.events) ? (meta.events as string[]) : [],
+                  athleteIds: [...new Set(shared.data.sessions.filter(item => parseSource(item.source_key)?.kind === 'comp' && (parseSource(item.source_key) as { competitionId: string }).competitionId === source.competitionId).map(item => localOf.get(item.athlete_id ?? '')).filter((id): id is string => !!id))],
+                });
+                created.add(source.competitionId);
+              }
               for (const result of performanceToResults(performance, source.competitionId, localId)) {
                 if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result);
               }
@@ -210,5 +225,5 @@ export function useCoachCloudSync() {
       })();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [isCoach, uid, links, localOf, groupAthletes, trainingPlans, competitions, results, sessionPerformances, athletes, shared.data.sessions, shared.data.performances, shared.refresh, addResult, updateResult, addSessionPerformance]);
+  }, [isCoach, uid, links, localOf, groupAthletes, trainingPlans, competitions, results, sessionPerformances, athletes, shared.data.sessions, shared.data.performances, shared.refresh, addResult, updateResult, addSessionPerformance, addCompetition]);
 }

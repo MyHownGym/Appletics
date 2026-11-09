@@ -19,6 +19,7 @@ import { useActivityScope } from '@/hooks/useActivityScope';
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
+import { useUnreadCounts } from '@/services/unreadStore';
 
 const CHANNEL_TYPE_ICONS: Record<string, string> = {
   staff: 'supervisor-account', group: 'people', admin: 'admin-panel-settings',
@@ -118,6 +119,7 @@ export default function ChatScreen() {
   const [tab, setTab] = useState('all');
   const { screenPadding, isPhone } = useResponsive();
   const shared = useSharedGroups();
+  const unread = useUnreadCounts();
   const onlineGroups = shared.data.groups;
 
   const channelTabs = isAthlete ? [{ id: 'all', label: t('all') }, { id: 'group', label: t('groups') }] : [
@@ -128,7 +130,7 @@ export default function ChatScreen() {
   ];
 
   const filtered = tab === 'all' ? channels : channels.filter(c => c.type === tab);
-  const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0);
+  const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0) + Object.values(unread).reduce((sum, count) => sum + count, 0);
 
   const handleDelete = (channel: ChatChannel) => {
     showAlert(
@@ -145,7 +147,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScreenHeader
         title={t('chat_messages')}
-        subtitle={totalUnread > 0 ? `${totalUnread} unread` : t('all_caught_up')}
+        subtitle={totalUnread > 0 ? `${totalUnread} non lu${totalUnread > 1 ? 's' : ''}` : t('all_caught_up')}
         rightAction={!isAthlete ? {
           icon: 'add',
           label: t('add'),
@@ -192,8 +194,9 @@ export default function ChatScreen() {
               <View style={styles.onlineIcon}><MaterialIcons name="forum" size={20} color="#FFF" /></View>
               <View style={styles.channelInfo}>
                 <Text verbatim style={styles.channelName} numberOfLines={1}>{group.name}</Text>
-                <Text style={styles.lastMsg}>{`${shared.data.members.filter(member => member.group_id === group.id).length} membre(s) · en ligne`}</Text>
+                <Text style={[styles.lastMsg, unread[group.id] ? { color: Colors.textPrimary, fontWeight: '700' } : null]}>{unread[group.id] ? `${unread[group.id]} nouveau${unread[group.id] > 1 ? 'x' : ''} message${unread[group.id] > 1 ? 's' : ''}` : `${shared.data.members.filter(member => member.group_id === group.id).length} membre(s) · en ligne`}</Text>
               </View>
+              {unread[group.id] ? <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', marginRight: 4 }}><Text verbatim style={{ color: '#FFF', fontSize: 12, fontWeight: '800' }}>{unread[group.id] > 99 ? '99+' : String(unread[group.id])}</Text></View> : null}
               <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
             </Pressable>
           )) : (

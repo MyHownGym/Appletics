@@ -28,7 +28,10 @@ export const CompactTabBar = memo(function CompactTabBar({ state, descriptors, n
               if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
             };
             return <Pressable key={route.key} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={options.tabBarAccessibilityLabel || label} onPress={onPress} onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })} style={({ pressed }) => [styles.item, focused ? styles.selected : null, pressed ? styles.pressed : null]}>
-              <MaterialIcons name={(icons[route.name] || 'circle') as any} size={22} color={color} />
+              <View>
+                <MaterialIcons name={(icons[route.name] || 'circle') as any} size={22} color={color} />
+                {options.tabBarBadge != null ? <View style={styles.badge}><Text style={styles.badgeText}>{String(options.tabBarBadge)}</Text></View> : null}
+              </View>
               <Text style={[styles.label, { color }]}>{label}</Text>
             </Pressable>;
           })}
@@ -46,4 +49,7 @@ const styles = StyleSheet.create({
   selected: { backgroundColor: Colors.primaryLight },
   label: { fontSize: Typography.fontSizeXS, lineHeight: 14, fontWeight: Typography.weightSemibold, textAlign: 'center', includeFontPadding: false },
   pressed: { opacity: 0.65 },
+  // Unread messages
+  badge: { position: 'absolute', top: -6, right: -10, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: Colors.surface },
+  badgeText: { color: '#FFFFFF', fontSize: 10, lineHeight: 12, fontWeight: '800', includeFontPadding: false },
 });
