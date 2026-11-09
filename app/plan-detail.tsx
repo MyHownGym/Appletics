@@ -17,6 +17,7 @@ import { Badge, IntensityDot } from '@/components';
 import { TrainingSession } from '@/types';
 import { EVENT_GROUPS, INTENSITY_LEVELS, DAYS_OF_WEEK } from '@/constants/config';
 import { IntensityLegend } from '@/components/ui/IntensityLegend';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 
 const PHASE_COLORS: Record<string, string> = {
   Base: '#60A5FA', Build: '#FBBF24', Peak: '#F87171', Taper: '#A78BFA', Competition: '#FFD700', Recovery: '#34D399',
@@ -155,7 +156,7 @@ export default function PlanDetailScreen() {
                     style={[styles.athleteChip, { borderColor: col + '50', backgroundColor: col + '15' }]}
                     onPress={() => router.push({ pathname: '/athlete-detail', params: { id: a.id } })}
                   >
-                    <Text style={[styles.athleteInitials, { color: col }]}>{initials}</Text>
+                    {a.avatar ? <View style={{ width: 22, height: 22 }}><AvatarPhoto uri={a.avatar} /></View> : <Text style={[styles.athleteInitials, { color: col }]}>{initials}</Text>}
                     <Text verbatim style={styles.athleteName}>{a.name.split(' ')[0]}</Text>
                   </Pressable>
                 );

@@ -21,6 +21,8 @@ import { useLocalizedAlert as useAlert } from '@/hooks/useLocalizedAlert';
 import { exportCompetitionResults } from '@/services/pdfExportService';
 import { getCompetitionPresentation } from '@/services/competitionPresentationService';
 import { useExternalLinks } from '@/hooks/useExternalLinks';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
 
 const STATUS_COLORS: Record<string, string> = {
   upcoming: Colors.primary, completed: Colors.success, cancelled: Colors.error,
@@ -32,7 +34,7 @@ const LIVE_RESULTS_URL = 'https://www.swiss-athletics.ch/fr/competitions/resulta
 function AddResultModal({ visible, onClose, onSave, athletes, events, editResult, forAthleteId }: {
   visible: boolean; onClose: () => void;
   onSave: (result: Omit<CompResult, 'id' | 'competitionId'>) => void;
-  athletes: { id: string; name: string; events: string[] }[];
+  athletes: { id: string; name: string; events: string[]; avatar?: string }[];
   events: string[]; editResult?: CompResult | null; forAthleteId?: string;
 }) {
   const [athleteId, setAthleteId] = useState(editResult?.athleteId || forAthleteId || athletes[0]?.id || '');
@@ -140,7 +142,7 @@ function AddResultModal({ visible, onClose, onSave, athletes, events, editResult
 // ── Invitation Modal (coach invites athletes) ─────────────────────────────
 function InviteModal({ visible, onClose, allAthletes, invitedIds, onToggle }: {
   visible: boolean; onClose: () => void;
-  allAthletes: { id: string; name: string; events: string[] }[];
+  allAthletes: { id: string; name: string; events: string[]; avatar?: string }[];
   invitedIds: string[];
   onToggle: (athleteId: string) => void;
 }) {
@@ -167,6 +169,7 @@ function InviteModal({ visible, onClose, allAthletes, invitedIds, onToggle }: {
                     <Text style={[styles.inviteAvatarText, isInvited && { color: Colors.primary }]}>
                       {a.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </Text>
+                    <AvatarPhoto uri={a.avatar} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text verbatim style={styles.inviteName}>{a.name}</Text>
@@ -272,6 +275,7 @@ export default function CompetitionDetailScreen() {
   const [exporting, setExporting] = useState(false);
 
   const competition = competitions.find(c => c.id === id);
+  const sharedGroups = useSharedGroups();
   if (!competition) return null;
 
   const isAthlete = user.userType === 'athlete';
@@ -422,6 +426,7 @@ export default function CompetitionDetailScreen() {
                   {compAthletes.slice(0, 6).map((a, i) => (
                     <View key={a.id} style={[styles.confirmAvatar, { marginLeft: i > 0 ? -10 : 0, zIndex: 10 - i }]}>
                       <Text style={styles.confirmAvatarText}>{a.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text>
+                      <AvatarPhoto uri={a.avatar} />
                     </View>
                   ))}
                   {compAthletes.length > 6 ? (
@@ -500,7 +505,7 @@ export default function CompetitionDetailScreen() {
 
             {teammates.map(item => (
               <View key={`mate-${item.id}`} style={styles.athleteRow}>
-                <View style={styles.athleteAvatar}><Text verbatim style={styles.athleteAvatarText}>{item.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text></View>
+                <View style={styles.athleteAvatar}><Text verbatim style={styles.athleteAvatarText}>{item.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text><AvatarPhoto uri={(() => { const record = sharedGroups.data.athletes.find(entry => entry.id === item.id); return record?.user_id ? sharedGroups.data.members.find(member => member.user_id === record.user_id && member.avatar)?.avatar : null; })()} /></View>
                 <View style={styles.athleteInfo}><Text verbatim style={styles.athleteName}>{item.name}</Text><Text style={styles.athleteEvents}>Même groupe</Text></View>
                 <View style={styles.confirmedBadge}><MaterialIcons name="check-circle" size={11} color={Colors.success} /><Text style={styles.confirmedText}>Inscrit</Text></View>
               </View>
@@ -518,6 +523,7 @@ export default function CompetitionDetailScreen() {
                   <Pressable key={a.id} style={styles.athleteRow} onPress={() => router.push({ pathname: '/athlete-detail', params: { id: a.id } })}>
                     <View style={styles.athleteAvatar}>
                       <Text style={styles.athleteAvatarText}>{a.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text>
+                      <AvatarPhoto uri={a.avatar} />
                     </View>
                     <View style={styles.athleteInfo}>
                       <Text verbatim style={styles.athleteName}>{a.name}</Text>

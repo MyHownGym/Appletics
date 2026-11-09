@@ -122,7 +122,7 @@ function AppContent() {
       <Stack screenOptions={({ route }) => ({
         headerShown: false,
         ...(wide && !FULL_WIDTH_ROUTES.has(route.name) ? {
-          contentStyle: { width: '100%', maxWidth: 1680, alignSelf: 'center', backgroundColor: Colors.background, borderLeftWidth: 1, borderRightWidth: 1, borderColor: Colors.border },
+          contentStyle: { width: '100%', backgroundColor: Colors.background },
         } : {}),
       })}>
         <Stack.Screen name="index" options={{ headerShown: false }} />

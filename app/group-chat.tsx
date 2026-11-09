@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsP
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import type { GroupMessage } from '@/services/groupChatService';
 import { markGroupRead } from '@/services/unreadStore';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
+import { GroupChatAddPeople } from '@/components/feature/GroupChatAddPeople';
 
 function timeLabel(iso: string) {
   const date = new Date(iso);
@@ -30,6 +32,8 @@ export default function GroupChatScreen() {
   const group = data.groups.find(item => item.id === groupId);
   const memberCount = data.members.filter(item => item.group_id === groupId).length;
   const chat = useGroupChat(groupId);
+  const isCoach = data.members.some(item => item.group_id === groupId && item.user_id === userId && item.role === 'coach');
+  const [adding, setAdding] = useState(false);
   const list = useRef<FlatList<GroupMessage>>(null);
 
   // Opens on the latest messages and stays at the bottom while new ones arrive (unless the user scrolled up).
@@ -66,6 +70,9 @@ export default function GroupChatScreen() {
             <Text verbatim style={styles.title} numberOfLines={1}>{group?.name ?? ''}</Text>
             <Text style={styles.subtitle}>{`${memberCount} membre${memberCount > 1 ? 's' : ''}`}</Text>
           </View>
+          {isCoach ? <Pressable accessibilityRole="button" accessibilityLabel="Ajouter des athlètes" onPress={() => setAdding(true)} style={({ pressed }) => [styles.iconButton, pressed ? styles.pressed : null]}>
+            <MaterialIcons name="person-add" size={22} color={Colors.primary} />
+          </Pressable> : null}
           <Pressable accessibilityLabel="Actualiser" onPress={() => { void chat.reload(); }} style={({ pressed }) => [styles.iconButton, pressed ? styles.pressed : null]}>
             <MaterialIcons name="refresh" size={22} color={Colors.primary} />
           </Pressable>
@@ -93,7 +100,11 @@ export default function GroupChatScreen() {
           renderItem={({ item }) => {
             const own = item.sender_id === chat.userId;
             return (
-              <Pressable onLongPress={() => openActions(item)} delayLongPress={350} style={[styles.row, own ? styles.rowOwn : null]}>
+              <Pressable onLongPress={() => openActions(item)} delayLongPress={350} style={[styles.row, own ? styles.rowOwn : null, !own ? { flexDirection: 'row', alignItems: 'flex-end', gap: 6 } : null]}>
+                {!own ? <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text verbatim style={{ fontSize: 11, fontWeight: '700', color: Colors.primary }}>{(item.sender_name || 'M').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text>
+                  <AvatarPhoto uri={data.members.find(member => member.group_id === groupId && member.user_id === item.sender_id)?.avatar} />
+                </View> : null}
                 <View style={[styles.bubble, own ? styles.bubbleOwn : styles.bubbleOther]}>
                   {!own ? <Text verbatim style={styles.sender}>{item.sender_name || 'Membre'}</Text> : null}
                   <Text verbatim style={[styles.body, own ? styles.bodyOwn : null]}>{item.body}</Text>
@@ -122,6 +133,7 @@ export default function GroupChatScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      <GroupChatAddPeople groupId={groupId} visible={adding} onClose={() => setAdding(false)} />
     </SafeAreaView>
   );
 }

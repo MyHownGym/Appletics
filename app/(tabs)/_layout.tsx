@@ -16,6 +16,8 @@ import { useCoachCloudSync } from '@/hooks/useCoachCloudSync';
 import { useAthleteCloudSync } from '@/hooks/useAthleteCloudSync';
 import { useUnreadWatcher } from '@/hooks/useUnreadWatcher';
 import { useAvatarSync } from '@/hooks/useAvatarSync';
+import { useLogoutConfirm } from '@/hooks/useLogoutConfirm';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { useUnreadCounts, unreadTotal } from '@/services/unreadStore';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
@@ -53,6 +55,7 @@ function Sidebar() {
   const { user } = useApp();
   const { isDesktop } = useResponsive();
 
+  const logout = useLogoutConfirm();
   const activeTab = segments[1] as string || 'index';
   const initials = user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -110,6 +113,7 @@ function Sidebar() {
       >
         <View style={sideStyles.avatarCircle}>
           <Text style={sideStyles.avatarText}>{initials}</Text>
+          <AvatarPhoto uri={user.avatar} />
         </View>
         {isDesktop ? (
           <View style={sideStyles.userInfo}>
@@ -117,6 +121,9 @@ function Sidebar() {
             <Text style={sideStyles.userRole}>{user.userType === 'athlete' ? 'Athlète' : 'Coach'}</Text>
           </View>
         ) : null}
+        {isDesktop ? <Pressable accessibilityRole="button" accessibilityLabel="Se déconnecter" onPress={logout} style={({ pressed }) => [{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.error + '12' }, pressed && { opacity: 0.7 }]}>
+          <MaterialIcons name="logout" size={20} color={Colors.error} />
+        </Pressable> : null}
       </Pressable>
     </View>
   );
