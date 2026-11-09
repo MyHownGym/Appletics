@@ -24,6 +24,7 @@ import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { SwipeSheet } from '@/components/ui/SwipeSheet';
+import { isCompetitionOngoing } from '@/services/competitionStatusService';
 
 const STATUS_COLORS: Record<string, string> = {
   upcoming: Colors.primary, completed: Colors.success, cancelled: Colors.error,
@@ -281,7 +282,8 @@ export default function CompetitionDetailScreen() {
 
   const isAthlete = user.userType === 'athlete';
   const compResults = results.filter(r => r.competitionId === id);
-  const statusColor = STATUS_COLORS[competition.status] || Colors.primary;
+  const ongoing = isCompetitionOngoing(competition);
+  const statusColor = ongoing ? Colors.success : STATUS_COLORS[competition.status] || Colors.primary;
   const compAthletes = athletes.filter(a => competition.athleteIds.includes(a.id));
   // Athlete view: the other athletes the coach registered (names sent by the coach).
   const teammates = user.userType === 'athlete' ? (competition.teammates ?? []).filter(item => !compAthletes.some(a => a.name === item.name)) : [];
@@ -366,7 +368,7 @@ export default function CompetitionDetailScreen() {
           <View style={styles.meetInfo}>
             <View style={styles.meetBadges}>
               <Badge label={getCompetitionPresentation(competition, language).typeLabel} size="sm" />
-              <Badge label={t(competition.status)} color={statusColor} size="sm" />
+              <Badge label={ongoing ? 'En cours' : t(competition.status)} color={statusColor} size="sm" />
             </View>
             <Text verbatim style={styles.meetName}>{competition.name}</Text>
             <Pressable style={styles.venueRow} onPress={() => openLink(`https://maps.google.com/?q=${encodeURIComponent(competition.venue)}`)}>

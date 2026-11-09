@@ -120,7 +120,7 @@ Deno.serve(async request => {
     // ── New group message (default) ──────────────────────────────────────────────────────
     const messageId = body.messageId;
     if (!isId(messageId)) return json({ error: 'Message invalide.' }, 400);
-    const { data: message } = await admin.from('group_messages').select('id, group_id, sender_id, sender_name, body, created_at').eq('id', messageId).maybeSingle();
+    const { data: message } = await admin.from('group_messages').select('*').eq('id', messageId).maybeSingle();
     if (!message || message.sender_id !== user.id) return json({ error: 'Accès refusé.' }, 403);
     if (Date.now() - new Date(message.created_at).getTime() > 5 * 60 * 1000) return json({ sent: 0 });
     const [{ data: group }, { data: members }, { data: blocks }] = await Promise.all([
@@ -131,7 +131,7 @@ Deno.serve(async request => {
     const blockedBy = new Set((blocks ?? []).map(row => row.blocker_id));
     const sent = await sendTo(admin, (members ?? []).map(row => row.user_id).filter(id => id !== user.id && !blockedBy.has(id)), {
       title: `${message.sender_name || 'Nouveau message'} · ${group?.name ?? 'Appletics'}`,
-      body: short(message.body),
+      body: short(message.body || (message.attachment_type?.startsWith('image/') ? '📷 Photo' : `📎 ${message.attachment_name || 'Fichier'}`)),
       url: `${appUrl}/group-chat?id=${message.group_id}`,
       tag: `group-${message.group_id}`,
     });

@@ -58,39 +58,41 @@ export default function PlansScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScreenHeader
-        title={t('training_plans')}
-        subtitle={`${trainingPlans.length} ${t('active_plans')}`}
-        rightAction={!isAthlete ? { icon: 'add', label: t('add_plan'), onPress: () => router.push('/plan-create') } : undefined}
-      />
-
-      {/* Group filter */}
-      <View style={styles.filterWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
-          {EVENT_GROUPS.map(g => {
-            const isSelected = selectedGroup === g.id;
-            return (
-              <Pressable
-                key={g.id}
-                onPress={() => setSelectedGroup(g.id)}
-                style={[
-                  styles.filterChip,
-                  isSelected
-                    ? { backgroundColor: g.color, borderColor: g.color }
-                    : { backgroundColor: Colors.surface, borderColor: Colors.border },
-                ]}
-              >
-                {isSelected ? <View style={styles.filterDot} /> : null}
-                <Text style={[styles.filterLabel, { color: isSelected ? '#FFF' : Colors.textSecondary }]}>
-                  {t(('group_' + g.id) as TranslationKey)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
       <FlatList
+        // The whole screen scrolls (title, filters and list together).
+        ListHeaderComponent={<View style={{ marginHorizontal: -Spacing.screenPadding }}>
+            <ScreenHeader
+              title={t('training_plans')}
+              subtitle={`${trainingPlans.length} ${t('active_plans')}`}
+              rightAction={!isAthlete ? { icon: 'add', label: t('add_plan'), onPress: () => router.push('/plan-create') } : undefined}
+            />
+
+            {/* Group filter */}
+            <View style={styles.filterWrap}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
+                {EVENT_GROUPS.map(g => {
+                  const isSelected = selectedGroup === g.id;
+                  return (
+                    <Pressable
+                      key={g.id}
+                      onPress={() => setSelectedGroup(g.id)}
+                      style={[
+                        styles.filterChip,
+                        isSelected
+                          ? { backgroundColor: g.color, borderColor: g.color }
+                          : { backgroundColor: Colors.surface, borderColor: Colors.border },
+                      ]}
+                    >
+                      {isSelected ? <View style={styles.filterDot} /> : null}
+                      <Text style={[styles.filterLabel, { color: isSelected ? '#FFF' : Colors.textSecondary }]}>
+                        {t(('group_' + g.id) as TranslationKey)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+        </View>}
         data={padGrid(filteredPlans, isPhone ? 1 : cols)}
         keyExtractor={item => item.id}
         numColumns={isPhone ? 1 : cols}

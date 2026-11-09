@@ -70,72 +70,74 @@ export default function CompetitionsScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScreenHeader
-        title={t('competitions')}
-        subtitle={`${competitions.length} ${t('competitions').toLowerCase()} · ${totalPBs} PBs`}
-        rightAction={!isAthlete ? { icon: 'add', label: t('add_competition'), onPress: () => router.push('/competition-create') } : undefined}
-      />
-
-      {/* Season summary */}
-      <View style={[styles.summaryStrip, Shadow.card]}>
-        <View style={styles.summaryItem}>
-          <Text style={[styles.summaryVal, { color: Colors.primary }]}>{wins}</Text>
-          <Text style={styles.summaryLabel}>{t('event_wins')}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.summaryItem}>
-          <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>{totalPBs}</Text>
-          <Text style={styles.summaryLabel}>{t('pbs_set')}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.summaryItem}>
-          <Text style={[styles.summaryVal, { color: Colors.success }]}>{competitions.filter(c => c.status === 'completed').length}</Text>
-          <Text style={[styles.summaryLabel, styles.completedLabel]}>{t('meets_done')}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.summaryItem}>
-          <Text style={[styles.summaryVal, { color: Colors.info }]}>{competitions.filter(c => c.status === 'upcoming').length}</Text>
-          <Text style={styles.summaryLabel}>{t('upcoming')}</Text>
-        </View>
-      </View>
-
-      {/* Status filter */}
-      <View style={styles.tabRow}>
-        {STATUS_IDS.map(id => {
-          const isActive = status === id;
-          return (
-            <Pressable
-              key={id}
-              onPress={() => setStatus(id)}
-              style={[styles.tab, isActive && { backgroundColor: Colors.primary, borderColor: Colors.primary }]}
-            >
-              <Text style={[styles.tabLabel, isActive && { color: '#FFF' }]}>{statusLabels[id]}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Swiss Athletics links */}
-      <View style={styles.swissRow}>
-        <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openSwissAthletics}>
-          <Text style={styles.swissFlag}>🇨🇭</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.swissBtnTitle}>Résultats en direct</Text>
-            <Text style={styles.swissBtnSub}>Swiss Athletics Live</Text>
-          </View>
-          <MaterialIcons name="open-in-new" size={16} color={Colors.info} />
-        </Pressable>
-        <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openInscriptions}>
-          <Text style={{ fontSize: 18 }}>🇨🇭</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.swissBtnTitle}>Inscriptions en ligne</Text>
-            <Text style={styles.swissBtnSub}>Swiss Athletics</Text>
-          </View>
-          <MaterialIcons name="open-in-new" size={16} color={Colors.primary} />
-        </Pressable>
-      </View>
-
       <FlatList
+        // The whole screen scrolls (title, filters and list together).
+        ListHeaderComponent={<View style={{ marginHorizontal: -Spacing.screenPadding }}>
+            <ScreenHeader
+              title={t('competitions')}
+              subtitle={`${competitions.length} ${t('competitions').toLowerCase()} · ${totalPBs} PBs`}
+              rightAction={!isAthlete ? { icon: 'add', label: t('add_competition'), onPress: () => router.push('/competition-create') } : undefined}
+            />
+
+            {/* Season summary */}
+            <View style={[styles.summaryStrip, Shadow.card]}>
+              <View style={styles.summaryItem}>
+                <Text style={[styles.summaryVal, { color: Colors.primary }]}>{wins}</Text>
+                <Text style={styles.summaryLabel}>{t('event_wins')}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.summaryItem}>
+                <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>{totalPBs}</Text>
+                <Text style={styles.summaryLabel}>{t('pbs_set')}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.summaryItem}>
+                <Text style={[styles.summaryVal, { color: Colors.success }]}>{competitions.filter(c => c.status === 'completed').length}</Text>
+                <Text style={[styles.summaryLabel, styles.completedLabel]}>{t('meets_done')}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.summaryItem}>
+                <Text style={[styles.summaryVal, { color: Colors.info }]}>{competitions.filter(c => c.status === 'upcoming').length}</Text>
+                <Text style={styles.summaryLabel}>{t('upcoming')}</Text>
+              </View>
+            </View>
+
+            {/* Status filter */}
+            <View style={styles.tabRow}>
+              {STATUS_IDS.map(id => {
+                const isActive = status === id;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => setStatus(id)}
+                    style={[styles.tab, isActive && { backgroundColor: Colors.primary, borderColor: Colors.primary }]}
+                  >
+                    <Text style={[styles.tabLabel, isActive && { color: '#FFF' }]}>{statusLabels[id]}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Swiss Athletics links */}
+            <View style={styles.swissRow}>
+              <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openSwissAthletics}>
+                <Text style={styles.swissFlag}>🇨🇭</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.swissBtnTitle}>Résultats en direct</Text>
+                  <Text style={styles.swissBtnSub}>Swiss Athletics Live</Text>
+                </View>
+                <MaterialIcons name="open-in-new" size={16} color={Colors.info} />
+              </Pressable>
+              <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openInscriptions}>
+                <Text style={{ fontSize: 18 }}>🇨🇭</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.swissBtnTitle}>Inscriptions en ligne</Text>
+                  <Text style={styles.swissBtnSub}>Swiss Athletics</Text>
+                </View>
+                <MaterialIcons name="open-in-new" size={16} color={Colors.primary} />
+              </Pressable>
+            </View>
+        </View>}
         data={padGrid(filtered, isPhone ? 1 : cols)}
         keyExtractor={item => item.id}
         numColumns={isPhone ? 1 : cols}

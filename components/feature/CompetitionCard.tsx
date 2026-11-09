@@ -25,7 +25,7 @@ const TYPE_COLORS: Record<string, string> = {
 export const CompetitionCard = React.memo(({ competition, onPress, fill = false }: CompetitionCardProps) => {
   const { t, language } = useI18n();
   const presentation = useCompetitionPresentation(competition);
-  const statusColor = STATUS_COLORS[competition.status] || Colors.primary;
+  const statusColor = presentation.ongoing ? Colors.success : STATUS_COLORS[competition.status] || Colors.primary;
   const typeColor = TYPE_COLORS[competition.type] || Colors.info;
   const dateObj = presentation.date;
   const dayNum = dateObj.getDate();

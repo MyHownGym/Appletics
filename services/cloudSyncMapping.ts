@@ -129,14 +129,17 @@ export function parseSource(source: string | null | undefined) {
 }
 
 // ── Cloud → athlete: the coach's items as the athlete's own plan and competitions ─────────
-export const athletePlanIdFor = (row: SharedSession) => (typeof row.meta?.planId === 'string' && row.meta.planId ? `shared-plan-${row.group_id}-${slug(row.meta.planId)}` : `shared-plan-${row.group_id}`);
+// Plan of a session row: from its details (meta), or from its source key (plan:<planId>:…) for older rows.
+const planIdOf = (row: SharedSession) => (typeof row.meta?.planId === 'string' && row.meta.planId) || (row.source_key?.startsWith('plan:') ? row.source_key.split(':')[1] ?? '' : '');
+const planTitleOf = (row: SharedSession) => (typeof row.meta?.planTitle === 'string' && row.meta.planTitle.trim()) || (row.details ?? '').match(/^Programme : (.+)$/m)?.[1]?.trim() || '';
+export const athletePlanIdFor = (row: SharedSession) => (planIdOf(row) ? `shared-plan-${row.group_id}-${slug(planIdOf(row))}` : `shared-plan-${row.group_id}`);
 
 // One plan per coach plan, with the coach's name, phase and group ("Pedro novembre"), sessions of the next weeks.
 // Sessions sent without a plan (older items) go to « Programme · <groupe> ».
 export function athletePlansFor(groupId: string, groupName: string, rows: SharedSession[], athleteId: string): TrainingPlan[] {
   const byPlan = new Map<string, SharedSession[]>();
   for (const row of rows.filter(item => (item.kind ?? 'session') === 'session')) {
-    const planId = typeof row.meta?.planId === 'string' ? row.meta.planId : '';
+    const planId = planIdOf(row);
     byPlan.set(planId, [...(byPlan.get(planId) ?? []), row]);
   }
   const plans: TrainingPlan[] = [];
@@ -155,7 +158,7 @@ export function athletePlansFor(groupId: string, groupName: string, rows: Shared
     const weeks = Math.max(1, Math.ceil((new Date(`${endDate}T12:00:00`).getTime() - new Date(`${startDate}T12:00:00`).getTime()) / (7 * 864e5)) + 1);
     plans.push({
       id: athletePlanIdFor(sessionRows[0]),
-      title: (planId && typeof meta.planTitle === 'string' && meta.planTitle.trim()) || `Programme · ${groupName}`,
+      title: (planId && sessionRows.map(planTitleOf).find(Boolean)) || `Séances · ${groupName}`,
       phase: (typeof meta.phase === 'string' && meta.phase) || 'Saison', group: (typeof meta.planGroup === 'string' && meta.planGroup) || 'all',
       athleteIds: [athleteId], startDate, endDate, weeks,
       description: (typeof meta.planDescription === 'string' && meta.planDescription.trim()) || 'Séances envoyées par votre coach.', sessions,

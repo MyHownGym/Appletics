@@ -57,11 +57,15 @@ function getSessionsForExactDate(sessions: TrainingSession[], dateStr: string): 
 export default function PlanDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { trainingPlans, athletes, deleteTrainingPlan } = useApp();
+  const { trainingPlans, athletes, deleteTrainingPlan, user } = useApp();
   const { showAlert } = useAlert();
   const { t, locale, language } = useI18n();
 
   const plan = trainingPlans.find(p => p.id === id);
+
+  // Plans sent by the coach: the athlete reads them and logs performances, but cannot change them.
+
+  const readOnly = user.userType === 'athlete' && !!plan?.id.startsWith('shared-plan-');
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null); // weekday key (Mon/Lun/etc)
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // exact YYYY-MM-DD
@@ -105,7 +109,7 @@ export default function PlanDetailScreen() {
           <MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} />
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable
+          {!readOnly ? <><Pressable
             onPress={() => router.push({ pathname: '/plan-create', params: { id: plan.id } })}
             style={styles.editBtn}
             hitSlop={4}
@@ -114,7 +118,7 @@ export default function PlanDetailScreen() {
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.deleteBtn} hitSlop={8}>
             <MaterialIcons name="delete-outline" size={22} color={Colors.error} />
-          </Pressable>
+          </Pressable></> : null}
         </View>
       </View>
 
@@ -181,13 +185,13 @@ export default function PlanDetailScreen() {
               >
                 <MaterialIcons name={calView ? 'list' : 'calendar-month'} size={16} color={calView ? '#FFF' : Colors.primary} />
               </Pressable>
-              <Pressable
+              {!readOnly ? <Pressable
                 style={styles.addSessionBtn}
                 onPress={() => router.push({ pathname: '/session-edit', params: { planId: plan.id } })}
               >
                 <MaterialIcons name="add" size={16} color={Colors.primary} />
                 <Text style={styles.addSessionText}>{t('add')}</Text>
-              </Pressable>
+              </Pressable> : null}
             </View>
           </View>
 
@@ -261,13 +265,13 @@ export default function PlanDetailScreen() {
                 ? `Aucune séance le ${new Date(selectedDate + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' })}`
                 : t('no_plans')}
             </Text>
-            <Pressable
+            {!readOnly ? <Pressable
               style={styles.addSessionBtnLarge}
               onPress={() => router.push({ pathname: '/session-edit', params: { planId: plan.id } })}
             >
               <MaterialIcons name="add" size={18} color="#FFF" />
               <Text style={styles.addSessionBtnLargeText}>{t('add')} {t('sessions')}</Text>
-            </Pressable>
+            </Pressable> : null}
           </View>
         ) : (
           filteredSessions.map(session => {
@@ -304,7 +308,7 @@ export default function PlanDetailScreen() {
                       style={styles.editSessionBtn}
                       hitSlop={8}
                     >
-                      <MaterialIcons name="edit" size={16} color={Colors.textMuted} />
+                      <MaterialIcons name={readOnly ? 'timer' : 'edit'} size={16} color={readOnly ? Colors.primary : Colors.textMuted} />
                     </Pressable>
                   </View>
                 </View>
@@ -315,7 +319,7 @@ export default function PlanDetailScreen() {
         )}
 
         {/* Add session bottom button */}
-        {filteredSessions.length > 0 ? (
+        {filteredSessions.length > 0 && !readOnly ? (
           <Pressable
             style={({ pressed }) => [styles.addSessionBtnLarge, { marginHorizontal: Spacing.screenPadding, marginTop: 0 }, pressed && { opacity: 0.85 }]}
             onPress={() => router.push({ pathname: '/session-edit', params: { planId: plan.id } })}
