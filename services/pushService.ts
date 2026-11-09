@@ -49,6 +49,9 @@ export async function enablePush(): Promise<PushState> {
   if (!data.endpoint || !data.keys?.p256dh || !data.keys?.auth) return 'off';
   const row = { endpoint: data.endpoint, p256dh: data.keys.p256dh, auth: data.keys.auth, user_agent: navigator.userAgent.slice(0, 200) };
   const client = getSupabaseClient();
+  // This device now receives the notifications of the account signed in on it (even if another account used it before).
+  const claimed = await client.rpc('appletics_claim_push', { p_endpoint: row.endpoint, p_p256dh: row.p256dh, p_auth: row.auth, p_user_agent: row.user_agent });
+  if (!claimed.error) return 'on';
   let { error } = await client.from('push_subscriptions').insert(row);
   // Already registered (same phone): refresh the keys of this account's row.
   if (error?.code === '23505') ({ error } = await client.from('push_subscriptions').update(row).eq('endpoint', data.endpoint));
@@ -58,6 +61,17 @@ export async function enablePush(): Promise<PushState> {
     throw new Error(`Activation impossible (${error.code || error.message}).`);
   }
   return 'on';
+}
+
+// At start-up: if notifications are already allowed on this device, make sure they go to the account signed in now.
+export async function claimPushForCurrentAccount() {
+  if (!isWeb() || !publicKey || !('Notification' in window) || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
+  if (isIos() && !isStandalone()) return;
+  const reg = await registration().catch(() => null);
+  const subscription = await reg?.pushManager.getSubscription().catch(() => null);
+  const data = subscription?.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } } | undefined;
+  if (!data?.endpoint || !data.keys?.p256dh || !data.keys?.auth) return;
+  await getSupabaseClient().rpc('appletics_claim_push', { p_endpoint: data.endpoint, p_p256dh: data.keys.p256dh, p_auth: data.keys.auth, p_user_agent: navigator.userAgent.slice(0, 200) });
 }
 
 // Fire and forget after a message is sent: the server notifies the other members of the group.

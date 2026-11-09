@@ -22,11 +22,8 @@ self.addEventListener('push', (event) => {
   try { data = event.data ? event.data.json() : {}; } catch (_) { data = { body: event.data ? event.data.text() : '' }; }
   const title = data.title || 'Appletics';
   event.waitUntil((async () => {
-    const isMessage = String(data.tag || '').startsWith('group-');
-    if (isMessage) await writeBadge((await readBadge()) + 1);
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of windows) client.postMessage({ type: 'appletics-push', tag: data.tag || '' });
-    await self.registration.showNotification(title, {
+    // The notification is shown first: iPhone stops delivering pushes to an app that does not show them.
+    const shown = self.registration.showNotification(title, {
       body: data.body || 'Nouveau message',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
@@ -34,6 +31,12 @@ self.addEventListener('push', (event) => {
       renotify: true,
       data: { url: data.url || '/' },
     });
+    try {
+      if (String(data.tag || '').startsWith('group-')) await writeBadge((await readBadge()) + 1);
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of windows) client.postMessage({ type: 'appletics-push', tag: data.tag || '' });
+    } catch (_) {}
+    await shown;
   })());
 });
 
