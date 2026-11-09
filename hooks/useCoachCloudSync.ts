@@ -50,6 +50,18 @@ export function useCoachCloudSync() {
     }
     return map;
   }, [groupAthletes, athletes, uid, storedLinks, groupDisciplines]);
+  // Athletes' profile photos (set in their own app) shown on the coach's athlete records.
+  useEffect(() => {
+    if (!isCoach) return;
+    for (const [localId, sharedId] of links) {
+      const record = groupAthletes.find(item => item.id === sharedId);
+      if (!record?.user_id) continue;
+      const photo = shared.data.members.find(item => item.user_id === record.user_id && item.avatar)?.avatar ?? undefined;
+      const local = athletes.find(item => item.id === localId);
+      if (local && photo && local.avatar !== photo) updateAthlete({ ...local, avatar: photo });
+    }
+  }, [isCoach, links, groupAthletes, shared.data.members, athletes, updateAthlete]);
+
   // shared athlete id → local athlete id (every group record, including a second group of the same person)
   const localOf = useMemo(() => {
     const map = new Map([...links].map(([local, sharedId]) => [sharedId, local]));

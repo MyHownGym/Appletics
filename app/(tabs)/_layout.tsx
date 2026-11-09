@@ -15,6 +15,7 @@ import { CompactTabBar } from '@/components/layout/CompactTabBar';
 import { useCoachCloudSync } from '@/hooks/useCoachCloudSync';
 import { useAthleteCloudSync } from '@/hooks/useAthleteCloudSync';
 import { useUnreadWatcher } from '@/hooks/useUnreadWatcher';
+import { useAvatarSync } from '@/hooks/useAvatarSync';
 import { useUnreadCounts, unreadTotal } from '@/services/unreadStore';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
@@ -199,6 +200,7 @@ export default function TabLayout() {
   useCoachCloudSync();
   useAthleteCloudSync();
   useUnreadWatcher();
+  useAvatarSync();
   const unread = unreadTotal(useUnreadCounts());
   const { t } = useI18n();
 
