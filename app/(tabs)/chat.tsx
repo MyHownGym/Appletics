@@ -130,7 +130,7 @@ export default function ChatScreen() {
   ];
 
   const filtered = tab === 'all' ? channels : channels.filter(c => c.type === tab);
-  const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0) + Object.values(unread).reduce((sum, count) => sum + count, 0);
+  const totalUnread = Object.values(unread).reduce((sum, count) => sum + count, 0);
 
   const handleDelete = (channel: ChatChannel) => {
     showAlert(
@@ -149,30 +149,14 @@ export default function ChatScreen() {
         title={t('chat_messages')}
         subtitle={totalUnread > 0 ? `${totalUnread} non lu${totalUnread > 1 ? 's' : ''}` : t('all_caught_up')}
         rightAction={!isAthlete ? {
-          icon: 'add',
+          icon: 'group-add',
           label: t('add'),
-          onPress: () => router.push('/create-channel'),
+          onPress: () => router.push('/shared-groups'),
         } : undefined}
       />
 
-      {/* Tab filter */}
-      <View style={styles.tabRow}>
-        {channelTabs.map(tabItem => {
-          const isActive = tab === tabItem.id;
-          return (
-            <Pressable
-              key={tabItem.id}
-              onPress={() => setTab(tabItem.id)}
-              style={[styles.tab, isActive && styles.tabActive]}
-            >
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tabItem.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       <FlatList
-        data={filtered}
+        data={[] as typeof filtered}
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { paddingHorizontal: screenPadding }]}
         showsVerticalScrollIndicator={false}
@@ -187,7 +171,7 @@ export default function ChatScreen() {
         ListHeaderComponent={<View style={styles.onlineSection}>
           <PendingInvitationsBanner />
           {onlineGroups.length ? <PushNotificationsPrompt /> : null}
-          <Text style={styles.sectionTitle}>Discussions de groupe en ligne</Text>
+          <Text style={styles.sectionTitle}>Discussions de groupe</Text>
           {onlineGroups.length ? onlineGroups.map(group => (
             <Pressable key={group.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id: group.id } })}
               style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
@@ -209,21 +193,7 @@ export default function ChatScreen() {
               <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
             </Pressable>
           )}
-          {channels.length ? <Text style={styles.sectionTitle}>Sur cet appareil</Text> : null}
         </View>}
-        ListEmptyComponent={onlineGroups.length ? null :
-          <View style={styles.empty}>
-            <MaterialIcons name="chat-bubble-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>{t('no_channels')}</Text>
-            {!isAthlete ? <Pressable
-              style={styles.createBtn}
-              onPress={() => router.push('/create-channel')}
-            >
-              <MaterialIcons name="add" size={18} color="#FFF" />
-              <Text style={styles.createBtnText}>{t('add')} {t('groups')}</Text>
-            </Pressable> : null}
-          </View>
-        }
       />
     </SafeAreaView>
   );

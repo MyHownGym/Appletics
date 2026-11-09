@@ -14,8 +14,8 @@ const dateLabel = (iso: string) => {
 
 // Times and measures entered by athletes on training sessions (synced from their app).
 // filter: one session, one athlete, or (default) every athlete of the coach — newest first.
-export const TrainingLogList = memo(function TrainingLogList({ title, sessionId, athleteId, limit = 8, empty, horizontalPadding = 0 }: {
-  title: string; sessionId?: string; athleteId?: string; limit?: number; empty?: string; horizontalPadding?: number;
+export const TrainingLogList = memo(function TrainingLogList({ title, sessionId, athleteId, limit = 8, empty, horizontalPadding = 0, seeAll = false }: {
+  title: string; sessionId?: string; athleteId?: string; limit?: number; empty?: string; horizontalPadding?: number; seeAll?: boolean;
 }) {
   const { sessionPerformances, trainingPlans, athletes, user } = useApp();
   const router = useRouter();
@@ -31,7 +31,10 @@ export const TrainingLogList = memo(function TrainingLogList({ title, sessionId,
   const sessionTitle = (item: SessionPerformance) => trainingPlans.find(plan => plan.id === item.planId)?.sessions.find(session => session.id === item.sessionId)?.title ?? 'Séance';
   const athleteName = (item: SessionPerformance) => athletes.find(athlete => athlete.id === item.athleteId)?.name ?? item.athleteName;
   return <View style={[styles.wrap, { paddingHorizontal: horizontalPadding }]}>
-    <Text style={styles.heading}>{title}</Text>
+    <View style={styles.headRow}>
+      <Text style={[styles.heading, { flex: 1 }]}>{title}</Text>
+      {seeAll ? <Pressable accessibilityRole="link" onPress={() => router.push('/training-log')} style={({ pressed }) => [pressed ? styles.pressed : null]}><Text style={styles.seeAll}>Voir tout</Text></Pressable> : null}
+    </View>
     {entries.length ? entries.map(item => (
       <Pressable key={item.id} accessibilityRole="button" disabled={!!sessionId}
         onPress={() => router.push({ pathname: '/session-edit', params: { planId: item.planId, sessionId: item.sessionId } })}
@@ -57,6 +60,8 @@ export const TrainingLogList = memo(function TrainingLogList({ title, sessionId,
 
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.sm, marginTop: Spacing.md, marginBottom: Spacing.md },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  seeAll: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightSemibold, color: Colors.primary },
   heading: { fontSize: Typography.fontSizeLG, fontWeight: Typography.weightBold, color: Colors.textPrimary },
   card: { backgroundColor: Colors.surface, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.md, gap: Spacing.sm },
   pressed: { opacity: 0.85 },

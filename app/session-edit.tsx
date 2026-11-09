@@ -19,7 +19,6 @@ import { TrainingSession, SessionPerformance, SessionMetric } from '@/types';
 import { INTENSITY_LEVELS, getIntensityColor } from '@/constants/config';
 import { IntensityDot } from '@/components/ui/IntensityDot';
 import { MiniCalendar } from '@/components/ui/MiniCalendar';
-import { SessionSharingPanel } from '@/components/feature/SessionSharingPanel';
 import { useActivityScope } from '@/hooks/useActivityScope';
 import { TrainingLogList } from '@/components/feature/TrainingLogList';
 
@@ -322,7 +321,6 @@ function AthleteSessionView({ session, planId }: { session: TrainingSession; pla
             </Text>
           </Pressable>
         </View>
-        <SessionSharingPanel planId={planId} session={session} localPerformance={existingPerf} />
       </ScrollView>
 
       <PerfLogModal
@@ -523,7 +521,6 @@ export default function SessionEditScreen() {
             />
           </View>
 
-          {existing ? <SessionSharingPanel planId={planId} session={existing} /> : null}
           {existing ? <TrainingLogList title="Temps et mesures des athlètes" sessionId={existing.id} limit={50} empty="Aucun athlète n’a encore saisi de résultat pour cette séance." /> : null}
 
           {/* Summary */}

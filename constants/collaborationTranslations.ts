@@ -1,4 +1,5 @@
 export const collaborationTranslations: readonly (readonly [string, string, string])[] = [
+ ['Entraînements des athlètes','Trainings der Athleten','Allenamenti degli atleti'],['Toutes les saisies','Alle Einträge','Tutte le registrazioni'],['Aucun athlète n’a encore saisi de temps ou de mesure.','Noch kein Athlet hat Zeiten oder Messungen erfasst.','Nessun atleta ha ancora inserito tempi o misure.'],
  ['Meilleure place','Beste Platzierung','Miglior piazzamento'],['Non lus','Ungelesen','Non letti'],['Non lu','Ungelesen','Non letto'],['Choisissez au moins une discipline.','Wählen Sie mindestens eine Disziplin.','Scegli almeno una disciplina.'],
  ['Même groupe','Gleiche Gruppe','Stesso gruppo'],['Inscrit','Angemeldet','Iscritto'],
  ['Importer depuis Swiss Athletics','Import von Swiss Athletics','Importa da Swiss Athletics'],['Importer les résultats Swiss Athletics','Swiss-Athletics-Resultate importieren','Importa i risultati Swiss Athletics'],['Importer mes résultats','Meine Resultate importieren','Importa i miei risultati'],
