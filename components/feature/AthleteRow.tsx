@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { Athlete } from '@/types';
 import { EVENT_GROUPS } from '@/constants/config';
+import { Image } from 'expo-image';
 
 interface AthleteRowProps {
   athlete: Athlete;
@@ -27,7 +28,7 @@ export const AthleteRow = React.memo(({ athlete, onPress }: AthleteRowProps) => 
       accessibilityLabel={`${t('Athlète')} ${athlete.name}`}
     >
       <View style={[styles.avatar, { backgroundColor: groupColor + '30', borderColor: groupColor + '60' }]}>
-        <Text style={[styles.initials, { color: groupColor }]}>{initials}</Text>
+        {athlete.avatar ? <Image source={{ uri: athlete.avatar }} contentFit="cover" style={{ width: '100%', height: '100%', borderRadius: 999 }} /> : <Text style={[styles.initials, { color: groupColor }]}>{initials}</Text>}
       </View>
       <View style={styles.info}>
         <Text verbatim style={styles.name}>{athlete.name}</Text>
@@ -63,6 +64,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 1.5,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
