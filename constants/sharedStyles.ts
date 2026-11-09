@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 export const sharedStyles = StyleSheet.create({
- screen: { flex: 1, backgroundColor: Colors.background }, flex: { flex: 1 }, stack: { gap: Spacing.md }, disabled: { opacity: 0.5 }, content: { width: '100%', maxWidth: 960, alignSelf: 'center', padding: Spacing.md, paddingBottom: Spacing.xxl, gap: Spacing.md },
+ screen: { flex: 1, backgroundColor: Colors.background }, flex: { flex: 1 }, stack: { gap: Spacing.md }, disabled: { opacity: 0.5 }, content: { width: '100%', maxWidth: 1680, alignSelf: 'center', padding: Spacing.md, paddingBottom: Spacing.xxl, gap: Spacing.md },
  header: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
  iconButton: { width: 48, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' }, title: { flex: 1, color: Colors.textPrimary, fontSize: Typography.fontSizeLG, fontWeight: Typography.weightBold },
  hero: { padding: Spacing.lg, backgroundColor: Colors.clubDeep, borderRadius: Radius.xl, gap: Spacing.sm }, heroTitle: { fontSize: Typography.fontSizeXL, fontWeight: Typography.weightBold, color: Colors.textOnPrimary }, heroText: { fontSize: Typography.fontSizeBase, lineHeight: 26, color: Colors.textOnPrimary },

@@ -23,6 +23,7 @@ import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard'
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
 import { TrainingLogList } from '@/components/feature/TrainingLogList';
+import { useLogoutConfirm } from '@/hooks/useLogoutConfirm';
 
 interface HomeCalendarProps { schedule: ReturnType<typeof useHomeSchedule> }
 const HomeCalendar = memo(function HomeCalendar({ schedule }: HomeCalendarProps) {
@@ -56,6 +57,7 @@ const SessionCard = memo(function SessionCard({ entry, compact = false }: Sessio
 
 export default function HomeScreen() {
   const router = useRouter();
+  const logout = useLogoutConfirm();
   const { user } = useApp();
   const { t } = useI18n();
   const { roleLabel } = useCoachRoles();
@@ -100,6 +102,12 @@ export default function HomeScreen() {
         <FlatList scrollEnabled={false} data={schedule.upcoming} keyExtractor={competition => competition.id} renderItem={({ item }) => <CompetitionCard competition={item} onPress={() => router.push({ pathname: '/competition-detail', params: { id: item.id } })} />} ListEmptyComponent={<View style={styles.emptyCard}><MaterialIcons name="event" size={32} color={Colors.textMuted} /><Text style={styles.emptyText}>{t('no_meets')}</Text></View>} />
       </View>
       <SubscriptionPlanCard compact horizontalPadding={screenPadding} />
+      <View style={{ paddingHorizontal: screenPadding, alignItems: 'center', marginTop: Spacing.sm }}>
+        <Pressable accessibilityRole="button" onPress={logout} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 18, borderRadius: 999, backgroundColor: Colors.error + '12' }, pressed ? styles.pressed : null]}>
+          <MaterialIcons name="logout" size={18} color={Colors.error} />
+          <Text style={{ color: Colors.error, fontWeight: '700' }}>Se déconnecter</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   </SafeAreaView>;
 }

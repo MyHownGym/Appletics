@@ -28,6 +28,7 @@ import { AppleticsLinks } from '@/components/feature/AppleticsLinks';
 import { CoachDirectorySection } from '@/components/feature/CoachDirectorySection';
 import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { useProfileSectionNavigation } from '@/hooks/useProfileSectionNavigation';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useClubCoaches } from '@/hooks/useClubCoaches';
 import { parsePerf, isDistanceEvent, sortResultsChronologically } from '@/services/athletePerformanceService';
@@ -77,6 +78,7 @@ function SwipeableAthleteRow({ athlete, onPress, onDelete }: {
         }}>
           <View style={[atStyles.avatar, { backgroundColor: color + '18', borderColor: color + '40' }]}>
             <Text style={[atStyles.avatarText, { color }]}>{initials}</Text>
+            <AvatarPhoto uri={athlete.avatar} />
           </View>
           <View style={atStyles.info}>
             <Text style={atStyles.name}>{athlete.name}</Text>

@@ -16,7 +16,7 @@ export function useCoachDirectory() {
       .filter(item => myGroups.has(item.group_id) && item.role === 'coach' && item.user_id !== shared.userId)
       .filter((item, index, list) => list.findIndex(other => other.user_id === item.user_id) === index)
       .filter(item => !seen.has(item.display_name.trim().toLowerCase()))
-      .map((item): CoachProfile => { const group = shared.data.groups.find(entry => entry.id === item.group_id)?.name ?? ''; return { id: `shared-coach-${item.user_id}`, name: item.display_name || 'Coach', role: 'Coach', club: group, avatar: null, status: 'active', groups: group ? [group] : [], source: 'group' }; });
+      .map((item): CoachProfile => { const group = shared.data.groups.find(entry => entry.id === item.group_id)?.name ?? ''; return { id: `shared-coach-${item.user_id}`, name: item.display_name || 'Coach', role: 'Coach', club: group, avatar: item.avatar ?? null, status: 'active', groups: group ? [group] : [], source: 'group' }; });
     return [...local, ...online];
   }, [user, athletes, channels, roster, shared.data.members, shared.data.groups, shared.userId]);
   return { coaches, loading, isClub: user.accountType === 'club' && user.userType !== 'athlete' };
