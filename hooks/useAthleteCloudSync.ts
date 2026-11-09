@@ -10,6 +10,7 @@ import {
   planSignature, resultsToPerformance,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyResult } from '@/services/pushService';
+import { asSync, consumeUserEdit, resultEditKey, sessionEditKey } from '@/services/userEdits';
 import { localGroupFor } from '@/services/trainingGroups';
 
 // Athlete side, in the background:
@@ -51,7 +52,7 @@ export function useAthleteCloudSync() {
       // Entries already made follow their session into its new plan; plans no longer sent disappear.
       for (const performance of sessionPerformances) {
         const target = planOfSession.get(performance.sessionId);
-        if (target && performance.planId !== target && performance.planId.startsWith(`shared-plan-${groupId}`)) addSessionPerformance({ ...performance, planId: target });
+        if (target && performance.planId !== target && performance.planId.startsWith(`shared-plan-${groupId}`)) asSync(() => addSessionPerformance({ ...performance, planId: target }));
       }
       const keep = new Set(nextPlans.map(plan => plan.id));
       for (const plan of trainingPlans) {
@@ -108,27 +109,28 @@ export function useAthleteCloudSync() {
               const competitionId = `shared-comp-${row.id}`;
               if (!competitions.some(item => item.id === competitionId)) continue; // created on the next pass
               for (const result of performanceToResults(performance, competitionId, uid)) {
-                if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result);
+                asSync(() => { if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result); });
               }
             } else {
-              addSessionPerformance(performanceToSession(performance, `ss-${row.id}`, athletePlanIdFor(row), uid, user.name));
+              asSync(() => addSessionPerformance(performanceToSession(performance, `ss-${row.id}`, athletePlanIdFor(row), uid, user.name)));
             }
             cache[key] = signature; cacheChanged = true;
           }
           // 2. My entries → my coach.
           const versionOf = (sessionId: string, sharedAthlete: string) => shared.data.performances.find(item => item.session_id === sessionId && item.athlete_id === sharedAthlete)?.version ?? 0;
-          const save = async (row: SharedSession, date: string, metrics: { label: string; value: string; unit: string }[], notes: string) => {
+          const save = async (row: SharedSession, date: string, metrics: { label: string; value: string; unit: string }[], notes: string, editKey: string) => {
             const sharedAthlete = myGroups.get(row.group_id); if (!sharedAthlete || !metrics.length) return;
             const signature = canonical(date, metrics, notes);
             const key = `perf:${row.id}:${sharedAthlete}`;
             if (cache[key] === signature) return;
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: date, p_metrics: metrics.slice(0, 30), p_notes: notes, p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[key] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(date)) notifyResult(row.id, sharedAthlete); }
+            // Notification only for what the athlete just entered on this device.
+            if (!error) { cache[key] = signature; cacheChanged = true; cloudChanged = true; if (consumeUserEdit(editKey) && isRecent(date)) notifyResult(row.id, sharedAthlete); }
           };
           for (const performance of sessionPerformances) {
             if (!performance.sessionId.startsWith('ss-') || performance.athleteId !== uid) continue;
             const row = rowById.get(performance.sessionId.slice(3));
-            if (row) await save(row, performance.date, performance.metrics, performance.notes ?? '');
+            if (row) await save(row, performance.date, performance.metrics, performance.notes ?? '', sessionEditKey(performance.sessionId, uid));
           }
           const byCompetition = new Map<string, CompResult[]>();
           for (const result of results) {
@@ -138,7 +140,7 @@ export function useAthleteCloudSync() {
           for (const [competitionId, list] of byCompetition) {
             const row = rowById.get(competitionId.slice('shared-comp-'.length)); if (!row) continue;
             const { metrics, notes } = resultsToPerformance(list);
-            await save(row, row.session_date, metrics, notes);
+            await save(row, row.session_date, metrics, notes, resultEditKey(competitionId, uid));
           }
         } finally {
           if (cacheChanged) await AsyncStorage.setItem(cacheKey, JSON.stringify(cache)).catch(() => {});

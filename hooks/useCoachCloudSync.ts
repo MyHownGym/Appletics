@@ -9,6 +9,7 @@ import {
   resultsToPerformance, staleRows,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
+import { asSync, consumeUserEdit, resultEditKey, sessionEditKey } from '@/services/userEdits';
 import { localGroupFor } from '@/services/trainingGroups';
 
 // Coach side, in the background (the coach's device data stays the source for what the coach creates):
@@ -163,7 +164,7 @@ export function useCoachCloudSync() {
             if (cache[key] === signature && !missingHere) continue;
             const athlete = athletes.find(item => item.id === localId);
             if (source.kind === 'plan') {
-              addSessionPerformance(performanceToSession(performance, source.sessionId, source.planId, localId, athlete?.name ?? ''));
+              asSync(() => addSessionPerformance(performanceToSession(performance, source.sessionId, source.planId, localId, athlete?.name ?? '')));
             } else {
               // The coach's copy of the competition is missing on this device (other phone, browser…): rebuilt from
               // what was sent, so the athlete's results always reach the coach's stats.
@@ -178,7 +179,7 @@ export function useCoachCloudSync() {
                 created.add(source.competitionId);
               }
               for (const result of performanceToResults(performance, source.competitionId, localId)) {
-                if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result);
+                asSync(() => { if (results.some(item => item.id === result.id)) updateResult(result); else addResult(result); });
               }
             }
             cache[key] = signature; cacheChanged = true;
@@ -202,8 +203,15 @@ export function useCoachCloudSync() {
             const signature = canonical(row.session_date, metrics, notes);
             const cacheId = `perf:${row.id}:${sharedAthlete}`;
             if (cache[cacheId] === signature) continue;
+            // Sent only for a real change: an entry made here, or values the cloud does not have yet
+            // (never just a different formatting of what the athlete already sent).
+            const edited = consumeUserEdit(resultEditKey(competitionId, localId));
+            const cloudPerf = shared.data.performances.find(item => item.session_id === row.id && item.athlete_id === sharedAthlete);
+            const values = (list2: { label: string; value: string }[]) => JSON.stringify(list2.map(item => [item.label.trim(), item.value.trim()]).sort());
+            if (!edited && cloudPerf && values(cloudPerf.metrics) === values(metrics)) { cache[cacheId] = signature; cacheChanged = true; continue; }
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: row.session_date, p_metrics: metrics, p_notes: notes, p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(row.session_date)) notifyResult(row.id, sharedAthlete); }
+            // Notification only for what the coach just entered on this device.
+            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (edited && isRecent(row.session_date)) notifyResult(row.id, sharedAthlete); }
           }
           for (const performance of sessionPerformances) {
             const sharedAthlete = links.get(performance.athleteId);
@@ -215,7 +223,7 @@ export function useCoachCloudSync() {
             const cacheId = `perf:${row.id}:${sharedAthlete}`;
             if (cache[cacheId] === signature) continue;
             const { error } = await client.rpc('shared_save_performance', { p_session: row.id, p_athlete: sharedAthlete, p_date: performance.date, p_metrics: performance.metrics.slice(0, 30), p_notes: performance.notes ?? '', p_version: versionOf(row.id, sharedAthlete) });
-            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (isRecent(performance.date, 3)) notifyResult(row.id, sharedAthlete); }
+            if (!error) { cache[cacheId] = signature; cacheChanged = true; cloudChanged = true; if (consumeUserEdit(sessionEditKey(performance.sessionId, performance.athleteId)) && isRecent(performance.date, 3)) notifyResult(row.id, sharedAthlete); }
           }
         } finally {
           if (cacheChanged) await AsyncStorage.setItem(cacheKey, JSON.stringify(cache)).catch(() => {});

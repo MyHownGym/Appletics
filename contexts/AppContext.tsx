@@ -15,6 +15,7 @@ import { eraseCloudAccount, clearDeletedAccountSession } from '@/services/accoun
 import { clearAccountClubCoaches } from '@/services/clubCoachService';
 import { cancelAccountDeviceNotifications } from '@/services/deviceCleanupService';
 import { withStartupDeadline } from '@/services/startupService';
+import { markUserEdit, resultEditKey, sessionEditKey } from '@/services/userEdits';
 import { markWorkspaceDirty, mergeWorkspaces, reconcileWithCloud, saveCloudWorkspace } from '@/services/workspaceCloudService';
 import { Platform } from 'react-native';
 import { emptyLocalWorkspace, loadLocalWorkspace, saveLocalWorkspace, claimLegacyWorkspace, clearLocalWorkspace, type LocalWorkspace } from '@/services/localWorkspaceService';
@@ -170,17 +171,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
  useEffect(() => {
   if (!authId || readyFor !== authId) return;
   void syncWithCloud(authId);
-  if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+  // Changes made on another device (computer ↔ phone) arrive within a minute while the app is open.
+  const poll = setInterval(() => {
+   if (pushTimer.current) return;
+   if (Platform.OS === 'web' && typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+   void syncWithCloud(authId);
+  },45000);
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return () => clearInterval(poll);
   let last = Date.now();
   const onVisible = () => {
    if (document.visibilityState === 'hidden' && pushTimer.current) {
     clearTimeout(pushTimer.current); pushTimer.current = null;
     void saveCloudWorkspace(authId,storedRef.current.data).catch(() => {});
    }
-   if (document.visibilityState === 'visible' && Date.now() - last > 20000) { last = Date.now(); void syncWithCloud(authId); }
+   if (document.visibilityState === 'visible' && Date.now() - last > 5000) { last = Date.now(); void syncWithCloud(authId); }
   };
   document.addEventListener('visibilitychange',onVisible);
-  return () => document.removeEventListener('visibilitychange',onVisible);
+  return () => { clearInterval(poll); document.removeEventListener('visibilitychange',onVisible); };
  },[authId,readyFor,syncWithCloud]);
  // 2. back up every change a few seconds after it happens.
  useEffect(() => {
@@ -206,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const addSession = useCallback((planId:string,session:TrainingSession) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === planId ? { ...item,sessions:[...item.sessions,session] } : item) })),[change]);
  const updateSession = useCallback((planId:string,session:TrainingSession) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === planId ? { ...item,sessions:item.sessions.map(row => row.id === session.id ? session : row) } : item) })),[change]);
  const deleteSession = useCallback((planId:string,id:string) => change(previous => ({ ...previous,trainingPlans:previous.trainingPlans.map(item => item.id === planId ? { ...item,sessions:item.sessions.filter(row => row.id !== id) } : item) })),[change]);
- const addSessionPerformance = useCallback((performance:SessionPerformance) => change(previous => ({ ...previous,sessionPerformances:[performance,...previous.sessionPerformances.filter(item => !(item.sessionId === performance.sessionId && item.athleteId === performance.athleteId))] })),[change]);
+ const addSessionPerformance = useCallback((performance:SessionPerformance) => (markUserEdit(sessionEditKey(performance.sessionId,performance.athleteId)), change)(previous => ({ ...previous,sessionPerformances:[performance,...previous.sessionPerformances.filter(item => !(item.sessionId === performance.sessionId && item.athleteId === performance.athleteId))] })),[change]);
  const deleteSessionPerformance = useCallback((id:string) => change(previous => ({ ...previous,sessionPerformances:previous.sessionPerformances.filter(item => item.id !== id) })),[change]);
  const addCompetition = useCallback((competition:Competition) => change(previous => ({ ...previous,competitions:[withAutomaticCompetitionStatus(competition),...previous.competitions.filter(item => item.id !== competition.id)] })),[change]);
  const updateCompetition = useCallback((competition:Competition) => change(previous => ({ ...previous,competitions:previous.competitions.map(item => item.id === competition.id ? withAutomaticCompetitionStatus(competition) : item) })),[change]);
@@ -229,8 +236,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   return { ...previous,results,competitions,athletes:reconcileAthletes(previous.athletes,results) };
  }),[change]);
- const addResult = useCallback((result:CompResult) => storeResult(result,false),[storeResult]);
- const updateResult = useCallback((result:CompResult) => storeResult(result,true),[storeResult]);
+ const addResult = useCallback((result:CompResult) => { markUserEdit(resultEditKey(result.competitionId,result.athleteId)); storeResult(result,false); },[storeResult]);
+ const updateResult = useCallback((result:CompResult) => { markUserEdit(resultEditKey(result.competitionId,result.athleteId)); storeResult(result,true); },[storeResult]);
  const addAthlete = useCallback((athlete:Athlete) => change(previous => ({ ...previous,athletes:reconcileAthletes([athlete,...previous.athletes.filter(item => item.id !== athlete.id)],previous.results) })),[change]);
  const updateAthlete = useCallback((athlete:Athlete) => change(previous => ({ ...previous,athletes:reconcileAthletes(previous.athletes.map(item => item.id === athlete.id ? athlete : item),previous.results),channels:previous.channels.map(item => ({ ...item,members:item.members.map(member => member.id === athlete.id ? { ...member,name:athlete.name } : member) })),sessionPerformances:previous.sessionPerformances.map(item => item.athleteId === athlete.id ? { ...item,athleteName:athlete.name } : item) })),[change]);
  const deleteAthlete = useCallback((id:string) => change(previous => ({ ...previous,athletes:previous.athletes.filter(item => item.id !== id) })),[change]);

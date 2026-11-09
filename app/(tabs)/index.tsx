@@ -81,7 +81,7 @@ export default function HomeScreen() {
       </LinearGradient>
       <PendingInvitationsBanner horizontalPadding={screenPadding} />
       {!isAthlete ? <TrainingLogList title="Derniers entraînements de vos athlètes" limit={5} horizontalPadding={screenPadding} /> : null}
-      <SubscriptionPlanCard compact />
+      <SubscriptionPlanCard compact horizontalPadding={screenPadding} />
       <HomeActivitySummary horizontalPadding={screenPadding} />
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{t('Calendrier')}</Text><Pressable onPress={schedule.toggleCalendar} style={({ pressed }) => [styles.calendarToggle, schedule.showCalendar ? styles.calendarToggleActive : null, pressed ? styles.pressed : null]}><MaterialIcons name={schedule.showCalendar ? 'expand-less' : 'expand-more'} size={18} color={schedule.showCalendar ? Colors.textOnPrimary : Colors.primary} /><Text style={[styles.toggleText, schedule.showCalendar ? styles.onPrimary : null]}>{t(schedule.showCalendar ? 'Masquer' : 'Afficher')}</Text></Pressable></View>

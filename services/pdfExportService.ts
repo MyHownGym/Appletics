@@ -5,7 +5,8 @@ import { TrainingPlan, Competition, CompResult, Athlete } from '@/types';
 import { Language } from '@/constants/i18n';
 import { getCompetitionPresentation } from '@/services/competitionPresentationService';
 import { translateUiText, localeFor, weekdayLabel } from '@/services/localizationService';
-const css = `body{font-family:Arial,sans-serif;margin:24px;color:#0F172A}h1{font-size:22px;color:#FF5722}h2{font-size:18px;margin-top:24px}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{text-align:left;padding:10px;border-bottom:1px solid #EAEDF2;font-size:13px;line-height:1.6}th{background:#FFF3EE;color:#A33212}.brand{background:#FF5722;color:white;border-radius:8px;padding:8px 12px;display:inline-block;font-weight:bold}.meta,footer{font-size:12px;color:#475569}footer{margin-top:32px;text-align:center}.pb{color:#166534;font-weight:bold}`;
+import { PDF_LOGO } from '@/constants/pdfLogo';
+const css = `body{font-family:Arial,sans-serif;margin:24px;color:#0F172A}h1{font-size:22px;color:#FF5722}h2{font-size:18px;margin-top:24px}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{text-align:left;padding:10px;border-bottom:1px solid #EAEDF2;font-size:13px;line-height:1.6}th{background:#FFF3EE;color:#A33212}.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}.brand img{width:44px;height:44px;border-radius:10px}.brand span{font-weight:800;font-size:18px;letter-spacing:1px;color:#FF5722}.meta,footer{font-size:12px;color:#475569}footer{margin-top:32px;text-align:center}.pb{color:#166534;font-weight:bold}`;
 const escape = (value: unknown): string => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 function translator(language: Language) { return (text: string) => escape(translateUiText(text, language)); }
 function table(headings: string[], rows: string[][], language: Language): string {
@@ -14,7 +15,7 @@ function table(headings: string[], rows: string[][], language: Language): string
 }
 function documentHtml(title: string, subtitle: string, content: string, language: Language): string {
   const t = translator(language);
-  return `<!DOCTYPE html><html lang="${language}"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="brand">AP</div><h1>${escape(title)}</h1><p class="meta">${escape(subtitle)} · ${t('Exporté le')} ${escape(new Date().toLocaleDateString(localeFor(language), { day: 'numeric', month: 'long', year: 'numeric' }))}</p>${content}<footer>Appletics · appletics.ch</footer></body></html>`;
+  return `<!DOCTYPE html><html lang="${language}"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="brand"><img src="${PDF_LOGO}" alt="Appletics"><span>APPLETICS</span></div><h1>${escape(title)}</h1><p class="meta">${escape(subtitle)} · ${t('Exporté le')} ${escape(new Date().toLocaleDateString(localeFor(language), { day: 'numeric', month: 'long', year: 'numeric' }))}</p>${content}<footer>Appletics · appletics.ch</footer></body></html>`;
 }
 // Web (browser / iPhone home-screen app): expo-print cannot build a file there. The document is shown
 // full screen inside the app (no pop-up, works in the installed app) with a button that opens the
