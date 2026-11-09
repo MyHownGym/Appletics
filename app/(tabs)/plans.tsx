@@ -19,6 +19,7 @@ import { EVENT_GROUPS } from '@/constants/config';
 import { TranslationKey } from '@/constants/i18n';
 import { exportTrainingPlan } from '@/services/pdfExportService';
 import { useActivityScope } from '@/hooks/useActivityScope';
+import { padGrid } from '@/services/gridLayout';
 
 export default function PlansScreen() {
   const router = useRouter();
@@ -90,16 +91,17 @@ export default function PlansScreen() {
       </View>
 
       <FlatList
-        data={filteredPlans}
+        data={padGrid(filteredPlans, isPhone ? 1 : cols)}
         keyExtractor={item => item.id}
         numColumns={isPhone ? 1 : cols}
         key={isPhone ? 'phone' : `cols-${cols}`}
         contentContainerStyle={[styles.list, { paddingHorizontal: Spacing.screenPadding }]}
         columnWrapperStyle={!isPhone && cols > 1 ? { gap: Spacing.md } : undefined}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item: cell }) => 'pad' in cell ? <View style={{ flex: 1, minWidth: 1 }} /> : ((item: typeof filteredPlans[number]) => (
           <View style={{ flex: 1, minWidth: 1 }}>
             <PlanCard
+              fill
               plan={item}
               onPress={() => router.push({ pathname: '/plan-detail', params: { id: item.id } })}
             />
@@ -125,7 +127,7 @@ export default function PlansScreen() {
               </Pressable>
             ) : null}
           </View>
-        )}
+        ))(cell)}
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIconWrap}>

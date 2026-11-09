@@ -15,13 +15,15 @@ interface PlanCardProps {
   plan: TrainingPlan;
   onPress: () => void;
   athleteCount?: number;
+  /** Fills the grid cell height (same size as its neighbours). */
+  fill?: boolean;
 }
 
 const PHASE_COLORS: Record<string, string> = {
   Base: '#60A5FA', Build: '#FBBF24', Peak: '#F87171', Taper: '#A78BFA', Competition: '#FFD700', Recovery: '#34D399',
 };
 
-export const PlanCard = React.memo(({ plan, onPress, athleteCount }: PlanCardProps) => {
+export const PlanCard = React.memo(({ plan, onPress, athleteCount, fill = false }: PlanCardProps) => {
   const { t } = useI18n();
   const group = EVENT_GROUPS.find(g => g.id === normalizeGroupId(plan.group));
   const groupColor = group?.color || Colors.primary;
@@ -30,7 +32,7 @@ export const PlanCard = React.memo(({ plan, onPress, athleteCount }: PlanCardPro
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, Shadow.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, fill ? { flex: 1 } : null, Shadow.card, pressed && styles.pressed]}
       accessibilityLabel={plan.title}
     >
       <View style={[styles.accentBar, { backgroundColor: groupColor }]} />

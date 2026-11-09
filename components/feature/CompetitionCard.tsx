@@ -12,6 +12,8 @@ import { useI18n } from '@/hooks/useI18n';
 interface CompetitionCardProps {
   competition: Competition;
   onPress: () => void;
+  /** Fills the grid cell height (same size as its neighbours). */
+  fill?: boolean;
 }
 
 const STATUS_COLORS = { upcoming: Colors.primary, completed: Colors.success, cancelled: Colors.error };
@@ -20,7 +22,7 @@ const TYPE_COLORS: Record<string, string> = {
   Outdoor: '#34D399', 'Cross Country': '#FBBF24', 'Road Race': '#FF6B35',
 };
 
-export const CompetitionCard = React.memo(({ competition, onPress }: CompetitionCardProps) => {
+export const CompetitionCard = React.memo(({ competition, onPress, fill = false }: CompetitionCardProps) => {
   const { t, language } = useI18n();
   const presentation = useCompetitionPresentation(competition);
   const statusColor = STATUS_COLORS[competition.status] || Colors.primary;
@@ -32,7 +34,7 @@ export const CompetitionCard = React.memo(({ competition, onPress }: Competition
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, Shadow.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, fill ? { flex: 1 } : null, Shadow.card, pressed && styles.pressed]}
       accessibilityLabel={competition.name}
     >
       <View style={[styles.dateBox, { borderColor: statusColor + '40', backgroundColor: statusColor + '15' }]}>

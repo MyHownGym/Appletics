@@ -18,6 +18,7 @@ import { ScreenHeader, CompetitionCard } from '@/components';
 import { exportCompetitionResults } from '@/services/pdfExportService';
 import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { useActivityScope } from '@/hooks/useActivityScope';
+import { padGrid } from '@/services/gridLayout';
 
 const STATUS_IDS = ['all', 'upcoming', 'completed'];
 
@@ -135,21 +136,22 @@ export default function CompetitionsScreen() {
       </View>
 
       <FlatList
-        data={filtered}
+        data={padGrid(filtered, isPhone ? 1 : cols)}
         keyExtractor={item => item.id}
         numColumns={isPhone ? 1 : cols}
         key={isPhone ? 'phone' : `cols-${cols}`}
         contentContainerStyle={[styles.list, { paddingHorizontal: Spacing.screenPadding }]}
         columnWrapperStyle={!isPhone && cols > 1 ? { gap: Spacing.md } : undefined}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item: cell }) => 'pad' in cell ? <View style={{ flex: 1, minWidth: 1 }} /> : ((item: typeof filtered[number]) => (
           <View style={{ flex: 1, minWidth: 1 }}>
             <CompetitionCard
+              fill
               competition={item}
               onPress={() => router.push({ pathname: '/competition-detail', params: { id: item.id } })}
             />
             {/* PDF export for completed */}
-            {!isAthlete && item.status === 'completed' ? (
+            {!isAthlete ? (
               <Pressable
                 style={({ pressed }) => [styles.exportRow, pressed && { opacity: 0.7 }]}
                 onPress={() => handleExportPDF(item.id)}
@@ -170,7 +172,7 @@ export default function CompetitionsScreen() {
               </Pressable>
             ) : null}
           </View>
-        )}
+        ))(cell)}
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIconWrap}>
