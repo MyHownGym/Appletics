@@ -32,7 +32,7 @@ export function upcomingSessionDates(plan: TrainingPlan, session: TrainingSessio
   return dates;
 }
 
-export function coachDesiredItems(plans: TrainingPlan[], competitions: Competition[], links: Map<string, string>, today = new Date()): DesiredItem[] {
+export function coachDesiredItems(plans: TrainingPlan[], competitions: Competition[], links: Map<string, string>, athleteNames: Map<string, string> = new Map(), today = new Date()): DesiredItem[] {
   const items: DesiredItem[] = [];
   for (const plan of plans) for (const localId of plan.athleteIds ?? []) {
     const sharedAthlete = links.get(localId); if (!sharedAthlete) continue;
@@ -48,13 +48,15 @@ export function coachDesiredItems(plans: TrainingPlan[], competitions: Competiti
   }
   for (const competition of competitions) {
     if (competition.status === 'cancelled') continue;
+    // Everyone the coach registered (names only), so each athlete sees who else is going.
+    const teammates = (competition.athleteIds ?? []).map(id => ({ id: links.get(id) ?? id, name: athleteNames.get(id) ?? '' })).filter(item => item.name).slice(0, 60);
     for (const localId of competition.athleteIds ?? []) {
       const sharedAthlete = links.get(localId); if (!sharedAthlete) continue;
       items.push({
         source: `comp:${competition.id}:${sharedAthlete}`, sharedAthlete, kind: 'competition', date: competition.date.slice(0, 10),
         title: competition.name.trim().slice(0, 200) || 'Compétition',
         details: [competition.venue, competition.location, competition.events?.length ? `Épreuves : ${competition.events.join(', ')}` : ''].filter(Boolean).join(' · '),
-        meta: { competitionId: competition.id, type: competition.type, venue: competition.venue ?? '', location: competition.location ?? '', endDate: competition.endDate ?? '', events: competition.events ?? [] },
+        meta: { competitionId: competition.id, type: competition.type, venue: competition.venue ?? '', location: competition.location ?? '', endDate: competition.endDate ?? '', events: competition.events ?? [], teammates: teammates.filter(item => item.id !== sharedAthlete) },
       });
     }
   }
@@ -147,8 +149,9 @@ export function athleteCompetitionFor(row: SharedSession, athleteId: string): Co
     id: `shared-comp-${row.id}`, name: row.title, type: String(meta.type ?? 'meeting'), date, venue: String(meta.venue ?? ''),
     ...(meta.location ? { location: String(meta.location) } : {}), ...(meta.endDate ? { endDate: String(meta.endDate) } : {}),
     status: date < todayKey() ? 'completed' : 'upcoming', events: Array.isArray(meta.events) ? (meta.events as string[]) : [], athleteIds: [athleteId],
+    teammates: Array.isArray(meta.teammates) ? (meta.teammates as { id?: unknown; name?: unknown }[]).filter(item => typeof item?.name === 'string' && item.name && item.id !== row.athlete_id).map(item => ({ id: String(item.id ?? item.name), name: String(item.name) })) : [],
   };
 }
 
 export const planSignature = (plan: TrainingPlan) => hash(JSON.stringify([plan.title, plan.startDate, plan.endDate, plan.sessions.map(item => [item.id, item.sessionDate, item.title, item.details, item.type, item.intensity, item.duration])]));
-export const competitionSignature = (competition: Competition) => hash(JSON.stringify([competition.name, competition.date, competition.venue, competition.location, competition.endDate, competition.events, competition.type]));
+export const competitionSignature = (competition: Competition) => hash(JSON.stringify([competition.name, competition.date, competition.venue, competition.location, competition.endDate, competition.events, competition.type, competition.teammates ?? []]));
