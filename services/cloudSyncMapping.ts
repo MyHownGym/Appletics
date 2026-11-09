@@ -77,6 +77,20 @@ export function canonical(date: string, metrics: SessionMetric[], notes: string)
 interface CompetitionNotes { ranks?: Record<string, number>; notes?: Record<string, string> }
 export function readCompetitionNotes(notes: string): CompetitionNotes { try { const value = JSON.parse(notes); return value && typeof value === 'object' ? value : {}; } catch { return {}; } }
 
+// Notes of a shared performance, readable: competition notes are stored as JSON (ranks / remarks per event).
+export function describeNotes(notes: string | null | undefined): { ranks: Record<string, number>; remarks: Record<string, string>; text: string; structured: boolean } {
+  const raw = (notes ?? '').trim();
+  if (raw.startsWith('{')) {
+    try {
+      const value = JSON.parse(raw);
+      if (value && typeof value === 'object' && ('ranks' in value || 'notes' in value || 'text' in value)) {
+        return { ranks: value.ranks ?? {}, remarks: value.notes ?? {}, text: typeof value.text === 'string' ? value.text : '', structured: true };
+      }
+    } catch { /* plain text */ }
+  }
+  return { ranks: {}, remarks: {}, text: raw, structured: false };
+}
+
 // Local competition results of one athlete → one shared performance (one metric per event).
 export function resultsToPerformance(results: CompResult[]) {
   const sorted = [...results].sort((a, b) => a.event.localeCompare(b.event));

@@ -4,6 +4,7 @@ import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
 import type { SessionMetric } from '@/types';
 import type { SharedPerformance } from '@/types/sharedGroups';
+import { describeNotes } from '@/services/cloudSyncMapping';
 export function useSharedPerformance(sessionId: string, initialMetrics?: SessionMetric[], initialDate?: string, initialNotes = '') {
  const shared = useSharedGroups(); const { showAlert } = useAlert(); const { translate } = useLocalizedCopy();
  const session = shared.data.sessions.find(item => item.id === sessionId);
@@ -15,6 +16,13 @@ export function useSharedPerformance(sessionId: string, initialMetrics?: Session
  const [target, setTarget] = useState('');
  const [metrics, setMetrics] = useState<SessionMetric[]>([{ label: '', value: '', unit: 's' }]);
  const [notes, setNotes] = useState('');
+ // Competition notes are JSON (ranks / remarks per event): only the free text is edited, the rest is kept.
+ const [notesBase, setNotesBase] = useState<Record<string, unknown> | null>(null);
+ const loadNotes = useCallback((value: string) => {
+  const extra = describeNotes(value);
+  setNotes(extra.text); setNotesBase(extra.structured ? { ranks: extra.ranks, ...(Object.keys(extra.remarks).length ? { notes: extra.remarks } : {}) } : null);
+ }, []);
+ const storedNotes = notesBase ? JSON.stringify({ ...notesBase, ...(notes.trim() ? { text: notes.trim() } : {}) }) : notes;
  const [date, setDate] = useState('');
  const [version, setVersion] = useState(0);
  const [error, setError] = useState('');
@@ -22,11 +30,11 @@ export function useSharedPerformance(sessionId: string, initialMetrics?: Session
  const begin = useCallback((existing?: SharedPerformance) => {
   const firstTarget = existing?.athlete_id ?? athletes[0]?.id ?? '';
   const previous = existing ?? performances.find(item => item.athlete_id === firstTarget);
-  setTarget(firstTarget); setVersion(previous?.version ?? 0); setMetrics(previous?.metrics.map(item => ({ ...item })) ?? initialMetrics?.map(item => ({ ...item })) ?? [{ label: '', value: '', unit: 's' }]); setNotes(previous?.notes ?? initialNotes); setDate(previous?.performed_on ?? initialDate ?? session?.session_date ?? new Date().toISOString().slice(0,10)); setError(''); setMessage(''); setOpen(true);
+  setTarget(firstTarget); setVersion(previous?.version ?? 0); setMetrics(previous?.metrics.map(item => ({ ...item })) ?? initialMetrics?.map(item => ({ ...item })) ?? [{ label: '', value: '', unit: 's' }]); loadNotes(previous?.notes ?? initialNotes); setDate(previous?.performed_on ?? initialDate ?? session?.session_date ?? new Date().toISOString().slice(0,10)); setError(''); setMessage(''); setOpen(true);
  }, [athletes, performances, initialMetrics, initialDate, initialNotes, session?.session_date]);
  const chooseAthlete = useCallback((id: string) => {
   const previous = performances.find(item => item.athlete_id === id);
-  setTarget(id); setVersion(previous?.version ?? 0); setMetrics(previous?.metrics.map(item => ({ ...item })) ?? [{ label: '', value: '', unit: 's' }]); setNotes(previous?.notes ?? ''); setDate(previous?.performed_on ?? session?.session_date ?? new Date().toISOString().slice(0,10)); setError('');
+  setTarget(id); setVersion(previous?.version ?? 0); setMetrics(previous?.metrics.map(item => ({ ...item })) ?? [{ label: '', value: '', unit: 's' }]); loadNotes(previous?.notes ?? ''); setDate(previous?.performed_on ?? session?.session_date ?? new Date().toISOString().slice(0,10)); setError('');
  }, [performances, session?.session_date]);
  const updateMetric = useCallback((index: number, field: keyof SessionMetric, value: string) => setMetrics(previous => previous.map((item,i) => i === index ? { ...item, [field]: value } : item)), []);
  const addMetric = useCallback(() => setMetrics(previous => previous.length < 30 ? [...previous, { label: '', value: '', unit: 's' }] : previous), []);
@@ -36,9 +44,9 @@ export function useSharedPerformance(sessionId: string, initialMetrics?: Session
  const save = useCallback(async () => {
   if (!valid || shared.busy) return;
   setError('');
-  try { await shared.savePerformance(sessionId,target,date,metrics,notes,version); setOpen(false); setMessage('Enregistré dans le groupe.'); }
+  try { await shared.savePerformance(sessionId,target,date,metrics,storedNotes,version); setOpen(false); setMessage('Enregistré dans le groupe.'); }
   catch (reason) { setError(reason instanceof Error ? reason.message : 'Opération impossible. Vérifiez les informations et votre connexion.'); }
- }, [valid, shared.busy, shared.savePerformance, sessionId, target, date, metrics, notes, version]);
+ }, [valid, shared.busy, shared.savePerformance, sessionId, target, date, metrics, storedNotes, version]);
  const remove = useCallback((performance: SharedPerformance) => {
   showAlert(translate('Supprimer la performance ?'), translate('Cette suppression sera visible dans le groupe.'), [{ text: translate('Annuler'), style: 'cancel' }, { text: translate('Supprimer'), style: 'destructive', onPress: () => { void shared.operate('shared_delete_performance', { p_id: performance.id, p_version: performance.version }).catch(() => {}); } }]);
  }, [showAlert, translate, shared.operate]);
