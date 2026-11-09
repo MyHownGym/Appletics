@@ -52,7 +52,7 @@ export const CompetitionCard = React.memo(({ competition, onPress }: Competition
         <View style={styles.bottomRow}>
           <View style={styles.row}>
             <MaterialIcons name="people" size={13} color={Colors.textMuted} />
-            <Text style={styles.meta}>{competition.athleteIds.length} {t('athletes').toLowerCase()}</Text>
+            <Text style={styles.meta}>{competition.athleteIds.length + (competition.teammates?.length ?? 0)} {t('athletes').toLowerCase()}</Text>
           </View>
           {competition.teamScore !== undefined ? (
             <View style={styles.scoreChip}>

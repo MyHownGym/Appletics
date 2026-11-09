@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { Platform } from 'react-native';
 import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useI18n } from '@/hooks/useI18n';
 import Svg, { Line, Circle, Text as SvgText } from 'react-native-svg';
@@ -9,6 +10,8 @@ import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { usePerformanceChart } from '@/hooks/usePerformanceChart';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SubscriptionFeatureGate } from '@/components/feature/SubscriptionFeatureGate';
+
+const AXIS_FONT = Platform.OS === 'web' ? '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' : undefined;
 
 interface PerformanceChartProps {
   results: CompResult[];
@@ -40,8 +43,12 @@ export const PerformanceChart = memo(function PerformanceChart({ results, event,
                     <Line key={`grid-${index}`} x1={chart.plotLeft} x2={chart.plotRight} y1={tick.y} y2={tick.y} stroke={Colors.border} strokeWidth={1} />
                   ))}
                   {chart.ticks.map((tick, index) => (
-                    <SvgText key={`label-${index}`} x={chart.plotLeft - 12} y={tick.y + 4} textAnchor="end" fill={Colors.textSecondary} fontSize={Typography.fontSizeXS}>{tick.label}</SvgText>
+                    <SvgText key={`label-${index}`} x={chart.plotLeft - 12} y={tick.y + 4} textAnchor="end" fill={Colors.textPrimary} fontSize={Typography.fontSizeXS} fontWeight="700" fontFamily={AXIS_FONT}>{tick.label}</SvgText>
                   ))}
+                  {chart.ticks.length ? <>
+                    <Line x1={chart.plotLeft} x2={chart.plotLeft} y1={Math.min(...chart.ticks.map(tick => tick.y))} y2={Math.max(...chart.ticks.map(tick => tick.y))} stroke={Colors.textPrimary} strokeWidth={2} />
+                    <Line x1={chart.plotLeft} x2={chart.plotRight} y1={Math.max(...chart.ticks.map(tick => tick.y))} y2={Math.max(...chart.ticks.map(tick => tick.y))} stroke={Colors.textPrimary} strokeWidth={2} />
+                  </> : null}
                   {chart.points.slice(0, -1).map((point, index) => {
                     const next = chart.points[index + 1];
                     const better = chart.isDistance ? next.value > point.value : next.value < point.value;
@@ -51,8 +58,8 @@ export const PerformanceChart = memo(function PerformanceChart({ results, event,
                   {chart.points.map(point => (
                     <Circle key={point.result.id} cx={point.x} cy={point.y} r={5} fill={point.result.pb ? Colors.warning : accentColor} stroke={Colors.surface} strokeWidth={2} />
                   ))}
-                  <SvgText x={chart.plotLeft} y={206} textAnchor="start" fill={Colors.textSecondary} fontSize={Typography.fontSizeXS}>{t('Résultat')} 1</SvgText>
-                  <SvgText x={chart.plotRight} y={206} textAnchor="end" fill={Colors.textSecondary} fontSize={Typography.fontSizeXS}>{t('Résultat')} {chart.points.length}</SvgText>
+                  <SvgText x={chart.plotLeft} y={206} textAnchor="start" fill={Colors.textPrimary} fontSize={Typography.fontSizeXS} fontWeight="700" fontFamily={AXIS_FONT}>{t('Résultat')} 1</SvgText>
+                  <SvgText x={chart.plotRight} y={206} textAnchor="end" fill={Colors.textPrimary} fontSize={Typography.fontSizeXS} fontWeight="700" fontFamily={AXIS_FONT}>{t('Résultat')} {chart.points.length}</SvgText>
                 </Svg>
                 {chart.points.map((point, index) => (
                   <Pressable

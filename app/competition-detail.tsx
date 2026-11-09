@@ -278,6 +278,8 @@ export default function CompetitionDetailScreen() {
   const compResults = results.filter(r => r.competitionId === id);
   const statusColor = STATUS_COLORS[competition.status] || Colors.primary;
   const compAthletes = athletes.filter(a => competition.athleteIds.includes(a.id));
+  // Athlete view: the other athletes the coach registered (names sent by the coach).
+  const teammates = user.userType === 'athlete' ? (competition.teammates ?? []).filter(item => !compAthletes.some(a => a.name === item.name)) : [];
 
   // User's athlete record (for athlete self-entry)
   const athleteForUser = isAthlete ? athletes.find(a => a.id === user.id || (a.email && a.email.toLowerCase() === user.email.toLowerCase())) ?? athletes.find(a => a.name === user.name) : undefined;
@@ -321,7 +323,7 @@ export default function CompetitionDetailScreen() {
   const tabLabels = {
     overview: 'Aperçu',
     results: `Résultats${compResults.length > 0 ? ` (${compResults.length})` : ''}`,
-    athletes: `Athlètes (${compAthletes.length})`,
+    athletes: `Athlètes (${compAthletes.length + teammates.length})`,
   };
 
   return (
@@ -496,7 +498,14 @@ export default function CompetitionDetailScreen() {
               </Pressable>
             ) : null}
 
-            {compAthletes.length === 0 ? (
+            {teammates.map(item => (
+              <View key={`mate-${item.id}`} style={styles.athleteRow}>
+                <View style={styles.athleteAvatar}><Text verbatim style={styles.athleteAvatarText}>{item.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text></View>
+                <View style={styles.athleteInfo}><Text verbatim style={styles.athleteName}>{item.name}</Text><Text style={styles.athleteEvents}>Même groupe</Text></View>
+                <View style={styles.confirmedBadge}><MaterialIcons name="check-circle" size={11} color={Colors.success} /><Text style={styles.confirmedText}>Inscrit</Text></View>
+              </View>
+            ))}
+            {compAthletes.length === 0 && teammates.length === 0 ? (
               <View style={styles.emptyState}>
                 <MaterialIcons name="group" size={36} color={Colors.textMuted} />
                 <Text style={styles.emptyTitle}>Aucun athlète</Text>

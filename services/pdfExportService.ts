@@ -16,26 +16,35 @@ function documentHtml(title: string, subtitle: string, content: string, language
   const t = translator(language);
   return `<!DOCTYPE html><html lang="${language}"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="brand">AP</div><h1>${escape(title)}</h1><p class="meta">${escape(subtitle)} · ${t('Exporté le')} ${escape(new Date().toLocaleDateString(localeFor(language), { day: 'numeric', month: 'long', year: 'numeric' }))}</p>${content}<footer>Appletics · appletics.ch</footer></body></html>`;
 }
-// Web (browser / iPhone home-screen app): expo-print cannot build a file there. The document opens in a
-// new page with a button that opens the system print sheet, where « Enregistrer en PDF » / « Partager » is offered.
+// Web (browser / iPhone home-screen app): expo-print cannot build a file there. The document is shown
+// full screen inside the app (no pop-up, works in the installed app) with a button that opens the
+// system print sheet, where « Enregistrer en PDF » / « Partager » is offered.
 function printOnWeb(html: string, filename: string) {
-  const title = filename.replace(/\.pdf$/i, '').replace(/_/g, ' ');
-  const bar = `<div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;padding:12px;background:#fff;border-bottom:1px solid #EAEDF2"><button onclick="window.print()" style="font:600 16px Arial;padding:12px 18px;border:0;border-radius:10px;background:#FF5722;color:#fff">Enregistrer en PDF</button><button onclick="window.close()" style="font:600 16px Arial;padding:12px 18px;border:1px solid #EAEDF2;border-radius:10px;background:#fff;color:#0F172A">Fermer</button></div>`;
-  const page = html
-    .replace('<head>', `<head><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title><style>@media print{.noprint{display:none!important}}</style>`)
-    .replace('<body>', `<body>${bar}`)
-    .replace('</body>', '<script>setTimeout(function(){try{window.print()}catch(e){}},400)</script></body>');
-  const url = URL.createObjectURL(new Blob([page], { type: 'text/html' }));
-  const opened = window.open(url, '_blank');
-  if (opened) { setTimeout(() => URL.revokeObjectURL(url), 60_000); return; }
-  // Pop-up blocked: print from a hidden frame instead.
+  document.getElementById('appletics-print')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'appletics-print';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;flex-direction:column';
+  const bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;border-bottom:1px solid #EAEDF2;background:#fff';
+  const title = document.createElement('div');
+  title.textContent = filename.replace(/\.pdf$/i, '').replace(/_/g, ' ');
+  title.style.cssText = 'flex:1;font:600 15px -apple-system,Arial;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+  const button = (label: string, primary: boolean) => {
+    const element = document.createElement('button');
+    element.textContent = label;
+    element.style.cssText = `font:600 15px -apple-system,Arial;padding:11px 16px;border-radius:10px;border:${primary ? '0' : '1px solid #EAEDF2'};background:${primary ? '#FF5722' : '#fff'};color:${primary ? '#fff' : '#0F172A'}`;
+    return element;
+  };
+  const save = button('Enregistrer en PDF', true), close = button('Fermer', false);
   const frame = document.createElement('iframe');
-  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-  document.body.appendChild(frame);
-  const doc = frame.contentWindow?.document;
-  if (!doc) throw new Error('print_unavailable');
-  doc.open(); doc.write(html); doc.close();
-  setTimeout(() => { frame.contentWindow?.focus(); frame.contentWindow?.print(); setTimeout(() => frame.remove(), 60_000); URL.revokeObjectURL(url); }, 300);
+  frame.title = title.textContent;
+  frame.style.cssText = 'flex:1;width:100%;border:0;background:#fff';
+  frame.srcdoc = html.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
+  save.onclick = () => { try { frame.contentWindow?.focus(); frame.contentWindow?.print(); } catch { window.print(); } };
+  close.onclick = () => overlay.remove();
+  bar.append(title, save, close);
+  overlay.append(bar, frame);
+  document.body.appendChild(overlay);
 }
 async function printAndShare(html: string, filename: string): Promise<void> {
   if (Platform.OS === 'web') { printOnWeb(html, filename); return; }

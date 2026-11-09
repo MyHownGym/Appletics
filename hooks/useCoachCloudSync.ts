@@ -124,7 +124,7 @@ export function useCoachCloudSync() {
         const rowBySource = new Map(rows.filter(row => row.source_key).map(row => [row.source_key as string, row]));
         try {
           // 2a. Send plans and competitions (only what changed).
-          const desired = coachDesiredItems(trainingPlans, competitions, links);
+          const desired = coachDesiredItems(trainingPlans, competitions, links, new Map(athletes.map(item => [item.id, item.name])));
           const today = new Date().toISOString().slice(0, 10);
           const fresh = new Map<string, { sessions: number; competitions: number; firstTitle: string }>();
           for (const item of desired) {

@@ -53,6 +53,8 @@ export interface Competition {
   status: 'upcoming' | 'completed' | 'cancelled';
   events: string[];
   athleteIds: string[];
+  // Athlete side: the other athletes of the coach registered for this competition (names only).
+  teammates?: { id: string; name: string }[];
   teamScore?: number;
   teamRank?: number;
 }
