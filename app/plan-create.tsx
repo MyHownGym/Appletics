@@ -81,7 +81,8 @@ export default function PlanCreateScreen() {
   const [showEndCal, setShowEndCal] = useState(false);
 
   const effectiveWeeks = customWeeks.trim() ? customWeeks.trim() : weeks;
-  const groupAthletes = athletes.filter((a: any) => a.group === group);
+  // Every athlete can be added, whatever their discipline: the plan's group comes first, then the others.
+  const groupAthletes = [...athletes].sort((a: any, b: any) => Number(b.group === group) - Number(a.group === group) || a.name.localeCompare(b.name));
 
   const toggleAthlete = (id: string) => {
     setSelectedAthletes(prev =>
@@ -335,7 +336,7 @@ export default function PlanCreateScreen() {
             {groupAthletes.length === 0 ? (
               <View style={styles.noAthletesWrap}>
                 <MaterialIcons name="group-off" size={22} color={Colors.textMuted} />
-                <Text style={styles.noAthletes}>Aucun athlète dans ce groupe</Text>
+                <Text style={styles.noAthletes}>Aucun athlète pour l’instant</Text>
               </View>
             ) : (
               groupAthletes.map((a: any) => {
@@ -351,7 +352,7 @@ export default function PlanCreateScreen() {
                     </View>
                     <View style={styles.athleteInfo}>
                       <Text verbatim style={styles.athleteName}>{a.name}</Text>
-                      <Text style={styles.athleteEvents}>{a.events.join(' · ')}</Text>
+                      <Text style={styles.athleteEvents}>{[a.group !== group ? EVENT_GROUPS.find(item => item.id === a.group)?.label : '', a.events.join(' · ')].filter(Boolean).join(' · ')}</Text>
                     </View>
                     {a.status === 'injured' ? (
                       <Text style={styles.injuredLabel}>{t('injured')}</Text>
