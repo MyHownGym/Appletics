@@ -11,7 +11,7 @@ import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useLocalizedAlert } from '@/hooks/useLocalizedAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useBiometricSettings } from '@/hooks/useBiometricSettings';
 import { BiometricSettingsPanel } from '@/components/feature/BiometricSettingsPanel';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -24,6 +24,7 @@ import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { appleticsLinks } from '@/constants/links';
 import { AccountDeletionModal } from '@/components/auth/AccountDeletionModal';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
+import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 
 type UserRole = 'coach' | 'athlete' | 'club';
 
@@ -111,7 +112,7 @@ export default function SettingsScreen() {
     setNotifSettings(all);
   };
 
-  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsOnly = useLocalSearchParams<{ section?: string }>().section === 'notifications';
   const allOn = NOTIF_GROUPS.every(g => g.items.every(item => notifSettings[item.key] !== false));
 
   const handleLogout = () => {
@@ -158,6 +159,62 @@ export default function SettingsScreen() {
       ]
     );
   };
+
+  if (notificationsOnly) return (
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+          <MaterialIcons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={{ width: 36 }} />
+      </View>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', paddingHorizontal: screenPadding }]}>
+        <PushNotificationsPrompt />
+        <View style={styles.notifHeader}>
+          <Text style={styles.sectionLabel}>Rappels et alertes</Text>
+          <Pressable
+            style={[styles.allToggleBtn, { backgroundColor: allOn ? Colors.primary + '15' : Colors.background }]}
+            onPress={() => handleAllToggle(!allOn)}
+          >
+            <Text style={[styles.allToggleText, { color: allOn ? Colors.primary : Colors.textMuted }]}>
+              {allOn ? 'Tout désactiver' : 'Tout activer'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {NOTIF_GROUPS.map((group) => (
+          <View key={group.title} style={styles.notifGroup}>
+            <Text style={styles.notifGroupTitle}>{group.title}</Text>
+            <View style={styles.card}>
+              {group.items.map((item, idx) => {
+                const isOn = notifSettings[item.key] !== false;
+                return (
+                  <View key={item.key}>
+                    {idx > 0 ? <View style={styles.divider} /> : null}
+                    <View style={styles.row}>
+                      <View style={[styles.rowIcon, { backgroundColor: item.color + '18' }]}>
+                        <MaterialIcons name={item.icon as any} size={18} color={item.color} />
+                      </View>
+                      <Text style={styles.notifLabel}>{item.label}</Text>
+                      <Switch
+                        value={isOn}
+                        onValueChange={(v) => handleToggle(item.key, v)}
+                        trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                        thumbColor={isOn ? Colors.primary : '#FFF'}
+                        ios_backgroundColor={Colors.border}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+
+      </ScrollView>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -239,60 +296,20 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        {/* ── NOTIFICATIONS (folded: one row, the details open on tap) ── */}
+        {/* ── NOTIFICATIONS: own page (Profil › Paramètres › Notifications) ── */}
         <Text style={styles.sectionLabel}>Notifications</Text>
         <View style={styles.card}>
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: showNotifications }} style={styles.row} onPress={() => setShowNotifications(value => !value)}>
+          <Pressable accessibilityRole="button" style={styles.row} onPress={() => router.push({ pathname: '/settings', params: { section: 'notifications' } })}>
             <View style={[styles.rowIcon, { backgroundColor: Colors.primary + '18' }]}>
               <MaterialIcons name="notifications" size={18} color={Colors.primary} />
             </View>
-            <Text style={styles.notifLabel}>{allOn ? 'Toutes activées' : 'Personnalisées'}</Text>
-            <MaterialIcons name={showNotifications ? 'expand-less' : 'expand-more'} size={22} color={Colors.textMuted} />
-          </Pressable>
-        </View>
-        {showNotifications ? <>
-        <View style={styles.notifHeader}>
-          <Text style={styles.sectionLabel}>Rappels et alertes</Text>
-          <Pressable
-            style={[styles.allToggleBtn, { backgroundColor: allOn ? Colors.primary + '15' : Colors.background }]}
-            onPress={() => handleAllToggle(!allOn)}
-          >
-            <Text style={[styles.allToggleText, { color: allOn ? Colors.primary : Colors.textMuted }]}>
-              {allOn ? 'Tout désactiver' : 'Tout activer'}
-            </Text>
-          </Pressable>
-        </View>
-
-        {NOTIF_GROUPS.map((group) => (
-          <View key={group.title} style={styles.notifGroup}>
-            <Text style={styles.notifGroupTitle}>{group.title}</Text>
-            <View style={styles.card}>
-              {group.items.map((item, idx) => {
-                const isOn = notifSettings[item.key] !== false;
-                return (
-                  <View key={item.key}>
-                    {idx > 0 ? <View style={styles.divider} /> : null}
-                    <View style={styles.row}>
-                      <View style={[styles.rowIcon, { backgroundColor: item.color + '18' }]}>
-                        <MaterialIcons name={item.icon as any} size={18} color={item.color} />
-                      </View>
-                      <Text style={styles.notifLabel}>{item.label}</Text>
-                      <Switch
-                        value={isOn}
-                        onValueChange={(v) => handleToggle(item.key, v)}
-                        trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
-                        thumbColor={isOn ? Colors.primary : '#FFF'}
-                        ios_backgroundColor={Colors.border}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
+            <View style={styles.rowInfo}>
+              <Text style={styles.rowLabel}>Notifications</Text>
+              <Text style={styles.rowValue}>{allOn ? 'Toutes activées' : 'Personnalisées'}</Text>
             </View>
-          </View>
-        ))}
-
-        </> : null}
+            <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
+          </Pressable>
+        </View>
 
         {/* ── SWISS ATHLETICS ─────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Swiss Athletics</Text>
