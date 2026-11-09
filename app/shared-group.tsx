@@ -13,15 +13,23 @@ import { SubscriptionDisclosure } from '@/components/feature/SubscriptionDisclos
 import { sharedStyles as styles } from '@/constants/sharedStyles';
 import { Colors } from '@/constants/theme';
 import { useInvitation } from '@/hooks/useInvitation';
-import { useTrainingGroupEditor } from '@/hooks/useTrainingGroupEditor';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { DisciplineChips } from '@/components/ui/DisciplineChips';
-import { disciplineLabel, disciplineOf } from '@/services/trainingGroups';
+import { disciplineLabel, disciplineOf, updateTrainingGroup } from '@/services/trainingGroups';
 export default function SharedGroupScreen() {
  const params = useLocalSearchParams<{ id: string }>(); const id = typeof params.id === 'string' ? params.id : '';
  const group = useSharedGroupManagement(id); const router = useRouter(); const { translate } = useLocalizedCopy(); const { showAlert } = useAlert();
  const invitation = useInvitation();
  const [selected,setSelected] = useState('');
- const { editName, setEditName, editDiscipline, setEditDiscipline, saving, saveGroup } = useTrainingGroupEditor(id);
+ const shared = useSharedGroups();
+ const [editName,setEditName] = useState<string | null>(null); const [editDiscipline,setEditDiscipline] = useState('all'); const [saving,setSaving] = useState(false);
+ const saveGroup = async () => {
+  if (!group.group || !editName?.trim()) return;
+  setSaving(true);
+  try { await updateTrainingGroup(shared.operate, group.group.id, editName, editDiscipline); setEditName(null); void shared.refresh(); showAlert('Groupe enregistré', 'Les coachs et athlètes du groupe voient le nouveau nom.'); }
+  catch (reason) { showAlert('Modification impossible', reason instanceof Error ? reason.message : ''); }
+  finally { setSaving(false); }
+ };
  const session = group.sessions.find(item => item.id === selected) ?? group.sessions[0];
  return <SafeAreaView style={styles.screen} edges={['top','bottom']}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
   <View style={styles.header}><Pressable accessibilityLabel={translate('Retour')} onPress={() => router.back()} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} /></Pressable><Text verbatim style={styles.title}>{group.group?.name ?? translate('Groupe')}</Text>{group.coach && group.group ? <Pressable accessibilityRole="button" accessibilityLabel={translate('Renommer le groupe')} onPress={() => { setEditName(group.group?.name ?? ''); setEditDiscipline(disciplineOf(group.group)); }} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="edit" size={24} color={Colors.clubDeep} /></Pressable> : <Pressable accessibilityLabel={translate('Actualiser')} onPress={() => { void group.refresh(); }} style={({ pressed }) => [styles.iconButton,pressed ? styles.pressed : null]}><MaterialIcons name="refresh" size={24} color={Colors.clubDeep} /></Pressable>}</View>
@@ -31,7 +39,7 @@ export default function SharedGroupScreen() {
    {!group.group && !group.loading ? <Text style={styles.body}>Vous ne disposez pas de cet accès.</Text> : null}
    {group.group ? <>
     <View style={styles.hero}><MaterialIcons name="groups" size={32} color={Colors.textOnPrimary} /><Text verbatim style={styles.heroTitle}>{group.group.name}</Text><Text style={styles.heroText}>{`${disciplineLabel(disciplineOf(group.group))} · tous les coachs du groupe voient les athlètes, séances et résultats.`}</Text></View>
-    {group.coach && editName !== null ? <View style={styles.card}><Text style={styles.heading}>Modifier le groupe</Text><Text style={styles.label}>Nom du groupe</Text><TextInput accessibilityLabel={translate('Nom du groupe')} value={editName} onChangeText={setEditName} maxLength={120} editable={!saving} autoFocus style={styles.input} /><Text style={styles.label}>Discipline</Text><DisciplineChips value={editDiscipline} onChange={setEditDiscipline} disabled={saving} /><View style={styles.row}><Pressable disabled={saving || !editName.trim()} onPress={() => { void saveGroup(); }} style={({ pressed }) => [styles.button, pressed || saving || !editName.trim() ? styles.pressed : null]}><Text style={styles.buttonText}>Enregistrer</Text></Pressable><Pressable disabled={saving} onPress={() => setEditName(null)} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.link}>Annuler</Text></Pressable></View></View> : null}
+    {group.coach && editName !== null ? <View style={styles.card}><Text style={styles.heading}>Modifier le groupe</Text><Text style={styles.label}>Nom du groupe</Text><TextInput accessibilityLabel={translate('Nom du groupe')} value={editName} onChangeText={setEditName} maxLength={100} editable={!saving} autoFocus style={styles.input} /><Text style={styles.label}>Discipline</Text><DisciplineChips value={editDiscipline} onChange={setEditDiscipline} /><View style={styles.row}><Pressable disabled={saving || !editName.trim()} onPress={() => { void saveGroup(); }} style={({ pressed }) => [styles.button, pressed || saving || !editName.trim() ? styles.pressed : null]}><Text style={styles.buttonText}>Enregistrer</Text></Pressable><Pressable disabled={saving} onPress={() => setEditName(null)} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.link}>Annuler</Text></Pressable></View></View> : null}
     {group.coach && editName === null ? <Pressable accessibilityRole="button" onPress={() => { setEditName(group.group?.name ?? ''); setEditDiscipline(disciplineOf(group.group)); }} style={({ pressed }) => [styles.secondary, pressed ? styles.pressed : null]}><Text style={styles.link}>Renommer le groupe ou changer la discipline</Text></Pressable> : null}
     <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id } })} style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}><MaterialIcons name="forum" size={20} color={Colors.textOnPrimary} /><Text style={styles.buttonText}>Discussion du groupe</Text></Pressable>
     <SubscriptionDisclosure title="Membres du groupe"><FlatList scrollEnabled={false} data={group.members} keyExtractor={item => item.user_id} renderItem={({ item }) => <View style={styles.card}><Text verbatim style={styles.heading}>{item.display_name}</Text><Text style={styles.body}>{item.role === 'coach' ? 'Coach' : 'Athlète'}</Text>{group.group?.owner_id === group.userId && item.user_id !== group.userId ? <Pressable disabled={group.busy} onPress={() => showAlert(translate('Retirer l’accès'),translate('Cette personne ne pourra plus accéder au groupe.'),[{ text:translate('Annuler'),style:'cancel' },{ text:translate('Retirer l’accès'),style:'destructive',onPress:() => { void group.removeMember(item.user_id); } }])} style={({ pressed }) => [styles.secondary,pressed ? styles.pressed : null]}><Text style={[styles.link,styles.error]}>Retirer l’accès</Text></Pressable> : null}</View>} /></SubscriptionDisclosure>

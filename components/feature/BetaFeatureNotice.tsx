@@ -6,8 +6,8 @@ import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 // Short contextual information card (no beta wording). Kinds without a message render nothing.
 interface BetaFeatureNoticeProps { kind?: 'overview' | 'chat' | 'local' | 'club' | 'billing'; }
 const descriptions: Partial<Record<NonNullable<BetaFeatureNoticeProps['kind']>, string>> = {
-  local: 'Cette conversation reste sur cet appareil. Pour échanger avec vos athlètes, utilisez la discussion d’un groupe partagé.',
-  club: 'Cet annuaire reste sur cet appareil. Pour travailler à plusieurs coachs, invitez-les dans un groupe partagé.',
+  local: 'Cette conversation reste sur cet appareil. Pour échanger avec vos athlètes, utilisez la discussion d’un groupe.',
+  club: 'Cet annuaire reste sur cet appareil. Pour travailler à plusieurs coachs, invitez-les dans un groupe.',
   billing: 'L’abonnement se gère depuis votre compte Appletics.',
 };
 export const BetaFeatureNotice = memo(function BetaFeatureNotice({ kind = 'overview' }: BetaFeatureNoticeProps) {
