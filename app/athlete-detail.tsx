@@ -19,6 +19,7 @@ import { Competition } from '@/types';
 import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { SubscriptionFeatureGate } from '@/components/feature/SubscriptionFeatureGate';
 import { SharedAthleteHistory } from '@/components/feature/SharedAthleteHistory';
+import { TrainingLogList } from '@/components/feature/TrainingLogList';
 
 type Tab = 'overview' | 'stats' | 'competitions';
 type DetailItem = { kind: 'pb'; id: string; event: string; performance: string }
@@ -124,6 +125,7 @@ export default function AthleteDetailScreen() {
         ListFooterComponent={
           activeTab === 'overview' ? (
             <>
+              <TrainingLogList title="Entraînements" athleteId={athlete.id} limit={20} />
               <SharedAthleteHistory athleteId={athlete.id} />
               <View style={styles.card}><Text style={styles.cardTitle}>Informations de l’athlète</Text>{athlete.email ? <Text style={styles.body}>E-mail : {athlete.email}</Text> : null}{athlete.phone ? <Text style={styles.body}>Téléphone : {athlete.phone}</Text> : null}{athlete.birthYear ? <Text style={styles.body}>Naissance : {athlete.birthYear}</Text> : null}{athlete.club ? <Text verbatim style={styles.body}>{t('Club :')} {athlete.club}</Text> : null}{athlete.licenseNumber ? <Text style={styles.body}>Licence : {athlete.licenseNumber}</Text> : null}{athlete.notes ? <Text verbatim style={styles.body}>{athlete.notes}</Text> : null}</View>
               <Pressable style={({ pressed }) => [styles.editButton, pressed ? styles.pressed : null]} onPress={() => openLink(getAthleteSearchUrl(athlete.name))}><MaterialIcons name="open-in-new" size={20} color={Colors.primary} /><View style={styles.competitionHeading}><Text style={styles.cardTitle}>Swiss Athletics</Text><Text style={styles.subtle}>Rechercher les résultats officiels</Text></View></Pressable>

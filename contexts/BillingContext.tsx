@@ -69,7 +69,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
         setState(emptyBillingState); // Fail closed; never grant access from a preview or a callback URL.
       } else {
         setState(result.data); setError('');
-        if (result.data.subscribed) { setPendingUntil(0); setMessage('Abonnement test confirmé par Stripe.'); }
+        if (result.data.subscribed) { setPendingUntil(0); setMessage('Abonnement confirmé par Stripe.'); }
       }
       setLoading(false);
     })();
@@ -123,7 +123,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     const result = await createBillingCheckout(tier, cycle, returnUrl.current, language);
     if (result.error || !result.data) throw new Error(result.error ?? 'Paiement non disponible.');
     if (!alive.current || currentId.current !== userId) return;
-    setPendingUntil(Date.now() + 180_000); setMessage('Paiement test ouvert. L’accès sera activé après confirmation par Stripe.');
+    setPendingUntil(Date.now() + 180_000); setMessage('Paiement ouvert. L’accès sera activé après confirmation par Stripe.');
     const outcome = await openBillingBrowser(result.data.url);
     if (!alive.current || currentId.current !== userId) return;
     // iOS returns through the session promise, not necessarily a Linking event.
@@ -139,7 +139,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       if (!alive.current || currentId.current !== userId) return;
       // Credentials exist only in this call and in the native SDK, never in React state or storage.
       setPendingUntil(Date.now() + 180_000);
-      setMessage('Fenêtre Stripe test ouverte. L’accès sera activé après vérification du paiement.');
+      setMessage('Fenêtre de paiement Stripe ouverte. L’accès sera activé après vérification du paiement.');
       const outcome = await presentBillingPaymentSheet(prepared.data);
       if (!alive.current || currentId.current !== userId) return;
       if (outcome.status === 'cancelled') {
@@ -147,7 +147,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
         if (!alive.current || currentId.current !== userId) return;
         if (discarded.data) {
           setState(discarded.data); setPendingUntil(0);
-          setMessage(discarded.data.subscribed ? 'Abonnement test confirmé par Stripe.' : 'Paiement test annulé. Aucun abonnement activé par ce retour.');
+          setMessage(discarded.data.subscribed ? 'Abonnement confirmé par Stripe.' : 'Paiement annulé. Aucun abonnement activé par ce retour.');
         } else {
           await refresh(true);
           if (alive.current && currentId.current === userId) setError(discarded.error ?? 'Vérifiez le paiement avant d’abandonner cet essai.');
@@ -164,7 +164,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     if (result.error || !result.data) throw new Error(result.error ?? 'Impossible d’abandonner cet essai.');
     if (!alive.current || currentId.current !== userId) return;
     setState(result.data); setPendingUntil(0);
-    setMessage(result.data.subscribed ? 'Abonnement test confirmé par Stripe.' : 'Essai de paiement abandonné. Vous pouvez choisir une formule.');
+    setMessage(result.data.subscribed ? 'Abonnement confirmé par Stripe.' : 'Essai de paiement abandonné. Vous pouvez choisir une formule.');
   }), [run, state.subscriptionId, state.status, userId]);
   const openPortal = useCallback(async () => run(async () => {
     const result = await createBillingPortal(returnUrl.current, language);

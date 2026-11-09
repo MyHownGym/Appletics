@@ -1,4 +1,8 @@
 export const collaborationTranslations: readonly (readonly [string, string, string])[] = [
+ ['Renommer le groupe','Gruppe umbenennen','Rinomina il gruppo'],['Renommer le groupe ou changer la discipline','Gruppe umbenennen oder Disziplin ändern','Rinomina il gruppo o cambia disciplina'],
+ ['Derniers entraînements de vos athlètes','Letzte Trainings Ihrer Athleten','Ultimi allenamenti dei tuoi atleti'],['Temps et mesures des athlètes','Zeiten und Messungen der Athleten','Tempi e misure degli atleti'],
+ ['Aucun athlète n’a encore saisi de résultat pour cette séance.','Noch kein Athlet hat für dieses Training ein Resultat erfasst.','Nessun atleta ha ancora inserito un risultato per questa seduta.'],
+ ['Entraînements','Trainings','Allenamenti'],['Accès fondateur offert','Gründerzugang geschenkt','Accesso fondatore offerto'],
  ['Groupes','Gruppen','Gruppi'],['Groupe','Gruppe','Gruppo'],['Discipline','Disziplin','Disciplina'],['Nouveau groupe','Neue Gruppe','Nuovo gruppo'],['Modifier le groupe','Gruppe bearbeiten','Modifica gruppo'],
  ['Renommer ou changer la discipline','Umbenennen oder Disziplin ändern','Rinomina o cambia disciplina'],['Vos groupes d’entraînement.','Ihre Trainingsgruppen.','I tuoi gruppi di allenamento.'],
  ['Sprint, Demi-fond, Sprint U18… Plusieurs coachs peuvent suivre le même groupe : chacun voit les athlètes, séances, compétitions et résultats du groupe.','Sprint, Mittelstrecke, Sprint U18… Mehrere Trainer können dieselbe Gruppe betreuen: Alle sehen Athleten, Trainings, Wettkämpfe und Resultate der Gruppe.','Sprint, mezzofondo, Sprint U18… Più allenatori possono seguire lo stesso gruppo: ognuno vede atleti, sedute, gare e risultati del gruppo.'],

@@ -33,6 +33,27 @@ async function checkCatalog(stripe: Stripe, live: boolean) {
   return catalogCheck;
 }
 
+// Free plan granted by the owner to founding coaches: one row per e-mail in appletics_founder_access
+// (tier basic / pro / elite / club_…, optional end date). Returned in the same shape as a Stripe subscription.
+async function founderAccess(req: Request) {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: auth } = await admin.auth.getUser(token);
+  const email = auth?.user?.email?.trim().toLowerCase();
+  if (!email) return null;
+  const { data: row, error } = await admin.from('appletics_founder_access').select('tier, expires_at').eq('email', email).maybeSingle();
+  if (error || !row) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  if (row.expires_at && row.expires_at < today) return null;
+  const end = row.expires_at ? new Date(`${row.expires_at}T23:59:59Z`).toISOString() : null;
+  return {
+    subscribed: true, tier: row.tier, billingCycle: 'annual', status: 'founder', subscriptionId: null,
+    currentPeriodEnd: end, cancelAt: end, commitmentEnd: null, cancelAtPeriodEnd: !!end,
+    pendingTier: null, pendingCycle: null, pendingChangeAt: null, founder: true, checkedAt: new Date().toISOString(),
+  };
+}
+
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Méthode non autorisée.' }, 405);
@@ -43,6 +64,11 @@ Deno.serve(async req => {
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BillingError('Requête invalide.');
     action = body.action ?? 'check';
     if (!['config', 'check', 'checkout', 'payment-sheet', 'discard-payment', 'portal', 'cancel', 'resume', 'change'].includes(action)) throw new BillingError('Action inconnue.');
+    // Founder access (table appletics_founder_access): the plan is granted without any payment.
+    if (action === 'check') {
+      const founder = await founderAccess(req);
+      if (founder) return jsonResponse(founder);
+    }
     const key = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
     // The secret key decides the mode: sk_test_/rk_test_ = test payments, sk_live_/rk_live_ = real payments.
     const LIVE = /^(sk|rk)_live_/.test(key);
@@ -205,7 +231,9 @@ Deno.serve(async req => {
         customer: customerId!, client_reference_id: user.id, mode: 'subscription', line_items: [{ price: selected.priceId, quantity: 1 }], metadata,
         subscription_data: { metadata },
         success_url: `${baseReturn}${separator}result=success&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${baseReturn}${separator}result=cancelled`, expires_at: now() + 30 * 60,
-        custom_text: { submit: { message: body.billingCycle === 'annual_monthly' ? 'TEST : engagement renouvelable de 12 mois, facturé mensuellement. Résiliation à la fin des 12 mois. Aucun débit réel.' : 'MODE TEST : renouvellement automatique. Résiliation à la fin de la période payée. Aucun débit réel.' } },
+        custom_text: { submit: { message: `${LIVE ? '' : 'MODE TEST (aucun débit réel) · '}${body.billingCycle === 'annual_monthly' ? 'Engagement renouvelable de 12 mois, facturé mensuellement. Résiliation à la fin des 12 mois.' : 'Renouvellement automatique. Résiliation à la fin de la période payée.'}` } },
+        // Codes promo créés dans Stripe (ex. FONDATEUR -50 %) acceptés sur la page de paiement.
+        allow_promotion_codes: true,
       }, { idempotencyKey: `${appId}:checkout:${checkoutVersion}:${user.id}:${paymentLease!.token}` });
       if (session.livemode !== LIVE || !session.url) throw new BillingError('Session Stripe non disponible.', 409);
       return jsonResponse({ url: session.url, sessionId: session.id, testMode: !LIVE });

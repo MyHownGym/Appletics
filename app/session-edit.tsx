@@ -21,6 +21,7 @@ import { IntensityDot } from '@/components/ui/IntensityDot';
 import { MiniCalendar } from '@/components/ui/MiniCalendar';
 import { SessionSharingPanel } from '@/components/feature/SessionSharingPanel';
 import { useActivityScope } from '@/hooks/useActivityScope';
+import { TrainingLogList } from '@/components/feature/TrainingLogList';
 
 const SESSION_TYPES = [
   { id: 'track', icon: 'directions-run', label: 'Piste' },
@@ -523,6 +524,7 @@ export default function SessionEditScreen() {
           </View>
 
           {existing ? <SessionSharingPanel planId={planId} session={existing} /> : null}
+          {existing ? <TrainingLogList title="Temps et mesures des athlètes" sessionId={existing.id} limit={50} empty="Aucun athlète n’a encore saisi de résultat pour cette séance." /> : null}
 
           {/* Summary */}
           <View style={[styles.summaryCard, { borderColor: (intensityConfig?.color || Colors.border) + '60' }]}>
