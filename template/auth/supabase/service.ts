@@ -451,7 +451,7 @@ export class AuthService {
     try {
       // Generate cross-platform redirect URL
       const redirectUrl = AuthSession.makeRedirectUri({
-        scheme: 'appletics',
+        scheme: 'onspaceapp',
         path: 'auth'
       });
 

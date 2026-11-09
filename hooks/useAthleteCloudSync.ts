@@ -10,7 +10,6 @@ import {
   planSignature, resultsToPerformance,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyResult } from '@/services/pushService';
-import { localGroupFor } from '@/services/trainingGroups';
 
 // Athlete side, in the background:
 // 1. sessions and competitions sent by the coach become the athlete's own plan and competitions
@@ -33,9 +32,8 @@ export function useAthleteCloudSync() {
   // The athlete's own record (stats are attached to it).
   useEffect(() => {
     if (!active || athletes.some(item => item.id === uid)) return;
-    const discipline = shared.data.groups.find(group => myGroups.has(group.id) && group.discipline && group.discipline !== 'all')?.discipline ?? 'all';
-    addAthlete({ id: uid, name: user.name || 'Moi', email: user.email, events: [], group: localGroupFor(discipline), pb: {}, status: 'active' });
-  }, [active, uid, athletes, user.name, user.email, addAthlete, shared.data.groups, myGroups]);
+    addAthlete({ id: uid, name: user.name || 'Moi', email: user.email, events: [], group: 'sprints', pb: {}, status: 'active' });
+  }, [active, uid, athletes, user.name, user.email, addAthlete]);
 
   // 1. Coach's items → my plans and competitions.
   useEffect(() => {

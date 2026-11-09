@@ -200,7 +200,7 @@ export default function ChatScreen() {
             <Pressable accessibilityRole="button" onPress={() => router.push('/shared-groups')} style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
               <View style={styles.onlineIcon}><MaterialIcons name="group-add" size={20} color="#FFF" /></View>
               <View style={styles.channelInfo}>
-                <Text style={styles.channelName}>Créer ou rejoindre un groupe</Text>
+                <Text style={styles.channelName}>Créer ou rejoindre un groupe partagé</Text>
                 <Text style={styles.lastMsg}>Chaque groupe a sa discussion en ligne.</Text>
               </View>
               <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />

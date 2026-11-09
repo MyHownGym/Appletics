@@ -25,7 +25,7 @@ export default function CoachDetailScreen() {
           <Text verbatim style={styles.name}>{coach.name}</Text><Text style={[styles.role, { color: accent }]}>{coach.role}</Text><Text verbatim style={styles.body}>{coach.club}</Text>
           {coach.status ? <Text style={styles.body}>{coach.status === 'active' ? 'Actif' : coach.status === 'pending' ? 'En attente' : 'Suspendu'}</Text> : null}
         </View>
-        <View style={styles.card}><Text style={styles.title}>{isClub ? 'Informations du club' : 'Groupes'}</Text><Text style={styles.body}>{coach.groups.length ? coach.groups.join(' · ') : 'Aucun groupe renseigné'}</Text>
+        <View style={styles.card}><Text style={styles.title}>{isClub ? 'Informations du club' : 'Groupes partagés'}</Text><Text style={styles.body}>{coach.groups.length ? coach.groups.join(' · ') : 'Aucun groupe renseigné'}</Text>
           {coach.email ? <Pressable style={({ pressed }) => [styles.contact, pressed ? styles.pressed : null]} onPress={() => void openLink(`mailto:${coach.email}`)}><MaterialIcons name="email" size={22} color={accent} /><Text style={[styles.body, { color: accent }]}>{coach.email}</Text></Pressable> : null}
         </View>
         <Text style={styles.body}>{coach.source === 'club' ? 'Fiche locale en lecture seule. Les invitations et accès distants ne sont pas encore connectés.' : 'Profil issu des membres de vos groupes partagés. Seules les informations disponibles dans ces groupes sont affichées.'}</Text>

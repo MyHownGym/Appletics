@@ -46,10 +46,10 @@ export function useAuth(): AuthContextType {
     };
   }
 
-  const sendOTP = async (email: string, options?: { shouldCreateUser?: boolean }): Promise<SendOTPResult> => {
+  const sendOTP = async (email: string): Promise<SendOTPResult> => {
     context.setOperationLoading(true);
     try {
-      const result = await authService.sendOTP(email, options);
+      const result = await authService.sendOTP(email);
       return result;
     } catch (error) {
       console.warn('[Template:useAuth] sendOTP exception:', error);
