@@ -9,6 +9,7 @@ import {
   resultsToPerformance, staleRows,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
+import { localGroupFor } from '@/services/trainingGroups';
 
 // Coach side, in the background (the coach's device data stays the source for what the coach creates):
 // 1. athletes of the coach's shared groups appear in the coach's athlete list;
@@ -17,7 +18,7 @@ import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
 // 4. results the coach enters for them are sent to the athletes.
 export function useCoachCloudSync() {
   const app = useApp();
-  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance, mergeAthletes } = app;
+  const { user, athletes, trainingPlans, competitions, results, sessionPerformances, addAthlete, addResult, updateResult, addSessionPerformance, mergeAthletes, updateAthlete } = app;
   const shared = useSharedGroups();
   const uid = shared.userId;
   const isCoach = !!uid && user.userType !== 'athlete';
@@ -25,6 +26,7 @@ export function useCoachCloudSync() {
 
   const coachGroups = useMemo(() => new Set(shared.data.members.filter(item => item.user_id === uid && item.role === 'coach').map(item => item.group_id)), [shared.data.members, uid]);
   const groupNames = useMemo(() => new Map(shared.data.groups.map(group => [group.id, group.name])), [shared.data.groups]);
+  const groupDisciplines = useMemo(() => new Map(shared.data.groups.map(group => [group.id, group.discipline || 'all'])), [shared.data.groups]);
   const groupAthletes = useMemo(() => shared.data.athletes.filter(item => coachGroups.has(item.group_id)), [shared.data.athletes, coachGroups]);
 
   // Remembered links (shared athlete → local athlete), kept on the device.
@@ -37,15 +39,27 @@ export function useCoachCloudSync() {
   // local athlete id → shared athlete id
   const links = useMemo(() => {
     const map = new Map<string, string>();
-    for (const item of groupAthletes) {
+    // Same person in several groups: the record of a group with a discipline wins (e.g. « Sprint » over « Athlètes de … »).
+    const ordered = [...groupAthletes].sort((a, b) => Number((groupDisciplines.get(a.group_id) ?? 'all') !== 'all') - Number((groupDisciplines.get(b.group_id) ?? 'all') !== 'all'));
+    for (const item of ordered) {
       if (item.source_id?.startsWith(`${uid}:`)) { const local = item.source_id.slice(uid.length + 1); if (athletes.some(a => a.id === local)) map.set(local, item.id); }
       if (athletes.some(local => local.id === `shared-${item.id}`)) map.set(`shared-${item.id}`, item.id);
       const remembered = storedLinks[item.id];
       if (remembered && athletes.some(local => local.id === remembered)) map.set(remembered, item.id);
     }
     return map;
-  }, [groupAthletes, athletes, uid, storedLinks]);
-  const localOf = useMemo(() => new Map([...links].map(([local, sharedId]) => [sharedId, local])), [links]);
+  }, [groupAthletes, athletes, uid, storedLinks, groupDisciplines]);
+  // shared athlete id → local athlete id (every group record, including a second group of the same person)
+  const localOf = useMemo(() => {
+    const map = new Map([...links].map(([local, sharedId]) => [sharedId, local]));
+    for (const item of groupAthletes) {
+      if (map.has(item.id)) continue;
+      const sourceLocal = item.source_id?.startsWith(`${uid}:`) ? item.source_id.slice(uid.length + 1) : '';
+      const local = [`shared-${item.id}`, sourceLocal, storedLinks[item.id]].find(id => id && athletes.some(a => a.id === id));
+      if (local) map.set(item.id, local);
+    }
+    return map;
+  }, [links, groupAthletes, athletes, uid, storedLinks]);
 
   // 1. Each group athlete ↔ exactly one athlete in the coach's list: linked by invitation, e-mail or name,
   //    added once if missing, and duplicates (same person recorded twice) merged with all their data.
@@ -60,24 +74,32 @@ export function useCoachCloudSync() {
       const norm = (text?: string) => (text ?? '').trim().toLowerCase();
       const referenced = (id: string) => results.filter(item => item.athleteId === id).length + trainingPlans.filter(plan => plan.athleteIds.includes(id)).length + competitions.filter(item => item.athleteIds.includes(id)).length;
       const taken = new Set<string>();
+      const wanted = new Map<string, string>(); // local athlete → discipline of its (first) training group
       let changed = false;
       for (const item of groupAthletes) {
         const email = norm(shared.data.invitations.find(invite => invite.athlete_id === item.id)?.email);
         const sourceLocal = item.source_id?.startsWith(`${uid}:`) ? item.source_id.slice(uid.length + 1) : '';
-        const matches = athletes.filter(local => !taken.has(local.id) && (
+        const matches = athletes.filter(local => !taken.has(`${item.group_id}:${local.id}`) && (
           local.id === `shared-${item.id}` || local.id === sourceLocal || local.id === stored[item.id]
           || (email && norm(local.email) === email) || norm(local.name) === norm(item.name)));
         if (!matches.length) {
           if (!known.has(item.id)) {
-            const athlete: Athlete = { id: `shared-${item.id}`, name: item.name, events: [], group: 'sprints', pb: {}, status: 'active', ...(email ? { email } : {}), notes: `Groupe : ${groupNames.get(item.group_id) ?? ''}` };
-            addAthlete(athlete); stored[item.id] = athlete.id; taken.add(athlete.id); known.add(item.id); changed = true;
+            const athlete: Athlete = { id: `shared-${item.id}`, name: item.name, events: [], group: localGroupFor(groupDisciplines.get(item.group_id) ?? 'all'), pb: {}, status: 'active', ...(email ? { email } : {}), notes: `Groupe : ${groupNames.get(item.group_id) ?? ''}` };
+            addAthlete(athlete); stored[item.id] = athlete.id; taken.add(`${item.group_id}:${athlete.id}`); known.add(item.id); changed = true;
           }
           continue;
         }
         const keeper = [...matches].sort((a, b) => Number(a.id.startsWith('shared-')) - Number(b.id.startsWith('shared-')) || referenced(b.id) - referenced(a.id))[0];
         if (matches.length > 1) mergeAthletes(keeper.id, matches.filter(local => local.id !== keeper.id).map(local => local.id));
-        matches.forEach(local => taken.add(local.id));
+        matches.forEach(local => taken.add(`${item.group_id}:${local.id}`));
+        // The training group decides the athlete's discipline in the coach's list (filters in Plans, Athlètes…).
+        const discipline = groupDisciplines.get(item.group_id) ?? 'all';
+        if (discipline !== 'all' && !wanted.has(keeper.id)) wanted.set(keeper.id, discipline);
         if (stored[item.id] !== keeper.id || !known.has(item.id)) { stored[item.id] = keeper.id; known.add(item.id); changed = true; }
+      }
+      if (!cancelled) for (const [localId, discipline] of wanted) {
+        const local = athletes.find(item => item.id === localId);
+        if (local && local.group !== discipline) updateAthlete({ ...local, group: discipline });
       }
       if (changed && !cancelled) {
         await AsyncStorage.multiSet([[knownKey, JSON.stringify([...known])], [linkKey, JSON.stringify(stored)]]).catch(() => {});
@@ -85,7 +107,7 @@ export function useCoachCloudSync() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isCoach, uid, groupAthletes, shared.data.invitations, athletes, results, trainingPlans, competitions, addAthlete, mergeAthletes, groupNames]);
+  }, [isCoach, uid, groupAthletes, shared.data.invitations, athletes, results, trainingPlans, competitions, addAthlete, mergeAthletes, updateAthlete, groupNames, groupDisciplines]);
 
   // 2-4. Two-way sync of plans, competitions and results, a few seconds after any change.
   useEffect(() => {

@@ -1,5 +1,5 @@
 import type { SessionMetric } from '@/types';
-export interface SharedGroup { id: string; owner_id: string; name: string; created_at: string }
+export interface SharedGroup { id: string; owner_id: string; name: string; created_at: string; discipline?: string }
 export interface SharedMember { group_id: string; user_id: string; role: 'coach' | 'athlete'; display_name: string }
 export interface SharedAthlete { id: string; group_id: string; user_id: string | null; name: string; source_id: string | null }
 export interface SharedInvitation { id: string; group_id: string; group_name: string; email: string; role: 'coach' | 'athlete'; athlete_id: string | null; status: 'pending' | 'accepted' | 'declined' | 'revoked'; expires_at: string }

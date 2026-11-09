@@ -7,19 +7,19 @@ const copy = {
     subject: 'Invitation Appletics', greeting: 'Bonjour', invitation: 'Vous êtes invité(e) à rejoindre Appletics.',
     website: 'Ouvrir Appletics', store: '',
     group: 'Groupe', coach: 'Coach', athlete: 'Athlète', role: 'Rôle',
-    accept: 'Connectez-vous dans Appletics avec cette adresse e-mail, puis acceptez l’invitation dans Profil > Groupes partagés.',
+    accept: 'Connectez-vous dans Appletics avec cette adresse e-mail, puis acceptez l’invitation dans Profil > Groupes.',
   },
   de: {
     subject: 'Appletics-Einladung', greeting: 'Hallo', invitation: 'Sie sind eingeladen, Appletics beizutreten.',
     website: 'Appletics öffnen', store: '',
     group: 'Gruppe', coach: 'Trainer', athlete: 'Athlet', role: 'Rolle',
-    accept: 'Melden Sie sich in Appletics mit dieser E-Mail-Adresse an und nehmen Sie die Einladung unter Profil > Gemeinsame Gruppen an.',
+    accept: 'Melden Sie sich in Appletics mit dieser E-Mail-Adresse an und nehmen Sie die Einladung unter Profil > Gruppen an.',
   },
   it: {
     subject: 'Invito Appletics', greeting: 'Ciao', invitation: 'Sei invitato a unirti ad Appletics.',
     website: 'Apri Appletics', store: '',
     group: 'Gruppo', coach: 'Allenatore', athlete: 'Atleta', role: 'Ruolo',
-    accept: 'Accedi ad Appletics con questo indirizzo email, poi accetta l’invito in Profilo > Gruppi condivisi.',
+    accept: 'Accedi ad Appletics con questo indirizzo email, poi accetta l’invito in Profilo > Gruppi.',
   },
 } as const;
 
