@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { refreshUnread } from '@/services/unreadStore';
+import { claimPushForCurrentAccount } from '@/services/pushService';
 
 // Keeps unread message counts (chat list, home, tab bar, app icon badge) up to date.
 export function useUnreadWatcher() {
@@ -9,6 +10,8 @@ export function useUnreadWatcher() {
   const uid = shared.userId ?? '';
   const groupIds = useMemo(() => shared.data.groups.map(group => group.id).sort(), [shared.data.groups]);
   const ids = groupIds.join(',');
+  // Notifications of this device go to the account signed in now (several accounts may share a phone).
+  useEffect(() => { if (uid) void claimPushForCurrentAccount().catch(() => {}); }, [uid]);
   useEffect(() => {
     if (!uid) return;
     const list = ids ? ids.split(',') : [];
