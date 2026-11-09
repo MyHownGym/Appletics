@@ -8,6 +8,7 @@ import type { useBillingReview } from '@/hooks/useBillingReview';
 import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
 import { useBilling } from '@/hooks/useBilling';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { webScroll } from '@/constants/webScroll';
 
 interface SummaryRowProps { label: string; value: string }
 const SummaryRow = memo(function SummaryRow({ label, value }: SummaryRowProps) {
@@ -30,7 +31,7 @@ export const BillingCheckoutReview = memo(function BillingCheckoutReview({ revie
             <View style={styles.headerCopy}><Text style={styles.title}>{summary.changingPlan ? 'Votre changement de formule' : 'Avant de payer'}</Text>{testMode ? <Text style={styles.test}>TEST · aucun débit</Text> : null}</View>
             <Pressable accessibilityRole="button" accessibilityLabel={translate('Fermer le résumé')} disabled={actions.busy} onPress={review.closeReview} style={({ pressed }) => [styles.close, pressed ? styles.pressed : null]}><MaterialIcons name="close" size={24} color={Colors.textPrimary} /></Pressable>
           </View>
-          <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={styles.content}>
+          <ScrollView style={[styles.flex, webScroll]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={styles.content}>
             <View style={styles.summary}>
               <View style={styles.identity}><View style={styles.planCopy}><Text style={styles.eyebrow}>Formule choisie</Text><Text verbatim style={styles.plan}>{name}</Text></View><View style={styles.priceCopy}><Text verbatim style={styles.amount}>{review.amountLabel}</Text><Text style={styles.priceHint}>{summary.changingPlan ? 'à l’échéance' : 'à payer'}</Text></View></View>
               <SummaryRow label="Périodicité" value={review.cycleLabel} />

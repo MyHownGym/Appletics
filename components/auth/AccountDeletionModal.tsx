@@ -7,6 +7,7 @@ import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useAccountDeletion } from '@/hooks/useAccountDeletion';
 import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { webScroll } from '@/constants/webScroll';
 interface AccountDeletionModalProps { visible: boolean; onClose: () => void; }
 export const AccountDeletionModal = memo(function AccountDeletionModal({ visible, onClose }: AccountDeletionModalProps) {
   const deletion = useAccountDeletion(visible, onClose);
@@ -15,7 +16,7 @@ export const AccountDeletionModal = memo(function AccountDeletionModal({ visible
     <SafeAreaView edges={['top', 'bottom']} style={styles.screen}>
       <View style={styles.header}><Text style={styles.title}>Supprimer mon compte</Text><Pressable disabled={deletion.busy} accessibilityRole="button" accessibilityLabel={translate('Annuler')} onPress={onClose} style={({ pressed }) => [styles.close, pressed ? styles.pressed : null]}><MaterialIcons name="close" size={24} color={Colors.textPrimary} /></Pressable></View>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView style={styles.flex} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ScrollView style={[styles.flex, webScroll]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           <View style={styles.warning}><MaterialIcons name="delete-forever" size={32} color={Colors.error} /><Text style={styles.heading}>Suppression irréversible</Text><Text style={styles.body}>Votre connexion, votre profil, vos données privées Cloud et l’historique de ce compte sur cet appareil seront supprimés. Votre abonnement éventuel sera résilié immédiatement, sans nouveau prélèvement.</Text></View>
           <Text style={styles.body}>Les groupes dont vous êtes propriétaire seront supprimés pour tous leurs membres. Dans les groupes d’autres coachs, certaines contributions sportives resteront sans votre nom, e-mail ou profil, avec une référence technique anonymisée.</Text>
           <Text style={styles.body}>La suppression locale ne peut pas effacer les exports ou les copies déjà enregistrées sur d’autres appareils.</Text>
