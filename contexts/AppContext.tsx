@@ -37,6 +37,18 @@ interface AppContextType {
  updateUser: (updates: Partial<User>) => void; deleteAccount: (password: string) => Promise<void>;
 }
 export const AppContext = createContext<AppContextType | undefined>(undefined);
+// Same athlete, competition and event (results received twice through the cloud, or entered here and received back).
+const eventKey = (event: string) => event.trim().toLowerCase().replace(/\s+/g, '');
+function isTwinResult(a: CompResult, b: CompResult) { return a.id !== b.id && a.competitionId === b.competitionId && a.athleteId === b.athleteId && eventKey(a.event) === eventKey(b.event); }
+// Keeps one result per athlete/competition/event/value: the local entry rather than the cloud copy, PB kept.
+function uniqueResults(list: CompResult[]) {
+ const kept: CompResult[] = [];
+ for (const item of [...list].sort((a,b) => Number(a.id.startsWith('cr-')) - Number(b.id.startsWith('cr-')))) {
+  const index = kept.findIndex(other => isTwinResult(other,item) && other.result.trim() === item.result.trim());
+  if (index < 0) kept.push(item); else if (item.pb && !kept[index].pb) kept[index] = { ...kept[index],pb:true };
+ }
+ return list.filter(item => kept.some(other => other.id === item.id)).map(item => kept.find(other => other.id === item.id)!);
+}
 export function AppProvider({ children }: { children: ReactNode }) {
  const auth = useAuth(); const billing = useBilling(); const { showAlert } = useLocalizedAlert(); const today = useLocalDate();
  const [user,setUser] = useState<User>(emptyUser);
@@ -102,7 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
    }
    // Same id stored twice (older sync versions): keep one copy.
    const unique = <T extends { id: string }>(list: T[]) => list.filter((item, index) => list.findIndex(other => other.id === item.id) === index);
-   workspaceData = { ...workspaceData,trainingPlans:unique(workspaceData.trainingPlans),competitions:unique(workspaceData.competitions),results:unique(workspaceData.results),athletes:reconcileAthletes(unique(workspaceData.athletes),workspaceData.results) };
+   workspaceData = { ...workspaceData,trainingPlans:unique(workspaceData.trainingPlans),competitions:unique(workspaceData.competitions),results:uniqueResults(unique(workspaceData.results)),athletes:reconcileAthletes(unique(workspaceData.athletes),workspaceData.results) };
    // Commit only after every read succeeds. The persistence effect saves once ready;
    // a failed/timed-out/cancelled restore must never save an empty replacement.
    if (cancelled) return;
@@ -155,10 +167,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return { ...previous,results,athletes:reconcileAthletes(previous.athletes,results),competitions:previous.competitions.filter(item => item.id !== id) };
  }),[change]);
  const storeResult = useCallback((result:CompResult,editing:boolean) => change(previous => {
-  const old = previous.results.find(item => item.id === result.id);
+  let old = previous.results.find(item => item.id === result.id);
   if (editing && !old) return previous;
-  const next = resultWithPb(result,previous.athletes,previous.results);
-  const results = old ? previous.results.map(item => item.id === next.id ? next : item) : [next,...previous.results];
+  // Same event of the same athlete at the same competition, once entered here and once received through the cloud
+  // (ids "cr-…"): one result only. A received value updates the local one; a local entry replaces the received copy.
+  const twin = old ? undefined : previous.results.find(item => isTwinResult(item,result) && (item.id.startsWith('cr-') || result.id.startsWith('cr-')));
+  if (twin) { result = result.id.startsWith('cr-') ? { ...twin,result:result.result,rank:result.rank || twin.rank,notes:result.notes || twin.notes,pb:twin.pb || result.pb } : { ...result,pb:result.pb || twin.pb }; old = twin; }
+  const next = resultWithPb(result,previous.athletes,previous.results.filter(item => item.id !== twin?.id));
+  const results = old ? previous.results.map(item => item.id === old!.id ? next : item) : [next,...previous.results];
   const competitions = previous.competitions.map(item => {
    if (item.id !== next.competitionId && item.id !== old?.competitionId) return item;
    return { ...item,teamScore:Math.max(0,(item.teamScore ?? 0)-(old?.competitionId === item.id ? resultScore(old.rank) : 0)+(next.competitionId === item.id ? resultScore(next.rank) : 0)),athleteIds:item.id === next.competitionId && !item.athleteIds.includes(next.athleteId) ? [...item.athleteIds,next.athleteId] : item.athleteIds };

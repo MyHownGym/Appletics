@@ -23,6 +23,7 @@ import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard'
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import { CoachSessionsCard } from '@/components/feature/CoachSessionsCard';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
+import { TrainingLogList } from '@/components/feature/TrainingLogList';
 
 interface HomeCalendarProps { schedule: ReturnType<typeof useHomeSchedule> }
 const HomeCalendar = memo(function HomeCalendar({ schedule }: HomeCalendarProps) {
@@ -81,6 +82,7 @@ export default function HomeScreen() {
       </LinearGradient>
       <PendingInvitationsBanner horizontalPadding={screenPadding} />
       <CoachSessionsCard horizontalPadding={screenPadding} />
+      {!isAthlete ? <TrainingLogList title="Derniers entraînements de vos athlètes" limit={5} horizontalPadding={screenPadding} /> : null}
       <SubscriptionPlanCard compact />
       <HomeActivitySummary horizontalPadding={screenPadding} />
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>

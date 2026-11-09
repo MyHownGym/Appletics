@@ -14,7 +14,7 @@ export const BillingStatusPanel = memo(function BillingStatusPanel({ compact = f
   // Test labels only when the server confirms test mode: never tell a real customer that nothing is charged.
   const testMode = billing.configuration?.testMode === true;
   const date = (value: string | null) => value ? new Date(value).toLocaleDateString(locale) : '—';
-  const label = state.status === 'active' ? 'Actif' : state.status === 'past_due' ? 'Paiement en retard' : state.status === 'incomplete' ? 'Paiement à terminer' : state.status === 'canceled' ? 'Résilié' : state.status === 'unpaid' ? 'Paiement impayé' : 'Aucun abonnement confirmé';
+  const label = state.status === 'founder' ? 'Accès fondateur offert' : state.status === 'active' ? 'Actif' : state.status === 'past_due' ? 'Paiement en retard' : state.status === 'incomplete' ? 'Paiement à terminer' : state.status === 'canceled' ? 'Résilié' : state.status === 'unpaid' ? 'Paiement impayé' : 'Aucun abonnement confirmé';
   return <View style={styles.panel}>
     <View style={styles.heading}><MaterialIcons name={testMode ? 'science' : 'lock'} size={24} color={Colors.welcomeDeep} /><Text style={styles.title}>{testMode ? 'Stripe · mode test' : 'Paiement sécurisé · Stripe'}</Text></View>
     {testMode ? <Text style={styles.body}>Aucun débit réel. Utilisez uniquement les cartes de test Stripe.</Text> : null}
