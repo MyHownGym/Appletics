@@ -6,7 +6,7 @@ export const APP_NAME = 'Appletics';
 
 export const EVENT_GROUPS = [
   { id: 'all',      labelKey: 'all',      label: 'Tous',        color: '#FFD700' },
-  { id: 'sprints',  labelKey: 'sprints',  label: 'Sprints',     color: '#FF6B35' },
+  { id: 'sprints',  labelKey: 'sprints',  label: 'Sprint',     color: '#FF6B35' },
   { id: 'distance', labelKey: 'distance', label: 'Demi-fond',   color: '#60A5FA' },
   { id: 'hurdles',  labelKey: 'hurdles',  label: 'Haies',       color: '#F472B6' },
   { id: 'jumps',    labelKey: 'jumps',    label: 'Sauts',       color: '#A78BFA' },

@@ -23,6 +23,7 @@ export async function sharedOperation<T = unknown>(name: string, parameters: Rec
     if (error.code === 'PGRST202') throw new Error('function_missing');
     if (error.code === '23505' || error.message.includes('Performance changed')) throw new Error('Cette donnée a changé. Actualisez avant de modifier.');
     if (error.message.includes('Access denied')) throw new Error('Vous ne disposez pas de cet accès.');
+    if (error.message.includes('Already member')) throw new Error('Cette personne fait déjà partie de votre groupe.');
     if (error.message.includes('Invitation expired')) throw new Error('Invitation expirée ou indisponible.');
     throw new Error('Opération impossible. Vérifiez les informations et votre connexion.');
   }
