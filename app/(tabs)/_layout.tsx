@@ -19,6 +19,7 @@ import { useAvatarSync } from '@/hooks/useAvatarSync';
 import { useLogoutConfirm } from '@/hooks/useLogoutConfirm';
 import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { useUnreadCounts, unreadTotal } from '@/services/unreadStore';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // ── Animated icon for phone pill nav ──────────────────────────────────────
 function AnimatedTabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
@@ -60,7 +61,8 @@ function Sidebar() {
   const initials = user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <View style={[
+    // Orange like the logo, fading to white at the top so the logo stays visible.
+    <LinearGradient colors={['#FFFFFF', '#FF7A4D', '#FF5722', '#E2461A']} locations={[0, 0.11, 0.45, 1]} style={[
       sideStyles.sidebar,
       { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 20) },
       isDesktop ? sideStyles.sidebarWide : sideStyles.sidebarNarrow,
@@ -91,7 +93,7 @@ function Sidebar() {
               <MaterialIcons
                 name={item.icon as any}
                 size={22}
-                color={isActive ? Colors.primary : Colors.textMuted}
+                color={isActive ? Colors.primary : '#FFFFFF'}
               />
               {isDesktop ? (
                 <Text style={[sideStyles.navLabel, isActive && sideStyles.navLabelActive]}>
@@ -121,19 +123,17 @@ function Sidebar() {
             <Text style={sideStyles.userRole}>{user.userType === 'athlete' ? 'Athlète' : 'Coach'}</Text>
           </View>
         ) : null}
-        {isDesktop ? <Pressable accessibilityRole="button" accessibilityLabel="Se déconnecter" onPress={logout} style={({ pressed }) => [{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.error + '12' }, pressed && { opacity: 0.7 }]}>
-          <MaterialIcons name="logout" size={20} color={Colors.error} />
+        {isDesktop ? <Pressable accessibilityRole="button" accessibilityLabel="Se déconnecter" onPress={logout} style={({ pressed }) => [{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' }, pressed && { opacity: 0.7 }]}>
+          <MaterialIcons name="logout" size={20} color="#FFFFFF" />
         </Pressable> : null}
       </Pressable>
-    </View>
+    </LinearGradient>
   );
 }
 
 const sideStyles = StyleSheet.create({
   sidebar: {
-    backgroundColor: Colors.surface,
-    borderRightWidth: 1,
-    borderRightColor: Colors.border,
+    borderRightWidth: 0,
     alignItems: 'stretch',
     gap: 0,
   },
@@ -152,7 +152,7 @@ const sideStyles = StyleSheet.create({
     fontSize: Typography.fontSizeMD, fontWeight: Typography.weightExtrabold,
     color: Colors.textPrimary,
   },
-  divider: { height: 1, backgroundColor: Colors.border, marginBottom: 12, marginHorizontal: 14 },
+  divider: { height: 1, backgroundColor: 'rgba(255,87,34,0.18)', marginBottom: 12, marginHorizontal: 14 },
   navList: { gap: 2, paddingHorizontal: 8 },
   navItem: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -163,10 +163,10 @@ const sideStyles = StyleSheet.create({
     paddingHorizontal: 0, paddingVertical: 11, justifyContent: 'center',
     width: 48, alignSelf: 'center',
   },
-  navItemActive: { backgroundColor: Colors.primary + '12' },
+  navItemActive: { backgroundColor: '#FFFFFF' },
   navLabel: {
     fontSize: Typography.fontSizeSM, fontWeight: Typography.weightSemibold,
-    color: Colors.textSecondary, flex: 1,
+    color: '#FFFFFF', flex: 1,
   },
   navLabelActive: { color: Colors.primary, fontWeight: Typography.weightBold },
   activeIndicator: {
@@ -176,17 +176,17 @@ const sideStyles = StyleSheet.create({
   userAvatar: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 14, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: Colors.border, marginTop: 8,
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.25)', marginTop: 8,
   },
   avatarCircle: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.primary + '18', borderWidth: 1.5, borderColor: Colors.primary + '40',
+    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightBold, color: Colors.primary },
   userInfo: { flex: 1 },
-  userName: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightBold, color: Colors.textPrimary },
-  userRole: { fontSize: Typography.fontSizeXS, color: Colors.textMuted },
+  userName: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightBold, color: '#FFFFFF' },
+  userRole: { fontSize: Typography.fontSizeXS, color: 'rgba(255,255,255,0.8)' },
 });
 
 // ── Layout wrapper for tablet/desktop ─────────────────────────────────────
