@@ -100,7 +100,6 @@ function Sidebar() {
                   {t(item.labelKey as any)}
                 </Text>
               ) : null}
-              {isActive && isDesktop ? <View style={sideStyles.activeIndicator} /> : null}
             </Pressable>
           );
         })}
