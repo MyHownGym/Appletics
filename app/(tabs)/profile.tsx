@@ -37,6 +37,7 @@ import { useCoachRoles } from '@/hooks/useCoachRoles';
 import { AppBrand } from '@/components/feature/AppBrand';
 import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard';
 import { SharedGroupsLink } from '@/components/feature/SharedGroupsLink';
+import { SwipeSheet } from '@/components/ui/SwipeSheet';
 
 const DELETE_WIDTH = 76;
 
@@ -386,7 +387,7 @@ export default function ProfileScreen() {
   const LangModal = () => (
     <Modal visible={langModal} transparent animationType="slide" onRequestClose={() => setLangModal(false)}>
       <Pressable style={styles.modalOverlay} onPress={() => setLangModal(false)}>
-        <View style={styles.modalSheet}>
+        <SwipeSheet onClose={() => setLangModal(false)} style={styles.modalSheet}>
           <View style={styles.modalHandle} />
           <Text style={styles.modalTitle}>{t('select_language')}</Text>
           {LANGUAGES.map(lang => (
@@ -405,7 +406,7 @@ export default function ProfileScreen() {
                 : <MaterialIcons name="radio-button-unchecked" size={20} color={Colors.border} />}
             </Pressable>
           ))}
-        </View>
+        </SwipeSheet>
       </Pressable>
     </Modal>
   );
@@ -650,7 +651,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView ref={sectionNav.scrollRef} onContentSizeChange={sectionNav.onContentSizeChange} style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' }]}>
         <View style={styles.brandHeader}><AppBrand /></View>
-        <View style={[styles.profileCard, Shadow.card, !isPhone && { marginHorizontal: screenPadding }]}>
+        <View style={[styles.profileCard, Shadow.card]}>
           <View style={styles.profileTop}>
             <Pressable onPress={() => router.push('/edit-profile')}>
               {user.avatar ? (
@@ -739,7 +740,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingBottom: 120 },
   brandHeader: { paddingHorizontal: Spacing.screenPadding, paddingTop: Spacing.md },
-  profileCard: { margin: Spacing.screenPadding, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  profileCard: { marginVertical: Spacing.md, marginHorizontal: Spacing.screenPadding, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   profileTop: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
   avatarImage: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: Colors.primary + '50' },
   avatarCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },

@@ -21,6 +21,7 @@ import { IntensityDot } from '@/components/ui/IntensityDot';
 import { MiniCalendar } from '@/components/ui/MiniCalendar';
 import { useActivityScope } from '@/hooks/useActivityScope';
 import { TrainingLogList } from '@/components/feature/TrainingLogList';
+import { SwipeSheet } from '@/components/ui/SwipeSheet';
 
 const SESSION_TYPES = [
   { id: 'track', icon: 'directions-run', label: 'Piste' },
@@ -75,7 +76,7 @@ function PerfLogModal({ visible, onClose, onSave, existingPerf }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={perfStyles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={perfStyles.sheet}>
+        <SwipeSheet onClose={onClose} style={perfStyles.sheet}>
           <View style={perfStyles.handle} />
           <View style={perfStyles.header}>
             <MaterialIcons name="fitness-center" size={20} color={Colors.primary} />
@@ -151,7 +152,7 @@ function PerfLogModal({ visible, onClose, onSave, existingPerf }: {
             <MaterialIcons name="check" size={18} color="#FFF" />
             <Text style={perfStyles.saveBtnText}>Enregistrer mes performances</Text>
           </Pressable>
-        </View>
+        </SwipeSheet>
       </KeyboardAvoidingView>
     </Modal>
   );

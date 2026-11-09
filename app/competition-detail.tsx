@@ -23,6 +23,7 @@ import { getCompetitionPresentation } from '@/services/competitionPresentationSe
 import { useExternalLinks } from '@/hooks/useExternalLinks';
 import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
+import { SwipeSheet } from '@/components/ui/SwipeSheet';
 
 const STATUS_COLORS: Record<string, string> = {
   upcoming: Colors.primary, completed: Colors.success, cancelled: Colors.error,
@@ -57,7 +58,7 @@ function AddResultModal({ visible, onClose, onSave, athletes, events, editResult
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.modalSheet}>
+        <SwipeSheet onClose={onClose} style={styles.modalSheet}>
           <View style={styles.sheetHandle} />
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{editResult ? 'Modifier le résultat' : 'Ajouter un résultat'}</Text>
@@ -133,7 +134,7 @@ function AddResultModal({ visible, onClose, onSave, athletes, events, editResult
             <MaterialIcons name="check" size={18} color="#FFF" />
             <Text style={styles.saveResultBtnText}>{editResult ? 'Enregistrer' : 'Ajouter'}</Text>
           </Pressable>
-        </View>
+        </SwipeSheet>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -149,7 +150,7 @@ function InviteModal({ visible, onClose, allAthletes, invitedIds, onToggle }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
+        <SwipeSheet onClose={onClose} style={[styles.modalSheet, { maxHeight: '70%' }]}>
           <View style={styles.sheetHandle} />
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Inviter des athlètes</Text>
@@ -185,7 +186,7 @@ function InviteModal({ visible, onClose, allAthletes, invitedIds, onToggle }: {
           <Pressable style={styles.inviteDoneBtn} onPress={onClose}>
             <Text style={styles.inviteDoneBtnText}>Confirmer ({invitedIds.length} athlète{invitedIds.length !== 1 ? 's' : ''})</Text>
           </Pressable>
-        </View>
+        </SwipeSheet>
       </Pressable>
     </Modal>
   );
@@ -203,7 +204,7 @@ function PdfPreviewModal({ visible, onClose, onExport, competition, results, ath
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalSheet, { maxHeight: '85%' }]}>
+        <SwipeSheet onClose={onClose} style={[styles.modalSheet, { maxHeight: '85%' }]}>
           <View style={styles.sheetHandle} />
           <View style={styles.modalHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -252,7 +253,7 @@ function PdfPreviewModal({ visible, onClose, onExport, competition, results, ath
               <Text style={styles.pdfExportBtnText}>Exporter & Partager</Text>
             </Pressable>
           </View>
-        </View>
+        </SwipeSheet>
       </View>
     </Modal>
   );
