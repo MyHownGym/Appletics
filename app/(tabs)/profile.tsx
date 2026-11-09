@@ -213,6 +213,13 @@ function AthleteProgressionView({ athleteId }: { athleteId: string }) {
         </View>
         <MaterialIcons name="open-in-new" size={16} color={accentColor} />
       </Pressable>
+      <Pressable accessibilityRole="button" style={progStyles.swissLink} onPress={() => router.push({ pathname: '/import-results', params: { athleteId: athlete.id } })}>
+        <View style={{ flex: 1 }}>
+          <Text style={progStyles.swissLinkTitle}>Importer mes résultats</Text>
+          <Text style={progStyles.swissLinkSub}>Copier-coller depuis Swiss Athletics : compétitions, résultats et PB</Text>
+        </View>
+        <MaterialIcons name="download" size={16} color={accentColor} />
+      </Pressable>
 
       <Pressable style={progStyles.fullProfileBtn} onPress={() => router.push({ pathname: '/athlete-detail', params: { id: athlete.id } })}>
         <MaterialIcons name="bar-chart" size={18} color="#FFF" />
