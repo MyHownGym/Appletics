@@ -61,6 +61,16 @@ export default function CompetitionCreateScreen() {
   const toggleAthlete = (id: string) =>
     setSelectedAthletes(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
 
+  const [customEvent, setCustomEvent] = useState('');
+  // A discipline missing from the list, typed by the coach.
+  const addCustomEvent = () => {
+    const value = customEvent.trim();
+    if (!value) return;
+    const known = [...TRACK_EVENTS, ...selectedEvents].find(item => item.toLowerCase() === value.toLowerCase());
+    setSelectedEvents(prev => prev.includes(known ?? value) ? prev : [...prev, known ?? value]);
+    setCustomEvent('');
+  };
+
   const toggleEvent = (event: string) =>
     setSelectedEvents(prev => prev.includes(event) ? prev.filter(e => e !== event) : [...prev, event]);
 
@@ -254,7 +264,7 @@ export default function CompetitionCreateScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>{`Disciplines (${selectedEvents.length}) *`}</Text>
             <View style={styles.eventsGrid}>
-              {TRACK_EVENTS.map(event => {
+              {[...TRACK_EVENTS, ...selectedEvents.filter(item => !TRACK_EVENTS.includes(item))].map(event => {
                 const isSelected = selectedEvents.includes(event);
                 return (
                   <Pressable key={event} onPress={() => toggleEvent(event)}
@@ -263,6 +273,14 @@ export default function CompetitionCreateScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              <TextInput accessibilityLabel="Autre discipline" style={[styles.input, { flex: 1 }]} value={customEvent} onChangeText={setCustomEvent}
+                placeholder="Autre discipline (ex. 5 km route)" placeholderTextColor={Colors.textMuted} onSubmitEditing={addCustomEvent} returnKeyType="done" />
+              <Pressable accessibilityRole="button" accessibilityLabel="Ajouter la discipline" disabled={!customEvent.trim()} onPress={addCustomEvent}
+                style={({ pressed }) => [{ width: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, opacity: !customEvent.trim() ? 0.4 : pressed ? 0.8 : 1 }]}>
+                <MaterialIcons name="add" size={22} color="#FFFFFF" />
+              </Pressable>
             </View>
           </View>
 

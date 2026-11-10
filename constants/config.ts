@@ -16,7 +16,8 @@ export const EVENT_GROUPS = [
 
 export const TRACK_EVENTS = [
   '60m', '100m', '200m', '400m',
-  '800m', '1500m', '3000m', '5000m', '10000m',
+  '800m', '1500m', '3000m', '5000m', '10000m', '3000m Steeple',
+  'Cross-country', 'Semi-marathon', '20 km', 'Marathon',
   '60m Haies', '100m Haies', '110m Haies', '400m Haies',
   '4x100m Relais', '4x400m Relais',
   'Saut en longueur', 'Triple saut', 'Saut en hauteur', 'Saut à la perche',
