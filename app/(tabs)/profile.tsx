@@ -426,24 +426,25 @@ export default function ProfileScreen() {
         <ScrollView ref={sectionNav.scrollRef} onContentSizeChange={sectionNav.onContentSizeChange} style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' }]}>
           <View style={styles.brandHeader}><AppBrand /></View>
           {/* Club profile card */}
-          <LinearGradient colors={['#10B98118', Colors.background]} style={[styles.profileCard, Shadow.card]}>
-            <View style={styles.profileTop}>
+          <View style={[styles.profileCard, Shadow.card, { padding: 0, overflow: 'hidden' }]}>
+            {/* Green header for clubs (same layout as the coach card). */}
+            <LinearGradient colors={['#0B8A5F', '#10B981', '#4ADE9F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.profileTop, { padding: Spacing.md, marginBottom: 0 }]}>
               <Pressable accessibilityLabel={t('edit_profile')} onPress={() => router.push('/edit-profile')} style={({ pressed }) => [pressed ? { opacity: 0.75 } : null]}>
-                {user.avatar ? <Image source={{ uri: user.avatar }} contentFit="cover" transition={200} style={[styles.avatarImage, { borderColor: Colors.club + '50' }]} /> : <View style={[styles.avatarCircle, { backgroundColor: Colors.club + '20', borderColor: Colors.club + '50' }]}><MaterialIcons name="corporate-fare" size={28} color={Colors.club} /></View>}
+                {user.avatar ? <Image source={{ uri: user.avatar }} contentFit="cover" transition={200} style={[styles.avatarImage, { borderColor: '#FFFFFF' }]} /> : <View style={[styles.avatarCircle, { backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.7)' }]}><MaterialIcons name="corporate-fare" size={28} color="#10B981" /></View>}
               </Pressable>
               <View style={styles.profileInfo}>
-                <Text verbatim style={styles.coachName}>{user.club || 'Mon Club'}</Text>
-                <View style={[styles.rolePill, { backgroundColor: '#10B98115', borderColor: '#10B98140' }]}>
+                <Text verbatim style={[styles.coachName, { color: '#FFFFFF' }]}>{user.club || 'Mon Club'}</Text>
+                <View style={[styles.rolePill, { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}>
                   <MaterialIcons name="admin-panel-settings" size={12} color="#10B981" />
                   <Text style={[styles.roleText, { color: '#10B981' }]}>{getClubRoleLabel(user.role)}</Text>
                 </View>
-                <Text verbatim style={styles.clubText}>{user.name}</Text>
-                {user.email ? <Text verbatim style={styles.emailText}>{user.email}</Text> : null}
+                <Text verbatim style={[styles.clubText, { color: 'rgba(255,255,255,0.92)' }]}>{user.name}</Text>
+                {user.email ? <Text verbatim style={[styles.emailText, { color: 'rgba(255,255,255,0.85)' }]}>{user.email}</Text> : null}
               </View>
-            </View>
+            </LinearGradient>
 
             {/* Shared local club roster, including pending coaches. */}
-            <View style={styles.coachStats}>
+            <View style={[styles.coachStats, { borderTopWidth: 0, padding: Spacing.md }]}>
               <View style={styles.statItem}>
                 <Text style={[styles.statVal, { color: '#10B981' }]}>{totalAthletes}</Text>
                 <Text style={styles.statLbl}>Athlètes</Text>
@@ -465,7 +466,7 @@ export default function ProfileScreen() {
                 <Text style={styles.statLbl}>Terminées</Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
 
           <SubscriptionPlanCard />
           <SubscriptionUpgradeBanner />
@@ -571,31 +572,32 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.screen} edges={['top']}>
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' }]}>
           <View style={styles.brandHeader}><AppBrand /></View>
-          <LinearGradient colors={[Colors.info + '18', Colors.background]} style={[styles.profileCard, Shadow.card]}>
-            <View style={styles.profileTop}>
+          <View style={[styles.profileCard, Shadow.card, { padding: 0, overflow: 'hidden' }]}>
+            {/* Blue header for athletes (same layout as the coach card). */}
+            <LinearGradient colors={['#1557B0', '#1A73E8', '#5E9EF4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.profileTop, { padding: Spacing.md, marginBottom: 0 }]}>
               <Pressable onPress={() => router.push('/edit-profile')}>
                 {user.avatar ? (
-                  <Image source={{ uri: user.avatar }} style={styles.avatarImage} contentFit="cover" />
+                  <Image source={{ uri: user.avatar }} style={[styles.avatarImage, { borderColor: '#FFFFFF' }]} contentFit="cover" />
                 ) : (
-                  <View style={[styles.avatarCircle, { backgroundColor: Colors.info + '20', borderColor: Colors.info + '50' }]}>
+                  <View style={[styles.avatarCircle, { backgroundColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.7)' }]}>
                     <Text style={[styles.avatarInitials, { color: Colors.info }]}>{initials}</Text>
                   </View>
                 )}
               </Pressable>
               <View style={styles.profileInfo}>
-                <Text verbatim style={styles.coachName}>{user.name}</Text>
-                <View style={[styles.rolePill, { backgroundColor: Colors.info + '15', borderColor: Colors.info + '40' }]}>
+                <Text verbatim style={[styles.coachName, { color: '#FFFFFF' }]}>{user.name}</Text>
+                <View style={[styles.rolePill, { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}>
                   <MaterialIcons name="directions-run" size={12} color={Colors.info} />
                   <Text style={[styles.roleText, { color: Colors.info }]}>Athlète</Text>
                 </View>
-                <Text verbatim style={styles.clubText}>{user.club}</Text>
+                {user.club ? <Text verbatim style={[styles.clubText, { color: 'rgba(255,255,255,0.92)' }]}>{user.club}</Text> : null}
                 <View style={styles.athleteFreeBadge}>
-                  <MaterialIcons name="check-circle" size={13} color={Colors.success} />
-                  <Text style={styles.athleteFreeText}>Accès complet · fonctionnalités selon le plan coach</Text>
+                  <MaterialIcons name="check-circle" size={13} color="#FFFFFF" />
+                  <Text style={[styles.athleteFreeText, { color: '#FFFFFF' }]}>Accès complet · fonctionnalités selon le plan coach</Text>
                 </View>
               </View>
-            </View>
-          </LinearGradient>
+            </LinearGradient>
+          </View>
 
           <CoachDirectorySection />
           {/* Tabs: Profil / Progression */}

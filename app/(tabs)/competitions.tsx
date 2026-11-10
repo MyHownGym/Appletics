@@ -120,22 +120,20 @@ export default function CompetitionsScreen() {
 
             {/* Swiss Athletics links */}
             <View style={styles.swissRow}>
-              <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openSwissAthletics}>
-                <Text style={styles.swissFlag}>🇨🇭</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.swissBtnTitle}>Résultats en direct</Text>
-                  <Text style={styles.swissBtnSub}>Swiss Athletics Live</Text>
-                </View>
-                <MaterialIcons name="open-in-new" size={16} color={Colors.info} />
-              </Pressable>
-              <Pressable style={({ pressed }) => [styles.swissBtn, pressed && { opacity: 0.8 }]} onPress={openInscriptions}>
-                <Text style={{ fontSize: 18 }}>🇨🇭</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.swissBtnTitle}>Inscriptions en ligne</Text>
-                  <Text style={styles.swissBtnSub}>Swiss Athletics</Text>
-                </View>
-                <MaterialIcons name="open-in-new" size={16} color={Colors.primary} />
-              </Pressable>
+              {[
+                { title: 'Résultats en direct', sub: 'Swiss Athletics Live', color: Colors.info, onPress: openSwissAthletics },
+                { title: 'Inscriptions en ligne', sub: 'Swiss Athletics', color: Colors.primary, onPress: openInscriptions },
+              ].map(link => (
+                <Pressable key={link.title} accessibilityRole="link" onPress={link.onPress}
+                  style={({ pressed }) => [styles.swissBtn, !isPhone && styles.swissBtnWide, pressed && { opacity: 0.8 }]}>
+                  <View style={[styles.swissFlagTile, !isPhone && styles.swissFlagTileWide, { backgroundColor: link.color + '14' }]}><Text style={[styles.swissFlag, !isPhone && { fontSize: 24 }]}>🇨🇭</Text></View>
+                  <View style={{ flex: 1, minWidth: 1 }}>
+                    <Text style={[styles.swissBtnTitle, !isPhone && styles.swissBtnTitleWide]} numberOfLines={1}>{link.title}</Text>
+                    <Text style={[styles.swissBtnSub, !isPhone && styles.swissBtnSubWide]} numberOfLines={1}>{link.sub}</Text>
+                  </View>
+                  <View style={[styles.swissArrow, { backgroundColor: link.color + '14' }]}><MaterialIcons name="open-in-new" size={!isPhone ? 18 : 14} color={link.color} /></View>
+                </Pressable>
+              ))}
             </View>
         </View>}
         data={padGrid(filtered, isPhone ? 1 : cols)}
@@ -218,7 +216,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: Radius.md,
     padding: Spacing.sm, borderWidth: 1, borderColor: Colors.border,
   },
-  swissFlag: { fontSize: 18 },
+  swissFlag: { fontSize: 16 },
+  swissBtnWide: { padding: Spacing.md, gap: Spacing.md, borderRadius: Radius.lg, minHeight: 84 },
+  swissFlagTile: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  swissFlagTileWide: { width: 52, height: 52, borderRadius: 14 },
+  swissBtnTitleWide: { fontSize: Typography.fontSizeMD },
+  swissBtnSubWide: { fontSize: Typography.fontSizeSM, marginTop: 2 },
+  swissArrow: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   swissBtnTitle: { fontSize: Typography.fontSizeXS, fontWeight: Typography.weightBold, color: Colors.textPrimary },
   swissBtnSub: { fontSize: 10, color: Colors.textMuted },
   list: { paddingBottom: 120 },

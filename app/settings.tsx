@@ -26,6 +26,7 @@ import { AccountDeletionModal } from '@/components/auth/AccountDeletionModal';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { SwipeSheet } from '@/components/ui/SwipeSheet';
+import { saveAccountProfile } from '@/services/accountProfileService';
 
 type UserRole = 'coach' | 'athlete' | 'club';
 
@@ -81,26 +82,28 @@ export default function SettingsScreen() {
   const currentRole: UserRole = user.accountType === 'club' ? 'club' : (user.userType === 'athlete' ? 'athlete' : 'coach');
   const currentRoleInfo = ROLE_OPTIONS.find(r => r.id === currentRole);
 
+  // Changes the role in place (data kept) and saves it with the account, so every device follows.
   const handleRoleChange = (role: UserRole) => {
+    if (role === currentRole) { setRoleModal(false); return; }
     const roleLabel = t(ROLE_OPTIONS.find(r => r.id === role)?.label || role);
-    showAlert(
-      'Changer de rôle',
-      `Passer à "${roleLabel}" relancera l'onboarding pour reconfigurer votre profil. Continuer ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Relancer l\'onboarding',
-          onPress: async () => {
-            setRoleModal(false);
-            await AsyncStorage.multiRemove(['@appletics_onboarding_done', '@appletics_user']);
-            updateUser({ accountType: 'indie', isClubAdmin: false, userType: 'coach' });
-            setSubscription('basic');
-            setOnboardingDone(false);
-            router.replace('/onboarding');
-          },
+    const fields: Partial<typeof user> = role === 'club'
+      ? { userType: 'coach', accountType: 'club', isClubAdmin: true, role: 'admin' }
+      : role === 'athlete'
+        ? { userType: 'athlete', accountType: 'indie', isClubAdmin: false, role: 'Athlete' }
+        : { userType: 'coach', accountType: 'indie', isClubAdmin: false, role: 'Head Coach' };
+    showAlert('Changer de rôle', `Passer à « ${roleLabel} » ? Vos données sont conservées.`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Changer',
+        onPress: async () => {
+          setRoleModal(false);
+          const next = { ...user, ...fields };
+          updateUser(fields);
+          try { if (user.id) await saveAccountProfile(next); } catch { /* saved again with the next profile change */ }
+          router.replace('/(tabs)/profile');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleToggle = (key: string, value: boolean) => {
