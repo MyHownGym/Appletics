@@ -47,7 +47,8 @@ function AddResultModal({ visible, onClose, onSave, athletes, events, editResult
   const [notes, setNotes] = useState(editResult?.notes || '');
   const [showAthletes, setShowAthletes] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
-  const allEvents = [...new Set([...(editResult?.event ? [editResult.event] : []), ...events, ...TRACK_EVENTS])];
+  const [customEvent, setCustomEvent] = useState('');
+  const allEvents = [...new Set([...(event ? [event] : []), ...(editResult?.event ? [editResult.event] : []), ...events, ...TRACK_EVENTS])];
   const selectedAthlete = athletes.find(a => a.id === athleteId);
 
   const handleSave = () => {
@@ -111,6 +112,14 @@ function AddResultModal({ visible, onClose, onSave, athletes, events, editResult
                       </Pressable>
                     ))}
                   </ScrollView>
+                  <View style={{ flexDirection: 'row', gap: 8, padding: 8, borderTopWidth: 1, borderTopColor: Colors.border }}>
+                    <TextInput accessibilityLabel="Autre discipline" style={[styles.mInput, { flex: 1 }]} value={customEvent} onChangeText={setCustomEvent} placeholder="Autre discipline" placeholderTextColor={Colors.textMuted}
+                      onSubmitEditing={() => { if (customEvent.trim()) { setEvent(customEvent.trim()); setCustomEvent(''); setShowEvents(false); } }} returnKeyType="done" />
+                    <Pressable accessibilityRole="button" accessibilityLabel="Utiliser cette discipline" disabled={!customEvent.trim()} onPress={() => { setEvent(customEvent.trim()); setCustomEvent(''); setShowEvents(false); }}
+                      style={({ pressed }) => [{ width: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, opacity: !customEvent.trim() ? 0.4 : pressed ? 0.8 : 1 }]}>
+                      <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                    </Pressable>
+                  </View>
                 </View>
               ) : null}
             </View>
