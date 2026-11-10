@@ -1,7 +1,7 @@
 import { Calendar, Users, Trophy, MessageCircle, BarChart2, Shield } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/constants/translations";
-const coachImg = "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop&auto=format";
+import coachImg from "@/assets/coaches.jpg";
 
 const ICONS = {
   calendar: Calendar,

@@ -97,11 +97,11 @@
   }
 
   .key-figures {
-    --figures-base: 19 86% 36%;
-    --figures-deep: 16 84% 31%;
+    --figures-base: 18 100% 56%;
+    --figures-deep: 12 92% 50%;
     --figures-light: 0 0% 100%;
     --figures-subtle: 25 100% 96%;
-    --figures-shadow: 16 80% 13%;
+    --figures-shadow: 12 85% 28%;
     color: hsl(var(--figures-light));
     background: radial-gradient(ellipse at 8% 0%, hsl(var(--figures-light) / 0.06), transparent 55%),
       linear-gradient(120deg, hsl(var(--figures-base)), hsl(var(--figures-deep)));
