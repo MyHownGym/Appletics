@@ -9,7 +9,7 @@ export default function StoreAvailability({ language }: StoreAvailabilityProps) 
   const t = translations[language].download;
   return (
     <div data-scroll-reveal="left" className="mb-12 flex flex-col items-center gap-5">
-      <a href={APP_URL} className="inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-white px-8 py-4 text-lg font-bold text-primary-600 shadow-lg transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+      <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-white px-8 py-4 text-lg font-bold text-primary-600 shadow-lg transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
         <span>{t.appStore} · app.appletics.ch</span>
         <ExternalLink size={20} aria-hidden="true" />
       </a>
