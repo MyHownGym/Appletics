@@ -137,7 +137,17 @@ export function useCoachCloudSync() {
         const rowBySource = new Map(rows.filter(row => row.source_key).map(row => [row.source_key as string, row]));
         try {
           // 2a. Send plans and competitions (only what changed).
-          const desired = coachDesiredItems(trainingPlans, competitions, links, new Map(athletes.map(item => [item.id, item.name])));
+          // Same person recorded twice on the coach's list (e.g. once per group): a plan given to the unlinked copy
+          // still reaches the athlete through the linked one (same e-mail, else same name).
+          const norm = (text?: string) => (text ?? '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, ' ').trim();
+          const publishLinks = new Map(links);
+          for (const local of athletes) {
+            if (publishLinks.has(local.id)) continue;
+            const twin = athletes.find(other => other.id !== local.id && links.has(other.id)
+              && ((!!local.email && norm(other.email) === norm(local.email)) || (!!norm(local.name) && norm(other.name) === norm(local.name))));
+            if (twin) publishLinks.set(local.id, links.get(twin.id)!);
+          }
+          const desired = coachDesiredItems(trainingPlans, competitions, publishLinks, new Map(athletes.map(item => [item.id, item.name])));
           const today = new Date().toISOString().slice(0, 10);
           const fresh = new Map<string, { sessions: number; competitions: number; firstTitle: string }>();
           for (const item of desired) {
