@@ -31,6 +31,7 @@ export interface TrainingSession {
 
 export interface TrainingPlan {
   id: string;
+  groupSessions?: boolean; // athlete side: sessions published for a whole group, without a plan
   title: string;
   phase: string;
   group: string;

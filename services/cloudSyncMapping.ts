@@ -170,7 +170,7 @@ export function athletePlansFor(groupId: string, groupName: string, rows: Shared
       id: athletePlanIdFor(sessionRows[0]),
       title: (planId && sessionRows.map(planTitleOf).find(Boolean)) || `Séances du groupe ${groupName}`,
       phase: (typeof meta.phase === 'string' && meta.phase) || 'Saison', group: (typeof meta.planGroup === 'string' && meta.planGroup) || 'all',
-      athleteIds: [athleteId], startDate, endDate, weeks,
+      athleteIds: [athleteId], startDate, endDate, weeks, ...(planId ? {} : { groupSessions: true }),
       description: (typeof meta.planDescription === 'string' && meta.planDescription.trim()) || (planId ? 'Séances envoyées par votre coach.' : 'Séances publiées pour tout le groupe.'), sessions,
     });
   }

@@ -11,6 +11,7 @@ import { LocalizedInput as TextInput } from '@/components/ui/LocalizedInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { useLocalizedAlert as useAlert } from '@/hooks/useLocalizedAlert';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -56,7 +57,8 @@ function formatDate(dateStr: string, locale: string): string {
 
 export default function PlanCreateScreen() {
   const router = useRouter();
-  const { id: editId } = useLocalSearchParams<{ id?: string }>();
+  const { id: editId, groupId: fromGroup } = useLocalSearchParams<{ id?: string; groupId?: string }>();
+  const shared = useSharedGroups();
   const { addTrainingPlan, updateTrainingPlan, trainingPlans, athletes } = useApp();
   const { notifyNewPlan, notifyPlanUpdated } = usePushNotifications();
   const { showAlert } = useAlert();
@@ -69,10 +71,14 @@ export default function PlanCreateScreen() {
   const [title, setTitle] = useState(existing?.title || '');
   const [description, setDescription] = useState(existing?.description || '');
   const [phase, setPhase] = useState(existing?.phase || 'Base');
-  const [group, setGroup] = useState(existing?.group || 'sprints');
+  // Opened from a training group: its discipline and its athletes are preselected.
+  const sourceGroup = !existing && fromGroup ? shared.data.groups.find(item => item.id === fromGroup) : undefined;
+  const groupLocalIds = sourceGroup ? athletes.filter((local: any) => shared.data.athletes.some(item => item.group_id === sourceGroup.id
+    && (local.id === `shared-${item.id}` || item.source_id === `${shared.userId}:${local.id}`))).map((local: any) => local.id) : [];
+  const [group, setGroup] = useState(existing?.group || (sourceGroup?.discipline && sourceGroup.discipline !== 'all' ? sourceGroup.discipline : 'sprints'));
   const [weeks, setWeeks] = useState('4');
   const [customWeeks, setCustomWeeks] = useState('');
-  const [selectedAthletes, setSelectedAthletes] = useState<string[]>(existing?.athleteIds || []);
+  const [selectedAthletes, setSelectedAthletes] = useState<string[]>(existing?.athleteIds || groupLocalIds);
 
   // Date range
   const [startDate, setStartDate] = useState(existing?.startDate || new Date().toISOString().split('T')[0]);
