@@ -1,0 +1,37 @@
+/* Matte paper cards with a single, orange-accented featured plan. */
+.pricing-section {
+  --pricing-brand: var(--primary);
+  --pricing-featured: var(--primary);
+  --pricing-ink: var(--primary-strong);
+  --pricing-soft: var(--primary-soft);
+  --pricing-subtle: 220 9% 38%;
+  --pricing-on-featured: var(--primary-foreground);
+  --pricing-shadow: 20 40% 12%;
+  color: hsl(var(--foreground));
+}
+.pricing-subtle { color: hsl(var(--pricing-subtle)); }
+.pricing-value { color: hsl(var(--pricing-ink)); }
+.pricing-card { background: hsl(var(--card)); border-color: hsl(var(--border)); box-shadow: 0 4px 16px -10px hsl(var(--pricing-shadow) / .12); }
+.pricing-card.is-featured { color: hsl(var(--pricing-on-featured)); background: hsl(var(--pricing-featured)); border-color: hsl(var(--pricing-brand)); box-shadow: 0 16px 32px -16px hsl(var(--pricing-shadow) / .35); }
+.is-featured .pricing-subtle, .is-featured .pricing-value { color: hsl(var(--pricing-on-featured)); }
+.is-featured .border-border, .is-featured .divide-border > :not([hidden]) ~ :not([hidden]) { border-color: hsl(var(--pricing-on-featured) / .18); }
+.pricing-popular { color: hsl(var(--primary-foreground)); background: hsl(var(--pricing-brand)); }
+.pricing-select { color: hsl(var(--pricing-subtle)); background: hsl(var(--card)); }
+.pricing-select[aria-pressed="true"] { color: hsl(var(--primary-foreground)); background: hsl(var(--pricing-brand)); border-color: hsl(var(--pricing-brand)); }
+.pricing-cta { color: hsl(var(--pricing-ink)); background: hsl(var(--card)); border-color: hsl(var(--pricing-brand)); }
+.is-featured .pricing-cta.is-primary { color: hsl(var(--pricing-ink)); background: hsl(var(--card)); border-color: hsl(var(--card)); }
+.pricing-founders { background: hsl(var(--pricing-soft)); border-color: hsl(var(--pricing-brand) / .18); }
+.pricing-details summary::-webkit-details-marker { display: none; }
+.pricing-details[open] summary svg { transform: rotate(180deg); }
+.pricing-details summary svg { transition: transform 180ms ease; }
+.pricing-select:focus-visible, .pricing-cta:focus-visible, .pricing-details summary:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.pricing-select:disabled, .pricing-cta[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+@media (hover: hover) {
+  .pricing-select:hover { background: hsl(var(--pricing-soft)); color: hsl(var(--pricing-ink)); }
+  .pricing-select[aria-pressed="true"]:hover { background: hsl(var(--pricing-brand)); color: hsl(var(--primary-foreground)); transform: translateY(-1px); }
+  .pricing-cta:hover { transform: translateY(-2px); background: hsl(var(--pricing-soft)); }
+  .pricing-details summary:hover { opacity: .8; }
+  .pricing-card:hover { transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: no-preference) { .pricing-card, .pricing-cta { transition: transform 200ms ease; } }
+@media (prefers-reduced-motion: reduce) { .pricing-details summary svg { transition: none; } }
