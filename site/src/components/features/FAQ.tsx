@@ -8,7 +8,7 @@ interface FAQItem {
   a: string;
 }
 
-const faqData: Record<string, { badge: string; title: string; subtitle: string; items: FAQItem[] }> = {
+export const faqData: Record<string, { badge: string; title: string; subtitle: string; items: FAQItem[] }> = {
   fr: {
     badge: "FAQ",
     title: "Questions fréquentes",
@@ -186,10 +186,10 @@ export default function FAQ() {
             {language === "de" && "Noch eine Frage? "}
             {language === "it" && "Un'altra domanda? "}
             <a
-              href="mailto:contact@appletics.app"
+              href="mailto:contact@appletics.ch"
               className="text-primary-500 font-semibold hover:underline"
             >
-              contact@appletics.app
+              contact@appletics.ch
             </a>
           </p>
         </div>

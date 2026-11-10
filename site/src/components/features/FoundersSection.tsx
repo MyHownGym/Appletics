@@ -156,7 +156,7 @@ export default function FoundersSection() {
     const body = encodeURIComponent(
       `Type: ${type === "coach" ? f.typeCoach : f.typeClub}\nPrénom: ${form.firstName}\nNom: ${form.lastName}\nE-mail: ${form.email}\nClub: ${form.club}\nNatel: ${form.phone}\nInstagram: ${form.instagram}\nLangue: ${form.lang}\nMessage: ${form.message}`
     );
-    window.location.href = `mailto:contact@appletics.app?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:contact@appletics.ch?subject=${subject}&body=${body}`;
     setSubmitted(true);
   };
 

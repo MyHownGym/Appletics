@@ -3,6 +3,8 @@ import Hero from "@/components/features/Hero";
 import KeyMetrics from "@/components/features/KeyMetrics";
 import Features from "@/components/features/Features";
 import Advantages from "@/components/features/Advantages";
+import AppScreens from "@/components/features/AppScreens";
+import HelpBot from "@/components/features/HelpBot";
 import Testimonials from "@/components/features/Testimonials";
 import Pricing from "@/components/features/Pricing";
 import FoundersSection from "@/components/features/FoundersSection";
@@ -17,12 +19,14 @@ export default function Home() {
       <Hero />
       <KeyMetrics />
       <Features />
+      <AppScreens />
       <Advantages />
       <Testimonials />
       <Pricing />
       <FoundersSection />
       <FAQ />
       <DownloadCTA />
+      <HelpBot />
     </main>
   );
 }
