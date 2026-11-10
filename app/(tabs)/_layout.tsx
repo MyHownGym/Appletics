@@ -219,6 +219,8 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 }
 
 // ── Root tab layout ────────────────────────────────────────────────────────
+import { WelcomeTour } from '@/components/feature/WelcomeTour';
+
 export default function TabLayout() {
   useCoachCloudSync();
   useAthleteCloudSync();
@@ -229,6 +231,7 @@ export default function TabLayout() {
 
   return (
     <ResponsiveLayout>
+    <WelcomeTour />
     <Tabs tabBar={props => <CompactTabBar {...props} />} screenOptions={{ headerShown: false }}> 
       <Tabs.Screen
         name="index"
