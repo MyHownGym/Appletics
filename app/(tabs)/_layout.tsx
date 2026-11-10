@@ -5,6 +5,7 @@ import { Animated, Pressable, View, StyleSheet, Dimensions } from 'react-native'
 import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useAppleticsLinks } from '@/hooks/useAppleticsLinks';
+import { LANGUAGES } from '@/constants/i18n';
 import { Image } from 'expo-image';
 import { Tabs, useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,7 +54,7 @@ function Sidebar() {
   const router = useRouter();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const { user } = useApp();
   const { isDesktop } = useResponsive();
 
@@ -109,6 +110,17 @@ function Sidebar() {
 
       <View style={{ flex: 1 }} />
 
+      {/* Language: FR / DE / IT */}
+      {isDesktop ? <View accessibilityRole="radiogroup" accessibilityLabel={t('select_language')} style={sideStyles.langTrack}>
+        {LANGUAGES.map(lang => {
+          const active = language === lang.code;
+          return <Pressable key={lang.code} accessibilityRole="radio" accessibilityState={{ selected: active }} accessibilityLabel={lang.nativeName} onPress={() => setLanguage(lang.code)}
+            style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [sideStyles.langSeg, active ? sideStyles.langSegActive : hovered ? { backgroundColor: 'rgba(255,255,255,0.12)' } : null, pressed && { opacity: 0.8 }]}>
+            <Text verbatim style={[sideStyles.langText, active && sideStyles.langTextActive]}>{lang.code.toUpperCase()}</Text>
+          </Pressable>;
+        })}
+      </View> : null}
+
       {/* Instagram, e-mail, website */}
       <View style={[sideStyles.socialRow, !isDesktop && { flexDirection: 'column' }]}>
         <Pressable accessibilityRole="link" accessibilityLabel="Instagram @appletics.ch" onPress={links.openInstagram} style={({ pressed }) => [sideStyles.socialBtn, pressed && { opacity: 0.7 }]}><FontAwesome name="instagram" size={19} color="#FFFFFF" /></Pressable>
@@ -140,6 +152,11 @@ function Sidebar() {
 }
 
 const sideStyles = StyleSheet.create({
+  langTrack: { flexDirection: 'row', alignSelf: 'center', width: 150, padding: 3, marginBottom: 12, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  langSeg: { flex: 1, height: 30, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  langSegActive: { backgroundColor: '#FFFFFF', shadowColor: '#7A1F00', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  langText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, color: 'rgba(255,255,255,0.9)' },
+  langTextActive: { color: Colors.primary },
   socialRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 12 },
   socialBtn: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' },
   sidebar: {
