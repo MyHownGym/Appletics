@@ -168,10 +168,10 @@ export function athletePlansFor(groupId: string, groupName: string, rows: Shared
     const weeks = Math.max(1, Math.ceil((new Date(`${endDate}T12:00:00`).getTime() - new Date(`${startDate}T12:00:00`).getTime()) / (7 * 864e5)) + 1);
     plans.push({
       id: athletePlanIdFor(sessionRows[0]),
-      title: (planId && sessionRows.map(planTitleOf).find(Boolean)) || `Séances · ${groupName}`,
+      title: (planId && sessionRows.map(planTitleOf).find(Boolean)) || `Séances du groupe ${groupName}`,
       phase: (typeof meta.phase === 'string' && meta.phase) || 'Saison', group: (typeof meta.planGroup === 'string' && meta.planGroup) || 'all',
       athleteIds: [athleteId], startDate, endDate, weeks,
-      description: (typeof meta.planDescription === 'string' && meta.planDescription.trim()) || 'Séances envoyées par votre coach.', sessions,
+      description: (typeof meta.planDescription === 'string' && meta.planDescription.trim()) || (planId ? 'Séances envoyées par votre coach.' : 'Séances publiées pour tout le groupe.'), sessions,
     });
   }
   return plans;
