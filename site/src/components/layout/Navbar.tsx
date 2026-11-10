@@ -88,6 +88,14 @@ export default function Navbar() {
               ))}
             </div>
 
+            {/* Web app */}
+            <a
+              href="https://app.appletics.ch"
+              className={`hidden md:inline-flex items-center text-sm font-semibold px-3 py-2 rounded-full transition-colors ${scrolled ? "text-gray-700 hover:text-primary-500" : "text-white hover:text-white/80"}`}
+            >
+              {t.openApp}
+            </a>
+
             {/* CTA */}
             <a
               href="#founders-form"
@@ -121,6 +129,12 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
+            <a
+              href="https://app.appletics.ch"
+              className="block px-4 py-3 text-sm font-semibold text-primary-500 hover:bg-orange-50 rounded-lg"
+            >
+              {t.openApp}
+            </a>
             <a
               href="#founders-form"
               onClick={() => setMobileOpen(false)}

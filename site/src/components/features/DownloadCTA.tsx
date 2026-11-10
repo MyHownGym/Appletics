@@ -70,9 +70,9 @@ export default function DownloadCTA() {
             <Star key={i} size={18} className="text-yellow-300" fill="currentColor" />
           ))}
           <span className="ml-2 text-white/80 text-sm font-medium">
-            {language === "fr" && "Objectif ≥ 4.5 sur l'App Store"}
-            {language === "de" && "Ziel ≥ 4.5 im App Store"}
-            {language === "it" && "Obiettivo ≥ 4.5 sull'App Store"}
+            {language === "fr" && "Pensée avec des coachs suisses"}
+            {language === "de" && "Mit Schweizer Coachs entwickelt"}
+            {language === "it" && "Pensata con coach svizzeri"}
           </span>
         </div>
       </div>

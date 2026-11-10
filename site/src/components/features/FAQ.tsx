@@ -31,8 +31,8 @@ const faqData: Record<string, { badge: string; title: string; subtitle: string; 
         a: "Les coachs et clubs fondateurs sont les premiers à rejoindre Appletics avant le lancement officiel. En échange de vos retours et de votre aide pour faire connaître l'app dans votre club et réseau, vous bénéficiez de 6 mois de formule Premium offerts. Un badge « Fondateur » est affiché sur votre profil. Les places sont limitées.",
       },
       {
-        q: "Quand Appletics sera-t-elle disponible sur iOS et Android ?",
-        a: "Appletics est actuellement en développement actif. La sortie est prévue pour la saison indoor (novembre 2026 – janvier 2027), idéalement avant les championnats romands en salle. Inscrivez-vous en tant que coach fondateur pour être notifié en premier et obtenir un accès anticipé.",
+        q: "Quand et sur quels appareils Appletics est-elle disponible ?",
+        a: "Appletics est une web app : elle s'ouvre sur app.appletics.ch depuis un iPhone, un iPad, un téléphone Android ou un ordinateur, sans passer par l'App Store ni Google Play. Lancement officiel le mardi 1er décembre 2026. Astuce : ajoute-la à ton écran d'accueil pour l'utiliser comme une app, avec les notifications.",
       },
       {
         q: "Appletics fonctionne-t-elle pour toutes les disciplines d'athlétisme ?",
@@ -66,8 +66,8 @@ const faqData: Record<string, { badge: string; title: string; subtitle: string; 
         a: "Gründer-Coaches und Gründer-Vereine sind die Ersten, die Appletics vor dem offiziellen Launch beitreten. Als Gegenleistung für Ihr Feedback und Ihre Hilfe, die App in Ihrem Verein bekannt zu machen, erhalten Sie 6 Monate Premium gratis. Ein «Gründer»-Badge wird auf Ihrem Profil angezeigt. Die Plätze sind begrenzt.",
       },
       {
-        q: "Wann wird Appletics auf iOS und Android verfügbar sein?",
-        a: "Appletics befindet sich derzeit in aktiver Entwicklung. Die Veröffentlichung ist für die Hallensaison (November 2026 – Januar 2027) geplant. Registrieren Sie sich als Gründer-Coach, um als Erster benachrichtigt zu werden und Früh zugangzu erhalten.",
+        q: "Wann und auf welchen Geräten ist Appletics verfügbar?",
+        a: "Appletics ist eine Web-App: Sie öffnet sich unter app.appletics.ch auf iPhone, iPad, Android-Smartphone oder Computer, ohne App Store oder Google Play. Offizieller Start am Dienstag, 1. Dezember 2026. Tipp: Füge sie deinem Startbildschirm hinzu, um sie wie eine App mit Benachrichtigungen zu nutzen.",
       },
       {
         q: "Funktioniert Appletics für alle Leichtathletik-Disziplinen?",
@@ -101,8 +101,8 @@ const faqData: Record<string, { badge: string; title: string; subtitle: string; 
         a: "I coach e i club fondatori sono i primi a unirsi ad Appletics prima del lancio ufficiale. In cambio dei loro feedback e del loro aiuto per far conoscere l'app nel club e nella rete, ricevono 6 mesi di Premium in regalo. Un badge «Fondatore» viene visualizzato sul loro profilo. I posti sono limitati.",
       },
       {
-        q: "Quando Appletics sarà disponibile su iOS e Android?",
-        a: "Appletics è attualmente in sviluppo attivo. Il lancio è previsto per la stagione indoor (novembre 2026 – gennaio 2027). Registrati come coach fondatore per essere il primo a ricevere una notifica e ottenere un accesso anticipato.",
+        q: "Quando e su quali dispositivi è disponibile Appletics?",
+        a: "Appletics è una web app: si apre su app.appletics.ch da iPhone, iPad, smartphone Android o computer, senza App Store né Google Play. Lancio ufficiale martedì 1° dicembre 2026. Consiglio: aggiungila alla schermata Home per usarla come un'app, con le notifiche.",
       },
       {
         q: "Appletics funziona per tutte le discipline dell'atletica?",
