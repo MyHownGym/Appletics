@@ -14,7 +14,15 @@ export async function loadSharedData(): Promise<SharedData> {
       if ((data?.length ?? 0) < 500) return records;
     }
   }));
-  return { groups: results[0], members: results[1], athletes: results[2], invitations: results[3], sessions: results[4], performances: results[5] } as unknown as SharedData;
+  // Private (1:1) conversations are kept apart from training groups.
+  type Row = Record<string, unknown>;
+  const directIds = new Set(results[0].filter((row: Row) => row.kind === 'direct').map((row: Row) => String(row.id)));
+  const isDirect = (row: Row) => directIds.has(String(row.group_id));
+  return {
+    groups: results[0].filter((row: Row) => !directIds.has(String(row.id))), members: results[1].filter(row => !isDirect(row)),
+    athletes: results[2], invitations: results[3], sessions: results[4], performances: results[5],
+    directs: results[0].filter((row: Row) => directIds.has(String(row.id))), directMembers: results[1].filter(isDirect),
+  } as unknown as SharedData;
 }
 export async function sharedOperation<T = unknown>(name: string, parameters: Record<string, unknown>): Promise<T> {
   const { data, error } = await getSupabaseClient().rpc(name, parameters);

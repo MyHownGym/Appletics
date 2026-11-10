@@ -31,10 +31,14 @@ export default function GroupChatScreen() {
   const router = useRouter();
   const { showAlert } = useLocalizedAlert();
   const { data, userId } = useSharedGroups();
-  const group = data.groups.find(item => item.id === groupId);
-  const memberCount = data.members.filter(item => item.group_id === groupId).length;
+  const direct = data.directs.find(item => item.id === groupId);
+  const group = data.groups.find(item => item.id === groupId) ?? direct;
+  const allMembers = direct ? data.directMembers : data.members;
+  const memberCount = allMembers.filter(item => item.group_id === groupId).length;
+  // Private conversation: titled with the other person's name.
+  const other = direct ? data.directMembers.find(item => item.group_id === groupId && item.user_id !== userId) : undefined;
   const chat = useGroupChat(groupId);
-  const isCoach = data.members.some(item => item.group_id === groupId && item.user_id === userId && item.role === 'coach');
+  const isCoach = !direct && data.members.some(item => item.group_id === groupId && item.user_id === userId && item.role === 'coach');
   const [adding, setAdding] = useState(false);
   const [picker, setPicker] = useState<GroupMessage | null>(null);
   const openFile = (url?: string | null) => { if (url) void Linking.openURL(url); };
@@ -78,8 +82,8 @@ export default function GroupChatScreen() {
             <MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} />
           </Pressable>
           <View style={styles.flex}>
-            <Text verbatim style={styles.title} numberOfLines={1}>{group?.name ?? ''}</Text>
-            <Text style={styles.subtitle}>{`${memberCount} membre${memberCount > 1 ? 's' : ''}`}</Text>
+            <Text verbatim style={styles.title} numberOfLines={1}>{direct ? other?.display_name || 'Message privé' : group?.name ?? ''}</Text>
+            <Text style={styles.subtitle}>{direct ? 'Message privé' : `${memberCount} membre${memberCount > 1 ? 's' : ''}`}</Text>
           </View>
           {isCoach ? <Pressable accessibilityRole="button" accessibilityLabel="Ajouter des athlètes" onPress={() => setAdding(true)} style={({ pressed }) => [styles.iconButton, pressed ? styles.pressed : null]}>
             <MaterialIcons name="person-add" size={22} color={Colors.primary} />
@@ -106,7 +110,7 @@ export default function GroupChatScreen() {
           ListHeaderComponent={<PushNotificationsPrompt />}
           ListEmptyComponent={!chat.loading ? <View style={styles.empty}>
             <MaterialIcons name="forum" size={44} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Aucun message pour l’instant. Écrivez le premier au groupe.</Text>
+            <Text style={styles.emptyText}>{direct ? 'Aucun message pour l’instant. Écrivez le premier.' : 'Aucun message pour l’instant. Écrivez le premier au groupe.'}</Text>
           </View> : null}
           renderItem={({ item }) => {
             const own = item.sender_id === chat.userId;
@@ -114,10 +118,10 @@ export default function GroupChatScreen() {
               <Pressable onLongPress={() => setPicker(item)} delayLongPress={300} style={[styles.row, own ? styles.rowOwn : null, !own ? { flexDirection: 'row', alignItems: 'flex-end', gap: 6 } : null]}>
                 {!own ? <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' }}>
                   <Text verbatim style={{ fontSize: 11, fontWeight: '700', color: Colors.primary }}>{(item.sender_name || 'M').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text>
-                  <AvatarPhoto uri={data.members.find(member => member.group_id === groupId && member.user_id === item.sender_id)?.avatar} />
+                  <AvatarPhoto uri={allMembers.find(member => member.group_id === groupId && member.user_id === item.sender_id)?.avatar} />
                 </View> : null}
                 <View style={[styles.bubble, own ? styles.bubbleOwn : styles.bubbleOther, chat.reactions.some(reaction => reaction.message_id === item.id) ? { marginBottom: 14 } : null]}>
-                  {!own ? <Text verbatim style={styles.sender}>{item.sender_name || 'Membre'}</Text> : null}
+                  {!own && !direct ? <Text verbatim style={styles.sender}>{item.sender_name || 'Membre'}</Text> : null}
                   {item.attachment_path ? (item.attachment_type?.startsWith('image/') && item.attachment_url
                     ? <Pressable accessibilityRole="imagebutton" accessibilityLabel={item.attachment_name ?? 'Image'} onPress={() => openFile(item.attachment_url)}><Image source={{ uri: item.attachment_url }} contentFit="cover" style={styles.image} /></Pressable>
                     : <Pressable accessibilityRole="link" onPress={() => openFile(item.attachment_url)} style={[styles.file, own ? styles.fileOwn : null]}>
@@ -159,7 +163,7 @@ export default function GroupChatScreen() {
             accessibilityLabel="Message"
             value={chat.draft}
             onChangeText={chat.setDraft}
-            placeholder="Écrire au groupe…"
+            placeholder={direct ? `Écrire à ${other?.display_name?.split(" ")[0] || "…"}…` : "Écrire au groupe…"}
             placeholderTextColor={Colors.textMuted}
             multiline
             maxLength={2000}
