@@ -10,6 +10,7 @@ import { EVENT_GROUPS } from '@/constants/config';
 import { useI18n } from '@/hooks/useI18n';
 import { normalizeGroupId } from '@/services/disciplineService';
 import { Badge } from '@/components/ui/Badge';
+import { isPlanFinished } from '@/services/planStatus';
 
 interface PlanCardProps {
   plan: TrainingPlan;
@@ -28,18 +29,21 @@ export const PlanCard = React.memo(({ plan, onPress, athleteCount, fill = false 
   const group = EVENT_GROUPS.find(g => g.id === normalizeGroupId(plan.group));
   const groupColor = group?.color || Colors.primary;
   const phaseColor = PHASE_COLORS[plan.phase] || Colors.primary;
+  // Finished plans stay available but fade back.
+  const finished = isPlanFinished(plan);
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, fill ? { flex: 1 } : null, Shadow.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, fill ? { flex: 1 } : null, Shadow.card, finished ? { opacity: 0.62, backgroundColor: Colors.background } : null, pressed && styles.pressed]}
       accessibilityLabel={plan.title}
     >
-      <View style={[styles.accentBar, { backgroundColor: groupColor }]} />
+      <View style={[styles.accentBar, { backgroundColor: finished ? Colors.textMuted : groupColor }]} />
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Badge label={plan.phase} color={phaseColor} />
-          <Badge label={group ? t(group.labelKey) : plan.group} color={groupColor} />
+          {finished ? <Badge label="Terminé" color={Colors.textMuted} /> : null}
+          <Badge label={plan.phase} color={finished ? Colors.textMuted : phaseColor} />
+          <Badge label={group ? t(group.labelKey) : plan.group} color={finished ? Colors.textMuted : groupColor} />
         </View>
         <Text verbatim style={styles.title}>{plan.title}</Text>
         <Text verbatim style={styles.description} numberOfLines={2}>{plan.description}</Text>
