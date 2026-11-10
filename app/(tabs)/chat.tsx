@@ -125,6 +125,8 @@ export default function ChatScreen() {
   const onlineGroups = shared.data.groups;
   const directs = shared.data.directs;
   const [composing, setComposing] = useState(false);
+  // Real role of the other person (coach in any shared group → Coach), not the private chat's internal role.
+  const isCoachUser = (userId?: string) => !!userId && shared.data.members.some(member => member.user_id === userId && member.role === 'coach');
   const otherOf = (groupId: string) => shared.data.directMembers.find(member => member.group_id === groupId && member.user_id !== shared.userId);
 
   const channelTabs = isAthlete ? [{ id: 'all', label: t('all') }, { id: 'group', label: t('groups') }] : [
@@ -217,7 +219,7 @@ export default function ChatScreen() {
               </View>
               <View style={styles.channelInfo}>
                 <Text verbatim style={styles.channelName} numberOfLines={1}>{name}</Text>
-                <Text style={[styles.lastMsg, count ? { color: Colors.textPrimary, fontWeight: '700' } : null]}>{count ? `${count} nouveau${count > 1 ? 'x' : ''} message${count > 1 ? 's' : ''}` : (other?.role === 'coach' ? 'Coach' : 'Athlète')}</Text>
+                <Text style={[styles.lastMsg, count ? { color: Colors.textPrimary, fontWeight: '700' } : null]}>{count ? `${count} nouveau${count > 1 ? 'x' : ''} message${count > 1 ? 's' : ''}` : (isCoachUser(other?.user_id) ? 'Coach' : 'Athlète')}</Text>
               </View>
               {count ? <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', marginRight: 4 }}><Text verbatim style={{ color: '#FFF', fontSize: 12, fontWeight: '800' }}>{count > 99 ? '99+' : String(count)}</Text></View> : null}
               <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />

@@ -45,10 +45,11 @@ export const CompactTabBar = memo(function CompactTabBar({ state, descriptors, n
 const styles = StyleSheet.create({
   dock: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 8, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'flex-start' },
   pill: { width: '100%', maxWidth: 480, height: 64, borderRadius: Radius.full, borderWidth: 0, overflow: 'hidden' },
-  items: { flexGrow: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.xs },
+  items: { flexGrow: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 6, gap: 2 },
   // Intrinsic item widths preserve complete labels; horizontal scrolling is only needed for large accessibility text.
-  item: { flexGrow: 1, flexShrink: 0, minWidth: 48, minHeight: 64, alignItems: 'center', justifyContent: 'center', gap: 2, paddingHorizontal: Spacing.xs, paddingVertical: Spacing.sm, borderRadius: Radius.full },
-  selected: { backgroundColor: '#FFFFFF' },
+  item: { flexGrow: 1, flexShrink: 0, minWidth: 48, height: 52, alignItems: 'center', justifyContent: 'center', gap: 2, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full },
+  // Active tab: a white pill inset inside the bar (same rounding, small margin all around).
+  selected: { backgroundColor: '#FFFFFF', shadowColor: '#7A1F00', shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   label: { fontSize: Typography.fontSizeXS, lineHeight: 14, fontWeight: Typography.weightSemibold, textAlign: 'center', includeFontPadding: false },
   pressed: { opacity: 0.65 },
   // Unread messages
