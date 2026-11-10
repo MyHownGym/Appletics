@@ -1,26 +1,22 @@
-import { Apple, Smartphone } from "lucide-react";
+import { ExternalLink, Monitor, Smartphone, Tablet } from "lucide-react";
 import { translations, type Language } from "@/constants/translations";
 
 interface StoreAvailabilityProps { language: Language }
-const SOON: Record<Language, string> = { fr: "Bientôt disponible", de: "Bald verfügbar", it: "Presto disponibile" };
+export const APP_URL = "https://app.appletics.ch";
 
+// Appletics is a web app: one link for iPhone, iPad, Android and computers (no store).
 export default function StoreAvailability({ language }: StoreAvailabilityProps) {
   const t = translations[language].download;
-  const stores = [
-    { name: "App Store", Icon: Apple, label: t.appStore },
-    { name: "Google Play", Icon: Smartphone, label: t.googlePlay },
-  ];
   return (
-    <div data-scroll-reveal="left" className="mb-12 flex flex-col justify-center gap-4 sm:flex-row">
-      {stores.map(({ name, Icon, label }) => (
-        <button key={name} type="button" disabled aria-label={label} className="inline-flex min-h-16 cursor-not-allowed items-center justify-center gap-3 rounded-2xl border-2 border-primary-foreground/30 bg-primary-foreground/10 px-7 py-4 text-primary-foreground">
-          <Icon size={24} aria-hidden="true" />
-          <span className="text-left">
-            <span className="mb-1 block text-base leading-snug">{SOON[language]}</span>
-            <span className="block text-lg font-bold leading-snug">{name}</span>
-          </span>
-        </button>
-      ))}
+    <div data-scroll-reveal="left" className="mb-12 flex flex-col items-center gap-5">
+      <a href={APP_URL} className="inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-white px-8 py-4 text-lg font-bold text-primary-600 shadow-lg transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+        <span>{t.appStore} · app.appletics.ch</span>
+        <ExternalLink size={20} aria-hidden="true" />
+      </a>
+      <div className="flex items-center gap-4 text-white/90" aria-hidden="true">
+        <Smartphone size={22} /><Tablet size={22} /><Monitor size={22} />
+      </div>
+      <p className="max-w-md text-base text-white/85">{t.googlePlay}</p>
     </div>
   );
 }
