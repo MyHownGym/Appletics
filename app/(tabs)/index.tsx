@@ -20,6 +20,7 @@ import { clubRoleLabels } from '@/constants/club';
 import { HomeActivitySummary } from '@/components/feature/HomeActivitySummary';
 import { AppBrand } from '@/components/feature/AppBrand';
 import { SubscriptionPlanCard } from '@/components/feature/SubscriptionPlanCard';
+import { TrialBanner } from '@/components/feature/TrialBanner';
 import { PendingInvitationsBanner } from '@/components/feature/PendingInvitationsBanner';
 import type { ScheduleEntry } from '@/services/homeScheduleService';
 import { TrainingLogList } from '@/components/feature/TrainingLogList';
@@ -83,6 +84,7 @@ export default function HomeScreen() {
       </LinearGradient>
       <PendingInvitationsBanner horizontalPadding={screenPadding} />
       <HomeActivitySummary horizontalPadding={screenPadding} />
+      <TrialBanner horizontalPadding={screenPadding} />
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>{isAthlete ? <Pressable onPress={() => router.push({ pathname: '/(tabs)/profile', params: { section: 'progression', focusId: String(Date.now()) } })} style={({ pressed }) => [styles.athleteShortcut, pressed ? styles.pressed : null]}><MaterialIcons name="bar-chart" size={22} color={Colors.info} /><Text style={styles.shortcutText}>{t('Voir mes stats & progression')}</Text><MaterialIcons name="arrow-forward-ios" size={16} color={Colors.info} /></Pressable> : <><Text style={styles.sectionTitle}>{t('quick_actions')}</Text><FlatList data={quickActions} keyExtractor={item => item.id} numColumns={2} scrollEnabled={false} columnWrapperStyle={styles.quickRow} renderItem={({ item }) => <Pressable onPress={() => router.push(item.route as any)} style={({ pressed }) => [styles.quickCard, Shadow.card, pressed ? styles.primaryPressed : null]}><View style={[styles.quickIcon, { backgroundColor: item.color + '15' }]}><MaterialIcons name={item.icon as any} size={24} color={item.color} /></View><Text style={styles.quickLabel}>{item.label}</Text></Pressable>} /></>}</View>
       <View style={[styles.section, { paddingHorizontal: screenPadding }]}>
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{t('todays_training')}</Text><Pressable onPress={() => router.push('/(tabs)/plans')} style={({ pressed }) => [styles.linkButton, pressed ? styles.pressed : null]}><Text style={styles.link}>{t('see_all')}</Text></Pressable></View>

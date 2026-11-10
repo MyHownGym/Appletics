@@ -1,5 +1,6 @@
 // Powered by OnSpace.AI
 // Add Athlete screen — manual form + email/SMS invite
+import { TrialGate } from '@/components/feature/TrialGate';
 import React, { useState } from 'react';
 import {
   View, ScrollView, Pressable, StyleSheet,
@@ -30,7 +31,11 @@ const STATUS_OPTIONS = [
   { id: 'inactive', icon: 'pause-circle-outline', color: Colors.textMuted },
 ] as const;
 
-export default function AthleteAddScreen() {
+export default function AthleteAddScreenGated() {
+  return <TrialGate><AthleteAddScreen /></TrialGate>;
+}
+
+function AthleteAddScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const editId = typeof params.id === 'string' ? params.id : undefined;

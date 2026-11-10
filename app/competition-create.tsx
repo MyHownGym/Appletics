@@ -1,5 +1,6 @@
 // Powered by OnSpace.AI
 // v4 - Date début + date fin, lieu, statut, épreuves, athlètes
+import { TrialGate } from '@/components/feature/TrialGate';
 import React, { useState } from 'react';
 import {
   View, ScrollView, Pressable, StyleSheet,
@@ -30,7 +31,11 @@ function formatDate(dateStr: string, locale: string): string {
   } catch { return dateStr; }
 }
 
-export default function CompetitionCreateScreen() {
+export default function CompetitionCreateScreenGated() {
+  return <TrialGate><CompetitionCreateScreen /></TrialGate>;
+}
+
+function CompetitionCreateScreen() {
   const router = useRouter();
   const { id: editId } = useLocalSearchParams<{ id?: string }>();
   const { openLink } = useExternalLinks();
