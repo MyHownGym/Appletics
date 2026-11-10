@@ -1,9 +1,12 @@
 import { memo, useMemo, useRef, type ReactNode } from 'react';
-import { Animated, PanResponder, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, PanResponder, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 
 // Bottom sheet that closes when pulled down (like the iPhone's own sheets), and still on a tap outside.
 export const SwipeSheet = memo(function SwipeSheet({ onClose, style, children }: { onClose: () => void; style?: StyleProp<ViewStyle>; children: ReactNode }) {
   const translateY = useRef(new Animated.Value(0)).current;
+  // Computer / tablet: a centred window instead of a sheet stuck to the bottom of the screen.
+  const { width } = useWindowDimensions();
+  const centred = width >= 768;
   const close = useRef(onClose); close.current = onClose;
   const responder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, gesture) => gesture.dy > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx) * 1.5,
@@ -18,5 +21,5 @@ export const SwipeSheet = memo(function SwipeSheet({ onClose, style, children }:
     onPanResponderTerminate: () => Animated.spring(translateY, { toValue: 0, useNativeDriver: false }).start(),
   }), [translateY]);
   // A tap inside the sheet must not reach the backdrop (which closes it).
-  return <Animated.View {...responder.panHandlers} onStartShouldSetResponder={() => true} style={[style, { transform: [{ translateY }] }]}>{children}</Animated.View>;
+  return <Animated.View {...responder.panHandlers} onStartShouldSetResponder={() => true} style={[style, centred ? { marginTop: 'auto', marginBottom: 'auto', borderRadius: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' } : null, { transform: [{ translateY }] }]}>{children}</Animated.View>;
 });
