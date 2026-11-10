@@ -16,6 +16,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ScreenHeader, PlanCard } from '@/components';
 import { EVENT_GROUPS } from '@/constants/config';
+import { isPlanFinished } from '@/services/planStatus';
 import { TranslationKey } from '@/constants/i18n';
 import { exportTrainingPlan } from '@/services/pdfExportService';
 import { useActivityScope } from '@/hooks/useActivityScope';
@@ -31,15 +32,20 @@ export default function PlansScreen() {
   const { t, language } = useI18n();
   const { hasFeature } = useSubscription();
   const [selectedGroup, setSelectedGroup] = useState('all');
+  const [showFinished, setShowFinished] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const isAthlete = user.userType === 'athlete';
   const { screenPadding, cols, isPhone } = useResponsive();
 
   // A group shows its own plans, plans for everyone, and plans assigned to one of its athletes.
-  const filteredPlans = selectedGroup === 'all'
+  const groupPlans = selectedGroup === 'all'
     ? trainingPlans
     : trainingPlans.filter(p => p.group === selectedGroup || p.group === 'all'
       || p.athleteIds.some(id => athletes.find(a => a.id === id)?.group === selectedGroup));
+  // Current and upcoming plans first; finished ones in their own tab.
+  const finishedCount = groupPlans.filter(plan => isPlanFinished(plan)).length;
+  const filteredPlans = groupPlans.filter(plan => isPlanFinished(plan) === showFinished);
+  const activeCount = trainingPlans.filter(plan => !isPlanFinished(plan)).length;
 
   const handleExportPDF = async (planId: string) => {
     if (!hasFeature('pdf_export')) {
@@ -65,7 +71,7 @@ export default function PlansScreen() {
         ListHeaderComponent={<View style={{ marginHorizontal: -Spacing.screenPadding }}>
             <ScreenHeader
               title={t('training_plans')}
-              subtitle={`${trainingPlans.length} ${t('active_plans')}`}
+              subtitle={`${activeCount} ${t('active_plans')}`}
               rightAction={!isAthlete ? { icon: 'add', label: t('add_plan'), onPress: () => router.push('/plan-create') } : undefined}
             />
 
@@ -93,6 +99,18 @@ export default function PlansScreen() {
                   );
                 })}
               </ScrollView>
+            </View>
+
+            {/* En cours / Terminés */}
+            <View style={styles.statusRow}>
+              {[{ id: false, label: 'En cours', icon: 'play-circle-outline' }, { id: true, label: `Terminés${finishedCount ? ` (${finishedCount})` : ''}`, icon: 'check-circle-outline' }].map(option => {
+                const active = showFinished === option.id;
+                return <Pressable key={String(option.id)} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => setShowFinished(option.id)}
+                  style={({ pressed }) => [styles.statusTab, active ? styles.statusTabActive : null, pressed ? { opacity: 0.8 } : null]}>
+                  <MaterialIcons name={option.icon as any} size={16} color={active ? Colors.textPrimary : Colors.textMuted} />
+                  <Text verbatim style={[styles.statusText, active ? styles.statusTextActive : null]}>{option.label}</Text>
+                </Pressable>;
+              })}
             </View>
         </View>}
         data={padGrid(filteredPlans, isPhone ? 1 : cols)}
@@ -152,6 +170,11 @@ export default function PlansScreen() {
 }
 
 const styles = StyleSheet.create({
+  statusRow: { flexDirection: 'row', alignSelf: 'flex-start', gap: 4, padding: 4, marginHorizontal: Spacing.screenPadding, marginBottom: Spacing.md, borderRadius: Radius.full, backgroundColor: Colors.border + '80' },
+  statusTab: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 34, borderRadius: Radius.full },
+  statusTabActive: { backgroundColor: Colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  statusText: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightSemibold, color: Colors.textMuted },
+  statusTextActive: { color: Colors.textPrimary },
   screen: { flex: 1, backgroundColor: Colors.background },
   filterWrap: { height: 52 },
   filterContent: { paddingHorizontal: Spacing.screenPadding, gap: Spacing.sm, alignItems: 'center' },
