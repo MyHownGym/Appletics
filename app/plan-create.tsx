@@ -1,6 +1,7 @@
 // Powered by OnSpace.AI
 // Plan create v3 — date range picker, phases en français, groupes avec labels,
 // plan sans athlète obligatoire, vue calendrier mensuelle
+import { TrialGate } from '@/components/feature/TrialGate';
 import React, { useState } from 'react';
 import {
   View, ScrollView, Pressable, StyleSheet,
@@ -55,7 +56,11 @@ function formatDate(dateStr: string, locale: string): string {
   } catch { return dateStr; }
 }
 
-export default function PlanCreateScreen() {
+export default function PlanCreateScreenGated() {
+  return <TrialGate><PlanCreateScreen /></TrialGate>;
+}
+
+function PlanCreateScreen() {
   const router = useRouter();
   const { id: editId, groupId: fromGroup } = useLocalSearchParams<{ id?: string; groupId?: string }>();
   const shared = useSharedGroups();

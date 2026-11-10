@@ -18,6 +18,7 @@ import { BillingStatusPanel } from '@/components/feature/BillingStatusPanel';
 import { BillingPaymentActions } from '@/components/feature/BillingPaymentActions';
 import { BillingTestGuide } from '@/components/feature/BillingTestGuide';
 import { BetaBillingScreen } from '@/components/feature/BetaBillingScreen';
+import { TrialBanner } from '@/components/feature/TrialBanner';
 import { useReleasePolicy } from '@/hooks/useReleasePolicy';
 import { useBilling } from '@/hooks/useBilling';
 
@@ -38,6 +39,7 @@ export default function UpgradeScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView keyboardShouldPersistTaps="handled" ref={scrollRef} style={styles.flex} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingHorizontal: screenPadding }]}>
         <View style={styles.intro}><View style={styles.introTop}><Text style={styles.eyebrow}>{offer.isClub ? 'POUR VOTRE CLUB' : 'POUR VOTRE COACHING'}</Text>{testMode ? <Text style={styles.testBadge}>TEST</Text> : null}</View><Text style={styles.title}>Choisissez votre formule.</Text><Text style={styles.current}>{`Formule actuelle : ${offer.currentLabel}`}</Text></View>
+        <TrialBanner horizontalPadding={0} />
         {offer.reason ? <View style={styles.reason}><MaterialIcons name="lock-outline" size={20} color={Colors.welcomeDeep} /><Text style={styles.reasonText}>{offer.reason}</Text></View> : null}
         <View style={styles.tabs}>{offer.tiers.map(item => {
           const selected = item.id === plan.id;
