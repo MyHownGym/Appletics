@@ -88,7 +88,7 @@ export default function Features() {
               <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl">
                 <img
                   src={coachImg}
-                  alt="Coach Appletics"
+                  alt="Coach avec un chronomètre au bord de la piste"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
