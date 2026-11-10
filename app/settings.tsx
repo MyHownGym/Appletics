@@ -27,6 +27,7 @@ import { useReleasePolicy } from '@/hooks/useReleasePolicy';
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { SwipeSheet } from '@/components/ui/SwipeSheet';
 import { saveAccountProfile } from '@/services/accountProfileService';
+import { replayTour } from '@/services/tourStore';
 
 type UserRole = 'coach' | 'athlete' | 'club';
 
@@ -310,6 +311,21 @@ export default function SettingsScreen() {
             <View style={styles.rowInfo}>
               <Text style={styles.rowLabel}>Notifications</Text>
               <Text style={styles.rowValue}>{allOn ? 'Toutes activées' : 'Personnalisées'}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
+          </Pressable>
+        </View>
+
+        {/* ── PRISE EN MAIN ── */}
+        <Text style={styles.sectionLabel}>Aide</Text>
+        <View style={styles.card}>
+          <Pressable accessibilityRole="button" style={styles.row} onPress={() => { router.replace('/(tabs)'); setTimeout(replayTour, 400); }}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.info + '18' }]}>
+              <MaterialIcons name="school" size={18} color={Colors.info} />
+            </View>
+            <View style={styles.rowInfo}>
+              <Text style={styles.rowLabel}>Revoir la prise en main</Text>
+              <Text style={styles.rowValue}>Les bases d’Appletics en 1 minute</Text>
             </View>
             <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
           </Pressable>
