@@ -8,7 +8,6 @@ import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useSharedGroupManagement } from '@/hooks/useSharedGroupManagement';
 import { useLocalizedCopy } from '@/hooks/useLocalizedCopy';
 import { SharedSessionWorkspace } from '@/components/feature/SharedSessionWorkspace';
-import { SharedSessionPublisher } from '@/components/feature/SharedSessionPublisher';
 import { SubscriptionDisclosure } from '@/components/feature/SubscriptionDisclosure';
 import { sharedStyles as styles } from '@/constants/sharedStyles';
 import { Colors } from '@/constants/theme';
@@ -67,7 +66,10 @@ export default function SharedGroupScreen() {
     {group.coach && group.invitations.length ? <SubscriptionDisclosure title="Invitations en attente"><FlatList scrollEnabled={false} data={group.invitations} keyExtractor={item => item.id} renderItem={({ item }) => <View style={styles.card}><Text verbatim style={styles.body}>{item.email}</Text><Text style={styles.subtle}>{item.role === 'coach' ? 'Coach' : 'Athlète'}</Text><Pressable accessibilityRole="button" onPress={() => invitation.sendEmail(item.email, { groupName: group.group?.name ?? item.group_name, role: item.role })} style={({ pressed }) => [styles.secondary,pressed ? styles.pressed : null]}><MaterialIcons name="email" size={20} color={Colors.clubDeep} /><Text style={styles.link}>Préparer un e-mail Appletics</Text></Pressable><Text verbatim style={styles.subtle}>{invitation.link}</Text><Pressable disabled={group.busy} onPress={() => { void group.revoke(item.id); }} style={({ pressed }) => [styles.secondary,pressed ? styles.pressed : null]}><Text style={[styles.link,styles.error]}>Révoquer</Text></Pressable></View>} /></SubscriptionDisclosure> : null}
     <Text style={styles.heading}>Séances partagées</Text><View style={styles.chips}><FlatList horizontal data={group.sessions} keyExtractor={item => item.id} showsHorizontalScrollIndicator={false} renderItem={({ item }) => <Pressable accessibilityState={{ selected: session?.id === item.id }} onPress={() => setSelected(item.id)} style={({ pressed }) => [styles.chip,session?.id === item.id ? styles.selected : null,pressed ? styles.pressed : null]}><Text verbatim style={styles.chipText}>{[item.title, item.session_date.split('-').reverse().slice(0, 2).join('.'), group.athletes.find(athlete => athlete.id === item.athlete_id)?.name].filter(Boolean).join(' · ')}</Text></Pressable>} /></View>
     {session ? <><View style={styles.card}><Text verbatim style={styles.heading}>{session.title}</Text><Text verbatim style={styles.body}>{session.details || translate('Aucune consigne pour cette séance')}</Text></View><SharedSessionWorkspace key={session.id} sessionId={session.id} /></> : null}
-    {group.coach ? <SubscriptionDisclosure title="Publier une séance"><SharedSessionPublisher groupId={id} onPublished={setSelected} /></SubscriptionDisclosure> : null}
+    {/* Sessions always belong to a plan: the coach creates a plan for the group (athletes preselected). */}
+    {group.coach ? <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/plan-create', params: { groupId: id } })} style={({ pressed }) => [styles.button, { flexDirection: 'row', gap: 8, justifyContent: 'center' }, pressed ? styles.pressed : null]}>
+      <MaterialIcons name="playlist-add" size={20} color="#FFFFFF" /><Text style={styles.buttonText}>Créer un plan pour ce groupe</Text>
+    </Pressable> : null}
    </> : null}
   </View>} />
  </KeyboardAvoidingView></SafeAreaView>;

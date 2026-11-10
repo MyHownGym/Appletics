@@ -25,7 +25,9 @@ export default function PlansScreen() {
   const router = useRouter();
   const { showAlert } = useLocalizedAlert();
   const { athletes, user } = useApp();
-  const { trainingPlans } = useActivityScope();
+  // Sessions published for a whole group (no plan) are shown in the calendar, not as a plan.
+  const { trainingPlans: allPlans } = useActivityScope();
+  const trainingPlans = allPlans.filter(plan => !plan.groupSessions);
   const { t, language } = useI18n();
   const { hasFeature } = useSubscription();
   const [selectedGroup, setSelectedGroup] = useState('all');
