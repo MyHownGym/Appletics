@@ -48,7 +48,7 @@ export default function Footer() {
             </h4>
             <div className="flex gap-3">
               <a
-                href="https://instagram.com/appletics.app"
+                href="https://instagram.com/appletics.ch"
                 className="w-10 h-10 bg-gray-800 hover:bg-primary-500 rounded-xl flex items-center justify-center transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -76,18 +76,18 @@ export default function Footer() {
             {/* Contact */}
             <div className="mt-6">
               <a
-                href="mailto:contact@appletics.app"
+                href="mailto:contact@appletics.ch"
                 className="text-gray-400 hover:text-primary-400 text-sm transition-colors"
               >
-                contact@appletics.app
+                contact@appletics.ch
               </a>
             </div>
             <div className="mt-1">
               <a
-                href="https://appletics.app"
+                href="https://appletics.ch"
                 className="text-gray-400 hover:text-primary-400 text-sm transition-colors"
               >
-                appletics.app
+                appletics.ch
               </a>
             </div>
           </div>

@@ -9,8 +9,8 @@ const content = {
       {
         heading: "Éditeur du site",
         body: `Appletics
-Site web : appletics.app
-E-mail : contact@appletics.app
+Site web : appletics.ch
+E-mail : contact@appletics.ch
 Pays : Suisse`,
       },
       {
@@ -27,7 +27,7 @@ Pays : Suisse`,
 
 Les données collectées via l'application Appletics (nom, e-mail, données d'entraînement) sont utilisées exclusivement pour le fonctionnement du service et ne sont pas transmises à des tiers sans consentement explicite.
 
-Pour exercer vos droits : contact@appletics.app`,
+Pour exercer vos droits : contact@appletics.ch`,
       },
       {
         heading: "Cookies",
@@ -43,7 +43,7 @@ Pour exercer vos droits : contact@appletics.app`,
       },
       {
         heading: "Contact",
-        body: "Pour toute question relative aux présentes mentions légales ou à la protection de vos données :\ncontact@appletics.app",
+        body: "Pour toute question relative aux présentes mentions légales ou à la protection de vos données :\ncontact@appletics.ch",
       },
     ],
   },
@@ -54,8 +54,8 @@ Pour exercer vos droits : contact@appletics.app`,
       {
         heading: "Herausgeber",
         body: `Appletics
-Website: appletics.app
-E-Mail: contact@appletics.app
+Website: appletics.ch
+E-Mail: contact@appletics.ch
 Land: Schweiz`,
       },
       {
@@ -72,7 +72,7 @@ Land: Schweiz`,
 
 Die über die Appletics-App erhobenen Daten (Name, E-Mail, Trainingsdaten) werden ausschliesslich für den Betrieb des Dienstes verwendet und ohne ausdrückliche Einwilligung nicht an Dritte weitergegeben.
 
-Um Ihre Rechte auszuüben: contact@appletics.app`,
+Um Ihre Rechte auszuüben: contact@appletics.ch`,
       },
       {
         heading: "Cookies",
@@ -88,7 +88,7 @@ Um Ihre Rechte auszuüben: contact@appletics.app`,
       },
       {
         heading: "Kontakt",
-        body: "Bei Fragen zu diesem Impressum oder zum Datenschutz:\ncontact@appletics.app",
+        body: "Bei Fragen zu diesem Impressum oder zum Datenschutz:\ncontact@appletics.ch",
       },
     ],
   },
@@ -99,8 +99,8 @@ Um Ihre Rechte auszuüben: contact@appletics.app`,
       {
         heading: "Editore del sito",
         body: `Appletics
-Sito web: appletics.app
-E-mail: contact@appletics.app
+Sito web: appletics.ch
+E-mail: contact@appletics.ch
 Paese: Svizzera`,
       },
       {
@@ -117,7 +117,7 @@ Paese: Svizzera`,
 
 I dati raccolti tramite l'app Appletics (nome, e-mail, dati di allenamento) sono utilizzati esclusivamente per il funzionamento del servizio e non vengono trasmessi a terzi senza esplicito consenso.
 
-Per esercitare i suoi diritti: contact@appletics.app`,
+Per esercitare i suoi diritti: contact@appletics.ch`,
       },
       {
         heading: "Cookie",
@@ -133,7 +133,7 @@ Per esercitare i suoi diritti: contact@appletics.app`,
       },
       {
         heading: "Contatto",
-        body: "Per qualsiasi domanda relativa alle presenti note legali o alla protezione dei dati:\ncontact@appletics.app",
+        body: "Per qualsiasi domanda relativa alle presenti note legali o alla protezione dei dati:\ncontact@appletics.ch",
       },
     ],
   },
@@ -159,7 +159,7 @@ export default function LegalMentions() {
           <img src={logoIcon} alt="Appletics" className="w-12 h-12 rounded-xl" />
           <div>
             <h1 className="text-3xl font-black text-gray-900">{t.title}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">appletics.app · {new Date().getFullYear()}</p>
+            <p className="text-sm text-gray-500 mt-0.5">appletics.ch · {new Date().getFullYear()}</p>
           </div>
         </div>
 
