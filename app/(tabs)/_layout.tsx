@@ -3,7 +3,8 @@
 import React, { useRef } from 'react';
 import { Animated, Pressable, View, StyleSheet, Dimensions } from 'react-native';
 import { LocalizedText as Text } from '@/components/ui/LocalizedText';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { useAppleticsLinks } from '@/hooks/useAppleticsLinks';
 import { Image } from 'expo-image';
 import { Tabs, useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +58,7 @@ function Sidebar() {
   const { isDesktop } = useResponsive();
 
   const logout = useLogoutConfirm();
+  const links = useAppleticsLinks();
   const activeTab = segments[1] as string || 'index';
   const initials = user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -107,6 +109,13 @@ function Sidebar() {
 
       <View style={{ flex: 1 }} />
 
+      {/* Instagram, e-mail, website */}
+      <View style={[sideStyles.socialRow, !isDesktop && { flexDirection: 'column' }]}>
+        <Pressable accessibilityRole="link" accessibilityLabel="Instagram @appletics.ch" onPress={links.openInstagram} style={({ pressed }) => [sideStyles.socialBtn, pressed && { opacity: 0.7 }]}><FontAwesome name="instagram" size={19} color="#FFFFFF" /></Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="contact@appletics.ch" onPress={links.openEmail} style={({ pressed }) => [sideStyles.socialBtn, pressed && { opacity: 0.7 }]}><MaterialIcons name="email" size={19} color="#FFFFFF" /></Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="appletics.ch" onPress={links.openWebsite} style={({ pressed }) => [sideStyles.socialBtn, pressed && { opacity: 0.7 }]}><MaterialIcons name="language" size={19} color="#FFFFFF" /></Pressable>
+      </View>
+
       {/* User avatar at bottom */}
       <Pressable
         style={({ pressed }) => [sideStyles.userAvatar, pressed && { opacity: 0.8 }]}
@@ -131,6 +140,8 @@ function Sidebar() {
 }
 
 const sideStyles = StyleSheet.create({
+  socialRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 12 },
+  socialBtn: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' },
   sidebar: {
     borderRightWidth: 0,
     alignItems: 'stretch',
