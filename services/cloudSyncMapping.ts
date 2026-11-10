@@ -67,10 +67,20 @@ export function coachDesiredItems(plans: TrainingPlan[], competitions: Competiti
 // Published rows that should no longer exist (athlete removed, session deleted). Past sessions are kept.
 // superseded: older records of a linked person in another group (athlete moved to « Sprint »…). What this coach
 // published there is withdrawn too, otherwise the athlete would receive every session twice.
-export function staleRows(rows: SharedSession[], desired: Set<string>, linkedShared: Set<string>, today = todayKey(), coachId = '', superseded: Set<string> = new Set()): string[] {
+// A past session still in its plan on that day? (moved to another day or deleted → false)
+export function scheduledOn(plans: TrainingPlan[], source: string): boolean {
+  const [, planId, sessionId, date] = source.split(':');
+  const plan = plans.find(item => item.id === planId);
+  const session = plan?.sessions?.find(item => item.id === sessionId);
+  if (!plan || !session || !date) return false;
+  return upcomingSessionDates(plan, session, new Date(`${date}T12:00:00`)).includes(date);
+}
+
+// pastRemovable: a past published session the coach moved or deleted and nobody logged anything on.
+export function staleRows(rows: SharedSession[], desired: Set<string>, linkedShared: Set<string>, today = todayKey(), coachId = '', superseded: Set<string> = new Set(), pastRemovable: (row: SharedSession) => boolean = () => false): string[] {
   return rows.filter(row => row.source_key && row.athlete_id && (linkedShared.has(row.athlete_id) || (!!coachId && row.created_by === coachId && superseded.has(row.athlete_id)))
     && (row.source_key.startsWith('plan:') || row.source_key.startsWith('comp:'))
-    && row.session_date >= today && !desired.has(row.source_key)).map(row => row.id);
+    && !desired.has(row.source_key) && (row.session_date >= today || (row.source_key.startsWith('plan:') && pastRemovable(row)))).map(row => row.id);
 }
 
 // ── Performances: one canonical form for both directions (avoids sending back what was just received) ──

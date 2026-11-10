@@ -6,7 +6,7 @@ import { useSharedGroups } from '@/hooks/useSharedGroups';
 import type { Athlete, CompResult } from '@/types';
 import {
   canonical, coachDesiredItems, hash, parseSource, performanceToResults, performanceToSession,
-  resultsToPerformance, staleRows,
+  resultsToPerformance, staleRows, scheduledOn,
 } from '@/services/cloudSyncMapping';
 import { isRecent, notifyNewItems, notifyResult } from '@/services/pushService';
 import { asSync, consumeUserEdit, resultEditKey, sessionEditKey } from '@/services/userEdits';
@@ -159,7 +159,9 @@ export function useCoachCloudSync() {
           const linkedIds = new Set(links.values());
           const linkedUsers = new Set(groupAthletes.filter(item => linkedIds.has(item.id) && item.user_id).map(item => item.user_id));
           const superseded = new Set(groupAthletes.filter(item => !linkedIds.has(item.id) && item.user_id && linkedUsers.has(item.user_id)).map(item => item.id));
-          const stale = staleRows(rows, new Set(desired.map(item => item.source)), linkedIds, undefined, uid, superseded);
+          const logged = new Set(shared.data.performances.map(item => item.session_id));
+          const stale = staleRows(rows, new Set(desired.map(item => item.source)), linkedIds, undefined, uid, superseded,
+            row => !logged.has(row.id) && !scheduledOn(trainingPlans, row.source_key as string));
           if (stale.length) { const { error } = await client.rpc('shared_delete_published', { p_ids: stale }); if (!error) cloudChanged = true; }
 
           // 3. Athletes' entries → coach's stats.
