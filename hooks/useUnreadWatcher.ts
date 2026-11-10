@@ -8,7 +8,7 @@ import { claimPushForCurrentAccount } from '@/services/pushService';
 export function useUnreadWatcher() {
   const shared = useSharedGroups();
   const uid = shared.userId ?? '';
-  const groupIds = useMemo(() => shared.data.groups.map(group => group.id).sort(), [shared.data.groups]);
+  const groupIds = useMemo(() => [...shared.data.groups, ...shared.data.directs].map(group => group.id).sort(), [shared.data.groups, shared.data.directs]);
   const ids = groupIds.join(',');
   // Notifications of this device go to the account signed in now (several accounts may share a phone).
   useEffect(() => { if (uid) void claimPushForCurrentAccount().catch(() => {}); }, [uid]);

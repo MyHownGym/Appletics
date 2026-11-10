@@ -20,6 +20,8 @@ import { PendingInvitationsBanner } from '@/components/feature/PendingInvitation
 import { PushNotificationsPrompt } from '@/components/feature/PushNotificationsPrompt';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { useUnreadCounts } from '@/services/unreadStore';
+import { NewDirectMessage } from '@/components/feature/NewDirectMessage';
+import { AvatarPhoto } from '@/components/ui/AvatarPhoto';
 
 const CHANNEL_TYPE_ICONS: Record<string, string> = {
   staff: 'supervisor-account', group: 'people', admin: 'admin-panel-settings',
@@ -121,6 +123,9 @@ export default function ChatScreen() {
   const shared = useSharedGroups();
   const unread = useUnreadCounts();
   const onlineGroups = shared.data.groups;
+  const directs = shared.data.directs;
+  const [composing, setComposing] = useState(false);
+  const otherOf = (groupId: string) => shared.data.directMembers.find(member => member.group_id === groupId && member.user_id !== shared.userId);
 
   const channelTabs = isAthlete ? [{ id: 'all', label: t('all') }, { id: 'group', label: t('groups') }] : [
     { id: 'all', label: t('all') },
@@ -193,6 +198,39 @@ export default function ChatScreen() {
               <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
             </Pressable>
           )}
+          {/* Private (1:1) conversations */}
+          <View style={[styles.sectionHead]}>
+            <Text style={[styles.sectionTitle, { flex: 1 }]}>Messages privés</Text>
+            {onlineGroups.length ? <Pressable accessibilityRole="button" onPress={() => setComposing(true)} style={({ pressed }) => [styles.newButton, pressed ? { opacity: 0.7 } : null]}>
+              <MaterialIcons name="edit" size={16} color="#FFF" /><Text style={styles.newButtonText}>Nouveau</Text>
+            </Pressable> : null}
+          </View>
+          {directs.length ? directs.map(group => {
+            const other = otherOf(group.id);
+            const name = other?.display_name || 'Message privé';
+            const count = unread[group.id] ?? 0;
+            return <Pressable key={group.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/group-chat', params: { id: group.id } })}
+              style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
+              <View style={[styles.onlineIcon, { backgroundColor: Colors.primaryLight }]}>
+                <Text verbatim style={{ fontWeight: '700', color: Colors.primary }}>{name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</Text>
+                <AvatarPhoto uri={other?.avatar} />
+              </View>
+              <View style={styles.channelInfo}>
+                <Text verbatim style={styles.channelName} numberOfLines={1}>{name}</Text>
+                <Text style={[styles.lastMsg, count ? { color: Colors.textPrimary, fontWeight: '700' } : null]}>{count ? `${count} nouveau${count > 1 ? 'x' : ''} message${count > 1 ? 's' : ''}` : (other?.role === 'coach' ? 'Coach' : 'Athlète')}</Text>
+              </View>
+              {count ? <View style={{ minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center', marginRight: 4 }}><Text verbatim style={{ color: '#FFF', fontSize: 12, fontWeight: '800' }}>{count > 99 ? '99+' : String(count)}</Text></View> : null}
+              <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
+            </Pressable>;
+          }) : onlineGroups.length ? <Pressable accessibilityRole="button" onPress={() => setComposing(true)} style={({ pressed }) => [styles.onlineRow, pressed ? { opacity: 0.7 } : null]}>
+            <View style={styles.onlineIcon}><MaterialIcons name="chat-bubble-outline" size={20} color="#FFF" /></View>
+            <View style={styles.channelInfo}>
+              <Text style={styles.channelName}>Écrire à un athlète ou un coach</Text>
+              <Text style={styles.lastMsg}>Discussion à deux, seulement vous deux la voyez.</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} />
+          </Pressable> : null}
+          <NewDirectMessage visible={composing} onClose={() => setComposing(false)} />
         </View>}
       />
     </SafeAreaView>
@@ -200,6 +238,9 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionHead: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.md },
+  newButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: Colors.primary, marginTop: Spacing.sm },
+  newButtonText: { color: '#FFF', fontWeight: '700', fontSize: Typography.fontSizeSM },
   onlineSection: { gap: Spacing.sm, marginBottom: Spacing.sm },
   sectionTitle: { fontSize: Typography.fontSizeSM, fontWeight: Typography.weightBold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: Spacing.sm },
   onlineRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, borderRadius: Radius.lg, backgroundColor: Colors.surfaceCard, borderWidth: 1, borderColor: Colors.border },
