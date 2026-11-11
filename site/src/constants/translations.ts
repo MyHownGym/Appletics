@@ -60,8 +60,8 @@ export const translations = {
         },
         {
           icon: "shield",
-          title: "Données en Suisse",
-          desc: "Hébergement conforme nLPD, données de vos athlètes protégées sur sol suisse.",
+          title: "Données protégées",
+          desc: "Conforme nLPD : données de vos athlètes chiffrées et hébergées en Europe (Francfort).",
         },
       ],
     },
@@ -165,8 +165,8 @@ export const translations = {
         },
         {
           icon: "shield",
-          title: "Daten in der Schweiz",
-          desc: "nDSG-konformes Hosting, Athletendaten auf Schweizer Boden geschützt.",
+          title: "Geschützte Daten",
+          desc: "nDSG-konform: Athletendaten verschlüsselt und in Europa (Frankfurt) gehostet.",
         },
       ],
     },
@@ -270,8 +270,8 @@ export const translations = {
         },
         {
           icon: "shield",
-          title: "Dati in Svizzera",
-          desc: "Hosting conforme nLPD, dati dei tuoi atleti protetti su suolo svizzero.",
+          title: "Dati protetti",
+          desc: "Conforme nLPD: dati dei tuoi atleti cifrati e ospitati in Europa (Francoforte).",
         },
       ],
     },
