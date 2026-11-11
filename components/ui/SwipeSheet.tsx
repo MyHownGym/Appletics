@@ -21,5 +21,5 @@ export const SwipeSheet = memo(function SwipeSheet({ onClose, style, children }:
     onPanResponderTerminate: () => Animated.spring(translateY, { toValue: 0, useNativeDriver: false }).start(),
   }), [translateY]);
   // A tap inside the sheet must not reach the backdrop (which closes it).
-  return <Animated.View {...responder.panHandlers} onStartShouldSetResponder={() => true} style={[style, centred ? { marginTop: 'auto', marginBottom: 'auto', borderRadius: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' } : null, { transform: [{ translateY }] }]}>{children}</Animated.View>;
+  return <Animated.View {...responder.panHandlers} onStartShouldSetResponder={() => true} style={[style, centred ? { marginTop: 'auto', marginBottom: 'auto', alignSelf: 'center', width: '100%', maxWidth: 560, borderRadius: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' } : null, { transform: [{ translateY }] }]}>{children}</Animated.View>;
 });

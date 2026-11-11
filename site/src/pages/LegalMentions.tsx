@@ -15,7 +15,7 @@ Pays : Suisse`,
       },
       {
         heading: "Hébergement",
-        body: "Le site et les données utilisateurs sont hébergés en Suisse, en conformité avec la loi fédérale sur la protection des données (nLPD).",
+        body: "Données des utilisateurs (comptes, athlètes, plans, résultats) : base de données Supabase, Inc., région Zurich (Suisse).\nSite et application web : Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis — réseau de diffusion mondial ; aucune donnée de compte n'y est stockée.\nPaiements : Stripe Payments Europe, Ltd., Dublin, Irlande.\nE-mails : Hostpoint AG, Rapperswil-Jona, Suisse.",
       },
       {
         heading: "Propriété intellectuelle",
@@ -60,7 +60,7 @@ Land: Schweiz`,
       },
       {
         heading: "Hosting",
-        body: "Die Website und Benutzerdaten werden in der Schweiz gehostet, in Übereinstimmung mit dem Bundesgesetz über den Datenschutz (revDSG).",
+        body: "Benutzerdaten (Konten, Athleten, Pläne, Resultate): Datenbank von Supabase, Inc., Region Zürich (Schweiz).\nWebsite und Web-App: Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, USA — weltweites Auslieferungsnetz; dort werden keine Kontodaten gespeichert.\nZahlungen: Stripe Payments Europe, Ltd., Dublin, Irland.\nE-Mails: Hostpoint AG, Rapperswil-Jona, Schweiz.",
       },
       {
         heading: "Geistiges Eigentum",
@@ -105,7 +105,7 @@ Paese: Svizzera`,
       },
       {
         heading: "Hosting",
-        body: "Il sito e i dati degli utenti sono ospitati in Svizzera, in conformità con la Legge federale sulla protezione dei dati (nLPD).",
+        body: "Dati degli utenti (account, atleti, piani, risultati): database di Supabase, Inc., regione Zurigo (Svizzera).\nSito e web app: Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, Stati Uniti — rete di distribuzione mondiale; nessun dato degli account vi è memorizzato.\nPagamenti: Stripe Payments Europe, Ltd., Dublino, Irlanda.\nE-mail: Hostpoint AG, Rapperswil-Jona, Svizzera.",
       },
       {
         heading: "Proprietà intellettuale",
