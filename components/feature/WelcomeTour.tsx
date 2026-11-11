@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LocalizedText as Text } from '@/components/ui/LocalizedText';
 import { useApp } from '@/hooks/useApp';
 import { useAuth } from '@/template';
-import { markTourSeen, onReplayTour, tourSeen } from '@/services/tourStore';
+import { claimTour, markSeenLocal, markTourSeen, onReplayTour, releaseTour, seenLocal, tourSeen } from '@/services/tourStore';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 
 interface Step { icon: keyof typeof MaterialIcons.glyphMap; title: string; text: string; colors: [string, string] }
@@ -45,6 +45,7 @@ export function WelcomeTour() {
   const { user: authUser } = useAuth();
   const uid = authUser?.id ?? '';
   const [visible, setVisible] = useState(false);
+  const owner = useRef(Symbol('tour'));
   const [index, setIndex] = useState(0);
   const steps = useMemo(() => {
     const base = user.userType === 'athlete' ? ATHLETE : user.accountType === 'club' ? CLUB : COACH;
@@ -53,11 +54,14 @@ export function WelcomeTour() {
   useEffect(() => {
     if (!uid || !onboardingDone) return;
     let alive = true;
-    void tourSeen(uid).then(seen => { if (alive && !seen) { setIndex(0); setVisible(true); } });
-    return () => { alive = false; };
+    void tourSeen(uid).then(seen => {
+      if (!alive || seen || seenLocal(uid) || !claimTour(owner.current)) return;
+      setIndex(0); setVisible(true);
+    });
+    return () => { alive = false; releaseTour(owner.current); };
   }, [uid, onboardingDone]);
-  useEffect(() => onReplayTour(() => { setIndex(0); setVisible(true); }), []);
-  const close = () => { setVisible(false); if (uid) void markTourSeen(uid); };
+  useEffect(() => onReplayTour(() => { if (!claimTour(owner.current)) return; setIndex(0); setVisible(true); }), []);
+  const close = () => { setVisible(false); releaseTour(owner.current); if (uid) { markSeenLocal(uid); void markTourSeen(uid); } };
   if (!visible) return null;
   const step = steps[Math.min(index, steps.length - 1)];
   const last = index >= steps.length - 1;
