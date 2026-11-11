@@ -7,9 +7,15 @@ import { useApp } from '@/hooks/useApp';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import type { SessionPerformance } from '@/types';
 
+const RELATIVE_DAY = /^(aujourd['’]hui|hier|demain|today|yesterday|heute|gestern|oggi|ieri)$/i;
 const dateLabel = (iso: string) => {
   const date = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (Number.isNaN(date.getTime())) return iso;
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const diff = Math.round((today.getTime() - date.getTime()) / 86400000);
+  if (diff === 0) return 'Aujourd’hui';
+  if (diff === 1) return 'Hier';
+  return date.toLocaleDateString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' });
 };
 
 // Times and measures entered by athletes on training sessions (synced from their app).
@@ -28,7 +34,9 @@ export const TrainingLogList = memo(function TrainingLogList({ title, sessionId,
   }, [sessionPerformances, athletes, sessionId, athleteId, limit]);
   if (user.userType === 'athlete') return null;
   if (!entries.length && !empty) return null;
-  const sessionTitle = (item: SessionPerformance) => trainingPlans.find(plan => plan.id === item.planId)?.sessions.find(session => session.id === item.sessionId)?.title ?? 'Séance';
+  const sessionTitle = (item: SessionPerformance) => trainingPlans.find(plan => plan.id === item.planId)?.sessions.find(session => session.id === item.sessionId)?.title;
+  // A session named after a relative day ("Aujourd'hui"…) would mislead once the day has passed.
+  const shownTitle = (item: SessionPerformance) => { const raw = sessionTitle(item)?.trim(); return !raw || RELATIVE_DAY.test(raw) ? 'Séance' : raw; };
   const athleteName = (item: SessionPerformance) => athletes.find(athlete => athlete.id === item.athleteId)?.name ?? item.athleteName;
   return <View style={[styles.wrap, { paddingHorizontal: horizontalPadding }]}>
     <View style={styles.headRow}>
@@ -41,7 +49,7 @@ export const TrainingLogList = memo(function TrainingLogList({ title, sessionId,
         style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}>
         <View style={styles.top}>
           <MaterialIcons name="timer" size={18} color={Colors.primary} />
-          <Text verbatim style={styles.title} numberOfLines={1}>{sessionId ? athleteName(item) : athleteId ? sessionTitle(item) : `${athleteName(item)} · ${sessionTitle(item)}`}</Text>
+          <Text verbatim style={styles.title} numberOfLines={1}>{sessionId ? athleteName(item) : athleteId ? shownTitle(item) : `${athleteName(item)} · ${shownTitle(item)}`}</Text>
           <Text verbatim style={styles.date}>{dateLabel(item.date)}</Text>
         </View>
         <View style={styles.metrics}>
