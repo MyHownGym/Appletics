@@ -4,6 +4,10 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.1.1 — 11 novembre 2026
+- Fenêtres sur ordinateur : largeur limitée et centrées (ex. « Changer de profil »)
+- Site : mentions légales et FAQ précisent les hébergeurs (données à Zurich, Cloudflare, Stripe, Hostpoint)
+
 ## 1.1.0 — 11 novembre 2026
 - Essai gratuit de 30 jours avec compte à rebours et rappels (e-mail + notification)
 - Messages privés (1:1)

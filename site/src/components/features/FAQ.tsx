@@ -24,7 +24,7 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
       },
       {
         q: "Mes données sont-elles hébergées en Suisse ? (nLPD)",
-        a: "Oui. Toutes les données Appletics (profils coachs, données d'athlètes, plans d'entraînement) sont hébergées sur des serveurs en Suisse, en conformité avec la nouvelle Loi fédérale sur la protection des données (nLPD, en vigueur depuis le 1er septembre 2023). Vos données ne sont jamais transmises à des serveurs étrangers.",
+        a: "Oui. Les données Appletics (profils, données d'athlètes, plans d'entraînement, résultats) sont stockées dans une base de données à Zurich, conformément à la nouvelle loi fédérale sur la protection des données (nLPD). Seuls les paiements passent par Stripe (Irlande), et l'app est diffusée via le réseau Cloudflare, qui ne stocke pas vos données.",
       },
       {
         q: "C'est quoi le programme Coachs & Clubs Fondateurs ?",
@@ -59,7 +59,7 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
       },
       {
         q: "Werden meine Daten in der Schweiz gehostet? (revDSG)",
-        a: "Ja. Alle Appletics-Daten (Coach-Profile, Athletendaten, Trainingspläne) werden auf Servern in der Schweiz gehostet, in Übereinstimmung mit dem revidierten Bundesgesetz über den Datenschutz (revDSG, in Kraft seit 1. September 2023). Ihre Daten werden niemals auf ausländische Server übertragen.",
+        a: "Ja. Die Appletics-Daten (Profile, Athletendaten, Trainingspläne, Resultate) werden in einer Datenbank in Zürich gespeichert, gemäss dem revidierten Datenschutzgesetz (revDSG). Nur Zahlungen laufen über Stripe (Irland), und die App wird über das Cloudflare-Netz ausgeliefert, das Ihre Daten nicht speichert.",
       },
       {
         q: "Was ist das Gründer-Coach- und Gründer-Vereinsprogramm?",
@@ -94,7 +94,7 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
       },
       {
         q: "I miei dati sono ospitati in Svizzera? (nLPD)",
-        a: "Sì. Tutti i dati Appletics (profili coach, dati atleti, piani di allenamento) sono ospitati su server in Svizzera, in conformità con la nuova Legge federale sulla protezione dei dati (nLPD, in vigore dal 1° settembre 2023). I tuoi dati non vengono mai trasmessi a server stranieri.",
+        a: "Sì. I dati Appletics (profili, dati degli atleti, piani di allenamento, risultati) sono memorizzati in un database a Zurigo, in conformità con la nuova legge federale sulla protezione dei dati (nLPD). Solo i pagamenti passano da Stripe (Irlanda) e l'app è distribuita tramite la rete Cloudflare, che non memorizza i vostri dati.",
       },
       {
         q: "Cos'è il programma Coach e Club Fondatori?",
