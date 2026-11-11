@@ -23,8 +23,8 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
         a: PRICING_FAQ.fr,
       },
       {
-        q: "Mes données sont-elles hébergées en Suisse ? (nLPD)",
-        a: "Oui. Les données Appletics (profils, données d'athlètes, plans d'entraînement, résultats) sont stockées dans une base de données à Zurich, conformément à la nouvelle loi fédérale sur la protection des données (nLPD). Seuls les paiements passent par Stripe (Irlande), et l'app est diffusée via le réseau Cloudflare, qui ne stocke pas vos données.",
+        q: "Où sont hébergées mes données ? (nLPD)",
+        a: "Les données Appletics (profils, données d'athlètes, plans d'entraînement, résultats) sont stockées chiffrées dans une base de données à Francfort (Union européenne). L'UE est reconnue par la Suisse comme offrant un niveau de protection adéquat : c'est conforme à la nouvelle loi fédérale sur la protection des données (nLPD). Les paiements passent par Stripe (Irlande) et l'app est diffusée via le réseau Cloudflare, qui ne stocke pas vos données.",
       },
       {
         q: "C'est quoi le programme Coachs & Clubs Fondateurs ?",
@@ -58,8 +58,8 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
         a: PRICING_FAQ.de,
       },
       {
-        q: "Werden meine Daten in der Schweiz gehostet? (revDSG)",
-        a: "Ja. Die Appletics-Daten (Profile, Athletendaten, Trainingspläne, Resultate) werden in einer Datenbank in Zürich gespeichert, gemäss dem revidierten Datenschutzgesetz (revDSG). Nur Zahlungen laufen über Stripe (Irland), und die App wird über das Cloudflare-Netz ausgeliefert, das Ihre Daten nicht speichert.",
+        q: "Wo werden meine Daten gehostet? (revDSG)",
+        a: "Die Appletics-Daten (Profile, Athletendaten, Trainingspläne, Resultate) werden verschlüsselt in einer Datenbank in Frankfurt (EU) gespeichert. Die Schweiz anerkennt die EU als Raum mit angemessenem Datenschutz – das entspricht dem revidierten Datenschutzgesetz (revDSG). Zahlungen laufen über Stripe (Irland), und die App wird über das Cloudflare-Netz ausgeliefert, das Ihre Daten nicht speichert.",
       },
       {
         q: "Was ist das Gründer-Coach- und Gründer-Vereinsprogramm?",
@@ -93,8 +93,8 @@ export const faqData: Record<string, { badge: string; title: string; subtitle: s
         a: PRICING_FAQ.it,
       },
       {
-        q: "I miei dati sono ospitati in Svizzera? (nLPD)",
-        a: "Sì. I dati Appletics (profili, dati degli atleti, piani di allenamento, risultati) sono memorizzati in un database a Zurigo, in conformità con la nuova legge federale sulla protezione dei dati (nLPD). Solo i pagamenti passano da Stripe (Irlanda) e l'app è distribuita tramite la rete Cloudflare, che non memorizza i vostri dati.",
+        q: "Dove sono ospitati i miei dati? (nLPD)",
+        a: "I dati Appletics (profili, dati degli atleti, piani di allenamento, risultati) sono memorizzati cifrati in un database a Francoforte (UE). La Svizzera riconosce l'UE come area con un livello di protezione adeguato: è conforme alla nuova legge federale sulla protezione dei dati (nLPD). I pagamenti passano da Stripe (Irlanda) e l'app è distribuita tramite la rete Cloudflare, che non memorizza i vostri dati.",
       },
       {
         q: "Cos'è il programma Coach e Club Fondatori?",
