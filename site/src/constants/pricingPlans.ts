@@ -25,7 +25,7 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan[]> = {
       capacities: { coaches: 5, athletes: 150, plans: 40, competitions: 50, discussions: 10 },
       features: { ...PRO_FEATURES, pdf: true, dashboard: true }, pendingCoaches: true },
     { name: "Elite", prices: { monthly: 99.9, annual_monthly: 79.9, annual_once: 799 },
-      capacities: { coaches: 15, athletes: 500, plans: "unlimited", competitions: "unlimited", discussions: "unlimited" },
+      capacities: { coaches: "unlimited", athletes: "unlimited", plans: "unlimited", competitions: "unlimited", discussions: "unlimited" },
       features: { ...ELITE_FEATURES, dashboard: true } },
   ],
 };
