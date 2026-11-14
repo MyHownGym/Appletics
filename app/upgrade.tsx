@@ -31,7 +31,15 @@ export default function UpgradeScreen() {
   const { screenPadding } = useResponsive();
   const scrollRef = useRef<ScrollView>(null);
   const release = useReleasePolicy();
-  const testMode = useBilling().configuration?.testMode === true;
+  const billingNow = useBilling();
+  const testMode = billingNow.configuration?.testMode === true;
+  // Paid from this screen (in-app payment): show the confirmation, then the profile.
+  const subscribedAtOpen = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!billingNow.state.checkedAt) return;
+    if (subscribedAtOpen.current === null) { subscribedAtOpen.current = billingNow.state.subscribed; return; }
+    if (!subscribedAtOpen.current && billingNow.state.subscribed) { subscribedAtOpen.current = true; router.replace('/billing-return' as any); }
+  }, [billingNow.state.checkedAt, billingNow.state.subscribed]);
   useEffect(() => { scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [offer.focusId]);
   if (offer.isAthlete) return <Redirect href="/(tabs)/profile" />;
   if (!release.externalBillingAllowed) return <BetaBillingScreen currentLabel={offer.currentLabel} />;

@@ -4,6 +4,9 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.4.2 — 14 novembre 2026
+- Après un paiement : écran de confirmation « Paiement confirmé », puis retour automatique au profil
+
 ## 1.4.1 — 14 novembre 2026
 - Club : un coach passe de « En attente » à « Actif » dès qu'il a accepté l'invitation
 
