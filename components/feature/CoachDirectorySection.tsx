@@ -12,12 +12,12 @@ export const CoachDirectorySection = memo(function CoachDirectorySection({ compa
   const router = useRouter();
   const accent = isClub ? Colors.club : Colors.info;
   return <View style={[styles.section, compact ? styles.compact : null]}>
-    <View style={styles.heading}><View style={[styles.accent, { backgroundColor: accent }]} /><Text style={styles.title}>{isClub ? 'Coachs du club' : 'Mes coachs'} ({coaches.length})</Text></View>
-    <Text style={styles.subtitle}>{isClub ? 'Fiches enregistrées dans la liste locale du club.' : 'Coachs de vos groupes partagés dans l’app.'}</Text>
+    <View style={styles.heading}><View style={[styles.accent, { backgroundColor: accent }]} /><Text style={styles.title}>{isClub ? 'Coachs du club' : 'Mes coachs'} ({coaches.length})</Text>{isClub ? <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/club-admin', params: { invite: '1' } } as any)} style={({ pressed }) => [styles.add, { backgroundColor: accent }, pressed ? styles.pressed : null]}><MaterialIcons name="person-add" size={16} color="#FFFFFF" /><Text style={styles.addText}>Ajouter un coach</Text></Pressable> : null}</View>
+    <Text style={styles.subtitle}>{isClub ? 'Coachs invités par e-mail dans votre club.' : 'Coachs de vos groupes partagés dans l’app.'}</Text>
     {loading ? <ActivityIndicator color={accent} /> : <FlatList scrollEnabled={false} data={coaches} keyExtractor={coach => coach.id} renderItem={({ item: coach }) => <Pressable accessibilityLabel={`Voir le profil de ${coach.name}`} onPress={() => router.push({ pathname: '/coach-detail', params: { id: coach.id } } as any)} style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}>
       {coach.avatar ? <Image source={{ uri: coach.avatar }} contentFit="cover" transition={200} style={styles.avatar} /> : <View style={[styles.avatar, { backgroundColor: accent + '12' }]}><MaterialIcons name="sports" size={24} color={accent} /></View>}
       <View style={styles.info}><Text verbatim style={styles.name}>{coach.name}</Text><Text style={styles.subtitle}>{coach.role}</Text>{coach.status ? <Text style={[styles.subtitle, { color: coach.status === 'active' ? Colors.success : coach.status === 'pending' ? Colors.warning : Colors.error }]}>{coach.status === 'active' ? 'Actif' : coach.status === 'pending' ? 'En attente' : 'Suspendu'}</Text> : null}</View><MaterialIcons name="chevron-right" size={24} color={accent} />
-    </Pressable>} ListEmptyComponent={<View style={styles.empty}><MaterialIcons name="supervisor-account" size={28} color={accent} /><Text style={styles.body}>{isClub ? 'Aucun coach enregistré. Ajoutez une fiche depuis Administration club.' : 'Aucun coach lié à vos groupes pour le moment. Demandez à votre coach de vous ajouter à son groupe dans l’app.'}</Text></View>} />}
+    </Pressable>} ListEmptyComponent={<View style={styles.empty}><MaterialIcons name="supervisor-account" size={28} color={accent} /><Text style={styles.body}>{isClub ? 'Aucun coach pour le moment. Appuyez sur « Ajouter un coach » pour en inviter un par e-mail.' : 'Aucun coach lié à vos groupes pour le moment. Demandez à votre coach de vous ajouter à son groupe dans l’app.'}</Text></View>} />}
   </View>;
 });
 const styles = StyleSheet.create({
@@ -34,4 +34,6 @@ const styles = StyleSheet.create({
   empty: { padding: Spacing.md, marginTop: Spacing.sm, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, gap: Spacing.sm, backgroundColor: Colors.surface },
   body: { fontSize: Typography.fontSizeBase, color: Colors.textSecondary, lineHeight: 26 },
   pressed: { opacity: 0.7 },
+  add: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 12, borderRadius: Radius.full },
+  addText: { color: '#FFFFFF', fontWeight: Typography.weightBold, fontSize: Typography.fontSizeSM },
 });

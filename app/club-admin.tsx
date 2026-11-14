@@ -11,7 +11,9 @@ import { useI18n } from '@/hooks/useI18n';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSharedGroups } from '@/hooks/useSharedGroups';
+import { sendInvitationEmail } from '@/services/inviteEmailService';
 import { Colors, Typography, Spacing, Radius, Shadow } from '@/constants/theme';
 import { useApp } from '@/hooks/useApp';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -22,7 +24,6 @@ import { ClubCoach as InvitedCoach, CoachStatus, CoachRole } from '@/services/cl
 import { SubscriptionUpgradeBanner } from '@/components/feature/SubscriptionUpgradeBanner';
 import { useHigherPlanNavigation } from '@/hooks/useHigherPlanNavigation';
 import { useSubscriptionQuota } from '@/hooks/useSubscriptionQuota';
-import { BetaFeatureNotice } from '@/components/feature/BetaFeatureNotice';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -325,7 +326,7 @@ function InviteModal({
                 <View style={invStyles.noteRow}>
                   <MaterialIcons name="info-outline" size={14} color={Colors.textMuted} />
                   <Text style={invStyles.noteText}>
-                    La fiche sera enregistrée dans la liste locale du club, en attente. Aucun e-mail n’est envoyé : les invitations et accès distants ne sont pas encore connectés.
+                    Le coach reçoit un e-mail d’invitation. Il crée son compte avec cette adresse, accepte l’invitation et rejoint le groupe des coachs du club.
                   </Text>
                 </View>
 
@@ -334,7 +335,7 @@ function InviteModal({
                   onPress={handleSend}
                 >
                   <MaterialIcons name="send" size={18} color="#FFF" />
-                  <Text style={invStyles.sendBtnText}>Enregistrer le coach</Text>
+                  <Text style={invStyles.sendBtnText}>Envoyer l’invitation</Text>
                 </Pressable>
               </>
             )}
@@ -382,13 +383,16 @@ const invStyles = StyleSheet.create({
 export default function ClubAdminScreen() {
   const router = useRouter();
   const { user, subscription } = useApp();
-  const { t, locale } = useI18n();
+  const { t, locale, language } = useI18n();
   const { hasFeature } = useSubscription();
   const ensureQuota = useSubscriptionQuota();
 
   const { coaches, loading, addCoach, removeCoach, updateCoachStatus } = useClubCoaches();
   const { showAlert } = useAlert();
-  const [showInviteModal, setShowInviteModal] = useState(false);
+  const params = useLocalSearchParams<{ invite?: string }>();
+  // Opened from the profile's « Ajouter un coach » button: the form shows right away.
+  const [showInviteModal, setShowInviteModal] = useState(params.invite === '1');
+  const shared = useSharedGroups();
   const higherPlan = useHigherPlanNavigation();
   const [activeFilter, setActiveFilter] = useState<'all' | CoachStatus>('all');
 
@@ -406,19 +410,31 @@ export default function ClubAdminScreen() {
     ? coaches
     : coaches.filter(c => c.status === activeFilter);
 
-  const handleInvite = (name: string, email: string, role: CoachRole) => {
+  // The club's staff group (« <club> · Coachs »), created the first time a coach is invited.
+  // Each invited coach gets a real e-mail; once they create their account with that address and
+  // accept, they join this group with the club.
+  const staffGroupName = `${(user.club && user.club !== 'Athletics Club' ? user.club : 'Mon club').trim()} · Coachs`;
+  const ensureStaffGroup = async (): Promise<string> => {
+    const existing = shared.data.groups.find(group => group.name === staffGroupName && group.owner_id === shared.userId);
+    if (existing) return existing.id;
+    return shared.operate<string>('shared_create_group', { p_name: staffGroupName });
+  };
+  const handleInvite = async (name: string, email: string, role: CoachRole) => {
     if (!ensureQuota('coaches', usedQuota)) return;
+    const address = email.trim().toLowerCase();
     const today = new Date().toLocaleDateString(locale);
-    const newCoach: InvitedCoach = {
-      id: `coach-${Date.now()}`,
-      name,
-      email,
-      role,
-      status: 'pending',
-      invitedAt: today,
-    };
+    const newCoach: InvitedCoach = { id: `coach-${Date.now()}`, name: name || address.split('@')[0], email: address, role, status: 'pending', invitedAt: today };
     if (!addCoach(newCoach)) { showAlert('Coach non ajouté', 'La liste est en cours de chargement ou cette adresse e-mail est déjà présente.'); return; }
-    showAlert('Coach enregistré localement', `${name} a été ajouté à la liste du club sur cet appareil. Aucun e-mail n’a été envoyé et aucun compte distant n’a été créé.`);
+    try {
+      const groupId = await ensureStaffGroup();
+      const invitationId = await shared.operate<string>('shared_invite', { p_group: groupId, p_email: address, p_role: 'coach' });
+      void shared.refresh();
+      const failure = await sendInvitationEmail(invitationId, language);
+      if (failure) showAlert('Coach ajouté', `L’e-mail n’est pas parti (${failure}). Envoyez-lui ce lien : https://app.appletics.ch — il doit créer son compte avec ${address}.`);
+      else showAlert('Invitation envoyée', `${address} a reçu un e-mail. Dès qu’il aura créé son compte avec cette adresse et accepté l’invitation, il rejoindra « ${staffGroupName} ».`);
+    } catch (reason) {
+      showAlert('Coach ajouté sans e-mail', `La fiche est enregistrée, mais l’invitation n’a pas pu être envoyée (${reason instanceof Error ? reason.message : 'connexion'}). Vérifiez que vous êtes connecté, puis réessayez.`);
+    }
   };
 
   const handleRevoke = (coachId: string) => {
@@ -507,8 +523,7 @@ export default function ClubAdminScreen() {
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <BetaFeatureNotice kind="club" />
-        <Text style={styles.localNote}>Liste locale du club · mêmes compteurs sur l’accueil et le profil. Les invitations par e-mail et permissions distantes ne sont pas connectées.</Text>
+        <Text style={styles.localNote}>Les coachs invités reçoivent un e-mail et rejoignent le groupe des coachs du club une fois leur compte créé.</Text>
         {loading ? <Text style={styles.localNote}>Chargement des coachs enregistrés…</Text> : null}
 
         {/* Club info card */}
@@ -618,7 +633,7 @@ export default function ClubAdminScreen() {
               </Text>
               <Text style={styles.emptySub}>
                 {activeFilter === 'all'
-                  ? 'Ajoutez vos coachs à l’annuaire local. Leurs comptes et accès partagés ne sont pas encore connectés.'
+                  ? 'Invitez vos coachs par e-mail : ils rejoignent le groupe des coachs du club dès leur compte créé.'
                   : 'Modifiez le filtre pour voir d\'autres coachs.'}
               </Text>
               {activeFilter === 'all' ? (
