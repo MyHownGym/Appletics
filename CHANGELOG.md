@@ -4,6 +4,9 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.4.1 — 14 novembre 2026
+- Club : un coach passe de « En attente » à « Actif » dès qu'il a accepté l'invitation
+
 ## 1.4.0 — 14 novembre 2026
 - Coachs d'un club : ils profitent de la formule du club (Club Basic → Pro, Club Pro et Club Elite → Elite), sans payer
 - Bouton « Quitter le club » : le coach repasse en Basic (sans nouvel essai) et peut prendre Pro ou Elite

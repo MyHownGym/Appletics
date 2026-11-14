@@ -5,10 +5,12 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCoachDirectory } from '@/hooks/useCoachDirectory';
+import { useClubCoachStatusSync } from '@/hooks/useClubCoachStatusSync';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 interface CoachDirectorySectionProps { compact?: boolean }
 export const CoachDirectorySection = memo(function CoachDirectorySection({ compact = false }: CoachDirectorySectionProps) {
   const { coaches, loading, isClub } = useCoachDirectory();
+  useClubCoachStatusSync();
   const router = useRouter();
   const accent = isClub ? Colors.club : Colors.info;
   return <View style={[styles.section, compact ? styles.compact : null]}>
