@@ -4,6 +4,10 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.3.0 — 14 novembre 2026
+- Club : inviter un coach envoie un vrai e-mail ; le coach rejoint le groupe « <club> · Coachs » après avoir créé son compte
+- Profil club : bouton « Ajouter un coach »
+
 ## 1.2.1 — 14 novembre 2026
 - Liens externes (Swiss Athletics, etc.) : ouverts directement dans le navigateur, dans un nouvel onglet
 
