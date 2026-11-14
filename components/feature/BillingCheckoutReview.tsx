@@ -33,12 +33,21 @@ export const BillingCheckoutReview = memo(function BillingCheckoutReview({ revie
           </View>
           <ScrollView style={[styles.flex, webScroll]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={styles.content}>
             <View style={styles.summary}>
-              <View style={styles.identity}><View style={styles.planCopy}><Text style={styles.eyebrow}>Formule choisie</Text><Text verbatim style={styles.plan}>{name}</Text></View><View style={styles.priceCopy}><Text verbatim style={styles.amount}>{review.amountLabel}</Text><Text style={styles.priceHint}>{summary.changingPlan ? 'à l’échéance' : 'à payer'}</Text></View></View>
+              <View style={styles.identity}><View style={styles.planCopy}><Text style={styles.eyebrow}>Formule choisie</Text><Text verbatim style={styles.plan}>{name}</Text></View><View style={styles.priceCopy}><Text verbatim style={styles.amount}>{review.amountLabel}</Text><Text style={styles.priceHint}>{summary.changingPlan ? (review.timing === 'now' ? 'au prorata' : 'à l’échéance') : 'à payer'}</Text></View></View>
               <SummaryRow label="Périodicité" value={review.cycleLabel} />
-              {summary.changingPlan ? <SummaryRow label="Application du changement" value={review.startLabel} /> : null}
+              {summary.changingPlan ? <View style={styles.timing}>
+                <Text style={styles.eyebrow}>Quand appliquer le changement ?</Text>
+                {([['end', 'À la fin de mon abonnement', `Le ${review.startLabel} · aucun débit maintenant`], ['now', 'Tout de suite', 'Différence calculée au prorata et facturée maintenant']] as const).map(([value, title, detail]) => {
+                  const selected = review.timing === value;
+                  return <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected }} onPress={() => review.setTiming(value)} style={[styles.timingOption, selected ? styles.timingSelected : null]}>
+                    <MaterialIcons name={selected ? 'radio-button-checked' : 'radio-button-unchecked'} size={22} color={selected ? Colors.welcomeDeep : Colors.textMuted} />
+                    <View style={{ flex: 1, minWidth: 1 }}><Text style={styles.timingTitle}>{title}</Text><Text verbatim style={styles.timingDetail}>{detail}</Text></View>
+                  </Pressable>;
+                })}
+              </View> : null}
               <SummaryRow label={summary.estimated ? 'Prochain renouvellement (estimé)' : 'Prochain renouvellement'} value={review.renewalLabel} />
             </View>
-            {summary.estimated ? <Text style={styles.hint}>{summary.changingPlan ? 'Aucun débit immédiat. La nouvelle formule commence à l’échéance affichée.' : 'Date estimée à partir du paiement. Stripe confirmera la date exacte.'}</Text> : null}
+            {summary.estimated ? <Text style={styles.hint}>{summary.changingPlan ? (review.timing === 'now' ? 'La nouvelle formule s’active immédiatement ; Stripe facture ou crédite la différence au prorata.' : 'Aucun débit immédiat. La nouvelle formule commence à l’échéance affichée.') : 'Date estimée à partir du paiement. Stripe confirmera la date exacte.'}</Text> : null}
             {review.accountLoading ? <View style={styles.loading}><ActivityIndicator color={Colors.welcomeDeep} /><Text style={styles.body}>Restauration de votre session…</Text></View> : !actions.authenticated ? <BillingAccountForm checkout /> : <>
               <View style={styles.account}><MaterialIcons name="verified-user" size={20} color={Colors.clubDeep} /><Text verbatim numberOfLines={1} style={styles.email}>{review.accountEmail}</Text><Text style={styles.connected}>Connecté</Text></View>
               {actions.nativePayment && !actions.hasSubscription ? <View style={styles.methods}>
@@ -65,6 +74,11 @@ export const BillingCheckoutReview = memo(function BillingCheckoutReview({ revie
   </Modal>;
 });
 const styles = StyleSheet.create({
+  timing: { gap: Spacing.sm, marginTop: Spacing.sm },
+  timingOption: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface },
+  timingSelected: { borderColor: Colors.welcomeDeep, backgroundColor: Colors.welcomeDeep + '0D' },
+  timingTitle: { fontSize: Typography.fontSizeBase, fontWeight: Typography.weightBold, color: Colors.textPrimary },
+  timingDetail: { fontSize: Typography.fontSizeSM, color: Colors.textSecondary, marginTop: 2 },
   keyboardOverlay: { flex: 1, backgroundColor: Colors.overlay },
   flex: { flex: 1 }, overlay: { flex: 1, backgroundColor: Colors.transparent, alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: Spacing.sm },
   sheet: { height: '92%', width: '100%', maxWidth: 600, backgroundColor: Colors.surface, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, overflow: 'hidden' },

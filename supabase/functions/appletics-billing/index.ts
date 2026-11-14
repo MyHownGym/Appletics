@@ -274,6 +274,21 @@ Deno.serve(async req => {
       if (sub.status !== 'active') throw new BillingError('Régularisez le paiement avant de changer de formule.');
       if (sub.cancel_at || sub.cancel_at_period_end) throw new BillingError('Réactivez le renouvellement avant de programmer un changement.');
       if (next.priceId === sub.items.data[0].price.id) throw new BillingError('Cette formule est déjà active.');
+      if (body.timing === 'now') {
+        // Immediate change: Stripe bills (or credits) the difference pro rata right away.
+        const monthly = (amount: number, cycle: string) => cycle === 'annual' ? amount / 12 : amount;
+        const downgrade = monthly(next.amount, body.billingCycle) < monthly(offer!.amount, offer!.cycle);
+        const committed = (commitmentEnd(sub, offer!.cycle) ?? 0) > now();
+        if (downgrade && committed) throw new BillingError('Pendant l’engagement de 12 mois, une formule inférieure s’applique à l’échéance. Choisissez « À la fin de mon abonnement ».');
+        if (sub.schedule) await stripe.subscriptionSchedules.release(idOf(sub.schedule)!);
+        const updated = await stripe.subscriptions.update(sub.id, {
+          items: [{ id: sub.items.data[0].id, price: next.priceId }],
+          proration_behavior: 'always_invoice',
+          payment_behavior: 'error_if_incomplete',
+          metadata: { ...sub.metadata, tier: body.tier, billingCycle: body.billingCycle },
+        }, { idempotencyKey: `${appId}:change-now:v1:${paymentLease!.token}` });
+        return jsonResponse(await snapshot(updated));
+      }
       const effectiveAt = Math.max(periodEnd(sub), commitmentEnd(sub, offer.cycle) ?? 0);
       if (effectiveAt <= now()) throw new BillingError('Échéance Stripe indisponible. Vérifiez le paiement puis réessayez.', 409);
       const hadSchedule = !!sub.schedule;

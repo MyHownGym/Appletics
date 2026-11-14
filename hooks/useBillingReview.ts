@@ -16,6 +16,7 @@ export function useBillingReview(tier: SubscriptionTier, cycle: BillingCycle, na
   const [managementOpen, setManagementOpen] = useState(false);
   const [method, setMethod] = useState<'native' | 'hosted'>('native');
   const [reviewedAt, setReviewedAt] = useState(0);
+  const [timing, setTiming] = useState<'end' | 'now'>('end');
   const summary = useMemo(() => getBillingReviewSummary(tier, cycle, actions.state, new Date(reviewedAt)), [tier, cycle, actions.state, reviewedAt]);
   const amountLabel = useMemo(() => formatBillingAmount(summary.amount, locale), [summary.amount, locale]);
   const cycleLabel = translate(cycle === 'annual' ? 'Annuelle · en une fois' : cycle === 'annual_monthly' ? 'Mensuelle · engagement 12 mois' : 'Mensuelle · sans engagement');
@@ -29,6 +30,7 @@ export function useBillingReview(tier: SubscriptionTier, cycle: BillingCycle, na
     if (actions.current || actions.busy || auth.loading) return;
     actions.setAccepted(false);
     setReviewedAt(Date.now());
+    setTiming('end');
     setMethod(actions.configuration?.nativeReady === false ? 'hosted' : 'native');
     setReviewOpen(true);
   }, [actions.current, actions.busy, actions.configuration?.nativeReady, actions.setAccepted, auth.loading]);
@@ -38,11 +40,11 @@ export function useBillingReview(tier: SubscriptionTier, cycle: BillingCycle, na
     // Dismiss our review before presenting the SDK's real native payment window.
     setReviewOpen(false);
     if (effectiveMethod === 'hosted' && !actions.hasSubscription) actions.subscribeHosted();
-    else actions.subscribe();
-  }, [confirmationDisabled, effectiveMethod, actions.hasSubscription, actions.subscribeHosted, actions.subscribe]);
+    else actions.subscribe(timing);
+  }, [confirmationDisabled, effectiveMethod, actions.hasSubscription, actions.subscribeHosted, actions.subscribe, timing]);
   const toggleManagement = useCallback(() => setManagementOpen(value => !value), []);
   return {
-    actions, reviewOpen, managementOpen, toggleManagement, method: effectiveMethod, setMethod,
+    actions, timing, setTiming, reviewOpen, managementOpen, toggleManagement, method: effectiveMethod, setMethod,
     openReview, closeReview, confirmReview, confirmationDisabled, incompatiblePending, blockedChange,
     accountLoading: auth.loading, accountEmail: auth.user?.email ?? '', summary, amountLabel, cycleLabel,
     renewalLabel: dateLabel(summary.renewsAt), startLabel: dateLabel(summary.startsAt),

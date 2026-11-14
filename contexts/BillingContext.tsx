@@ -18,7 +18,7 @@ interface BillingContextValue {
   checkout: (tier: SubscriptionTier, cycle: BillingCycle) => Promise<void>;
   checkoutHosted: (tier: SubscriptionTier, cycle: BillingCycle) => Promise<void>;
   discardPendingPayment: () => Promise<void>;
-  changePlan: (tier: SubscriptionTier, cycle: BillingCycle) => Promise<void>;
+  changePlan: (tier: SubscriptionTier, cycle: BillingCycle, timing?: 'end' | 'now') => Promise<void>;
   openPortal: () => Promise<void>; cancel: () => Promise<void>; resume: () => Promise<void>;
 }
 export const BillingContext = createContext<BillingContextValue | undefined>(undefined);
@@ -174,8 +174,8 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     if (currentId.current !== userId || !alive.current) return;
     await refresh(true);
   }), [run, refresh, userId, language]);
-  const mutate = useCallback(async (action: 'cancel' | 'resume' | 'change', tier?: SubscriptionTier, cycle?: BillingCycle) => run(async () => {
-    const result = action === 'cancel' ? await cancelBillingSubscription() : action === 'resume' ? await resumeBillingSubscription() : await changeBillingSubscription(tier!, cycle!);
+  const mutate = useCallback(async (action: 'cancel' | 'resume' | 'change', tier?: SubscriptionTier, cycle?: BillingCycle, timing: 'end' | 'now' = 'end') => run(async () => {
+    const result = action === 'cancel' ? await cancelBillingSubscription() : action === 'resume' ? await resumeBillingSubscription() : await changeBillingSubscription(tier!, cycle!, timing);
     if (result.error || !result.data) {
       // Reconcile Stripe after a partial response failure; do not let polling silently erase the mutation error.
       await refresh(true);
@@ -184,10 +184,10 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     if (currentId.current !== userId || !alive.current) return;
     generation.current += 1;
     setState(result.data);
-    setMessage(action === 'cancel' ? 'Résiliation programmée. Votre accès reste actif jusqu’à l’échéance affichée.' : action === 'resume' ? 'Renouvellement réactivé.' : 'Changement programmé à l’échéance affichée. Aucun paiement supplémentaire immédiat.');
+    setMessage(action === 'cancel' ? 'Résiliation programmée. Votre accès reste actif jusqu’à l’échéance affichée.' : action === 'resume' ? 'Renouvellement réactivé.' : timing === 'now' ? 'Nouvelle formule active dès maintenant. La différence est calculée au prorata par Stripe.' : 'Changement programmé à l’échéance affichée. Aucun paiement supplémentaire immédiat.');
   }), [run, userId]);
   const cancel = useCallback(() => mutate('cancel'), [mutate]);
   const resume = useCallback(() => mutate('resume'), [mutate]);
-  const changePlan = useCallback((tier: SubscriptionTier, cycle: BillingCycle) => mutate('change', tier, cycle), [mutate]);
+  const changePlan = useCallback((tier: SubscriptionTier, cycle: BillingCycle, timing: 'end' | 'now' = 'end') => mutate('change', tier, cycle, timing), [mutate]);
   return <BillingContext.Provider value={{ state, configuration, configurationError, error, message, loading, busy, pending: pendingUntil > 0, authenticated: !!userId, refresh, checkConfiguration, checkout, checkoutHosted, discardPendingPayment, changePlan, openPortal, cancel, resume }}>{children}</BillingContext.Provider>;
 }

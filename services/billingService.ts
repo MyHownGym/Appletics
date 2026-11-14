@@ -58,4 +58,5 @@ export function discardBillingPayment(subscriptionId: string) {
 export function createBillingPortal(returnUrl: string | null, language: Language = 'fr') { return invokeBilling<{ url: string; testMode: boolean }>('portal', { returnUrl, returnMode: getBillingBrowserReturnMode(), language }); }
 export function cancelBillingSubscription() { return invokeBilling<BillingState>('cancel'); }
 export function resumeBillingSubscription() { return invokeBilling<BillingState>('resume'); }
-export function changeBillingSubscription(tier: SubscriptionTier, billingCycle: BillingCycle) { return invokeBilling<BillingState>('change', { tier, billingCycle }); }
+export type PlanChangeTiming = 'end' | 'now';
+export function changeBillingSubscription(tier: SubscriptionTier, billingCycle: BillingCycle, timing: PlanChangeTiming = 'end') { return invokeBilling<BillingState>('change', { tier, billingCycle, timing }); }
