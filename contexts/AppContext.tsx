@@ -85,7 +85,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
  // Paid (or founder) plan from Stripe; otherwise the 30-day trial gives Pro (Club Pro for clubs).
  const trial = useMemo(() => trialInfo(auth.user?.created_at), [auth.user?.created_at, today]);
  const paid = billing.state.subscribed && !!billing.state.tier;
- const subscription: SubscriptionTier = paid ? billing.state.tier! : trial.active ? (user.accountType === 'club' ? 'club_pro' : 'pro') : 'basic';
+ const isClubAccount = user.accountType === 'club';
+ // A plan bought for the other kind of account (a coach plan on a club account, e.g. after a role
+ // change) maps to its equivalent level, so a club never ends up with a 0-coach quota.
+ const paidTier = paid ? billing.state.tier! : null;
+ const matchesAccount = !!paidTier && paidTier.startsWith('club_') === isClubAccount;
+ const equivalent: Record<string, SubscriptionTier> = { basic: 'club_basic', pro: 'club_pro', elite: 'club_elite', club_basic: 'basic', club_pro: 'pro', club_elite: 'elite' };
+ const subscription: SubscriptionTier = paidTier && matchesAccount ? paidTier : trial.active ? (isClubAccount ? 'club_pro' : 'pro') : paidTier ? equivalent[paidTier] : 'basic';
  const trialLocked = !paid && trial.expired && user.userType !== 'athlete' && !billing.loading && !!billing.state.checkedAt;
  useEffect(() => {
   let cancelled = false;

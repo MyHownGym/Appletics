@@ -4,6 +4,10 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.2.0 — 14 novembre 2026
+- Changement de formule : choix entre « À la fin de mon abonnement » et « Tout de suite » (prorata Stripe)
+- Club : une formule coach sur un compte club compte comme son équivalent club (plus de quota à 0 coach)
+
 ## 1.1.2 — 14 novembre 2026
 - Enregistrer en PDF fonctionne depuis l'app installée sur iPhone (vrai fichier PDF, partage ou téléchargement)
 - Compétitions : bandeau des chiffres en dégradé orange, liens « Résultats » et « Inscriptions » en entier

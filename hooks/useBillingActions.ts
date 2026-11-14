@@ -22,10 +22,10 @@ export function useBillingActions(tier: SubscriptionTier, cycle: BillingCycle, n
       { text: 'Annuler', style: 'cancel' }, { text: 'Confirmer la résiliation', style: 'destructive', onPress: () => { void billing.cancel(); } },
     ]);
   }, [billing.cancel, billing.state.commitmentEnd, billing.state.currentPeriodEnd, showAlert, formatDate]);
-  const subscribe = useCallback(() => {
+  const subscribe = useCallback((timing: 'end' | 'now' = 'end') => {
     // The compact review is now the confirmation step; no duplicate dialog.
     if (!accepted || current || billing.busy || billing.loading || !billing.authenticated) return;
-    if (hasSubscription) { void billing.changePlan(tier, cycle); }
+    if (hasSubscription) { void billing.changePlan(tier, cycle, timing); }
     else { void billing.checkout(tier, cycle); }
   }, [accepted, current, hasSubscription, tier, cycle, billing.busy, billing.loading, billing.authenticated, billing.checkout, billing.changePlan]);
   const subscribeHosted = useCallback(() => {
