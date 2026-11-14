@@ -17,6 +17,7 @@ import { AppBrand } from '@/components/feature/AppBrand';
 import { BillingStatusPanel } from '@/components/feature/BillingStatusPanel';
 import { BillingPaymentActions } from '@/components/feature/BillingPaymentActions';
 import { TestCardStrip } from '@/components/feature/TestCardStrip';
+import { ClubMembershipCard } from '@/components/feature/ClubMembershipCard';
 import { BillingTestGuide } from '@/components/feature/BillingTestGuide';
 import { BetaBillingScreen } from '@/components/feature/BetaBillingScreen';
 import { TrialBanner } from '@/components/feature/TrialBanner';
@@ -39,6 +40,7 @@ export default function UpgradeScreen() {
     <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={t('back')} onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed ? styles.pressed : null]}><MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} /></Pressable><Text style={styles.headerTitle}>Abonnement</Text><AppBrand compact /></View>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView keyboardShouldPersistTaps="handled" ref={scrollRef} style={styles.flex} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingHorizontal: screenPadding }]}>
+        <ClubMembershipCard />
         <View style={styles.intro}><View style={styles.introTop}><Text style={styles.eyebrow}>{offer.isClub ? 'POUR VOTRE CLUB' : 'POUR VOTRE COACHING'}</Text>{testMode ? <Text style={styles.testBadge}>TEST</Text> : null}</View><Text style={styles.title}>Choisissez votre formule.</Text><Text style={styles.current}>{`Formule actuelle : ${offer.currentLabel}`}</Text></View>
         <TrialBanner horizontalPadding={0} />
         {offer.reason ? <View style={styles.reason}><MaterialIcons name="lock-outline" size={20} color={Colors.welcomeDeep} /><Text style={styles.reasonText}>{offer.reason}</Text></View> : null}

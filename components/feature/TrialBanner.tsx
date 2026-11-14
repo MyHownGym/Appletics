@@ -13,11 +13,11 @@ const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('fr-CH', { d
 
 // Countdown of the 30-day free trial (coaches and clubs without a paid plan).
 export const TrialBanner = memo(function TrialBanner({ horizontalPadding }: { horizontalPadding?: number }) {
-  const { trial, user } = useApp();
+  const { trial, user, clubCoach } = useApp();
   const billing = useBilling();
   const router = useRouter();
   // Wait for the Stripe check: otherwise a paying account sees the trial card flash for a moment.
-  if (user.userType === 'athlete' || billing.state.subscribed || !billing.state.checkedAt || billing.loading) return null;
+  if (user.userType === 'athlete' || clubCoach || billing.state.subscribed || !billing.state.checkedAt || billing.loading) return null;
   const urgent = trial.active && trial.daysLeft <= 7;
   const colors: [string, string] = trial.expired ? ['#B91C1C', '#EF4444'] : urgent ? ['#C2410C', '#FB923C'] : ['#E2461A', '#FF8A65'];
   return <Pressable accessibilityRole="button" onPress={() => router.push('/upgrade')} style={({ pressed }) => [{ marginHorizontal: horizontalPadding ?? Spacing.screenPadding, marginBottom: Spacing.md }, pressed ? { opacity: 0.9 } : null]}>

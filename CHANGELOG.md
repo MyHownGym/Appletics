@@ -4,6 +4,11 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.4.0 — 14 novembre 2026
+- Coachs d'un club : ils profitent de la formule du club (Club Basic → Pro, Club Pro et Club Elite → Elite), sans payer
+- Bouton « Quitter le club » : le coach repasse en Basic (sans nouvel essai) et peut prendre Pro ou Elite
+- SQL n° 18 (coachs-club) à exécuter dans Supabase
+
 ## 1.3.0 — 14 novembre 2026
 - Club : inviter un coach envoie un vrai e-mail ; le coach rejoint le groupe « <club> · Coachs » après avoir créé son compte
 - Profil club : bouton « Ajouter un coach »

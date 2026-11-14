@@ -1,5 +1,6 @@
 // Powered by OnSpace.AI
 // v10 — club/committee read-only view, role-appropriate content, no cross-contamination
+import { ClubMembershipCard } from '@/components/feature/ClubMembershipCard';
 import React, { useState, useRef, useMemo } from 'react';
 import {
   View, ScrollView, FlatList, Pressable, StyleSheet, Modal,
@@ -468,7 +469,9 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <SubscriptionPlanCard />
+          <ClubMembershipCard />
+          <ClubMembershipCard />
+        <SubscriptionPlanCard />
           <SubscriptionUpgradeBanner />
           {/* Settings strip */}
           <SettingsStrip showAnalytics={true} />
