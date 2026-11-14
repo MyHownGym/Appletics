@@ -16,6 +16,7 @@ import { SubscriptionCapacityPreview } from '@/components/feature/SubscriptionCa
 import { AppBrand } from '@/components/feature/AppBrand';
 import { BillingStatusPanel } from '@/components/feature/BillingStatusPanel';
 import { BillingPaymentActions } from '@/components/feature/BillingPaymentActions';
+import { TestCardStrip } from '@/components/feature/TestCardStrip';
 import { BillingTestGuide } from '@/components/feature/BillingTestGuide';
 import { BetaBillingScreen } from '@/components/feature/BetaBillingScreen';
 import { TrialBanner } from '@/components/feature/TrialBanner';
@@ -53,6 +54,7 @@ export default function UpgradeScreen() {
           <View style={styles.priceTop}><View style={styles.priceIdentity}><Text verbatim style={styles.planName}>{plan.name}</Text><Text style={styles.planSubtitle}>{plan.subtitle}</Text></View><View style={styles.priceBox}><Text verbatim style={styles.price}>{price.amountText}</Text><Text style={styles.priceUnit}>{price.unit}</Text></View></View>
           <SubscriptionCapacityPreview plan={plan} />
         </LinearGradient>
+        {testMode ? <TestCardStrip /> : null}
         <BillingPaymentActions key={`${plan.id}:${offer.billing}`} tier={plan.id} cycle={offer.billing} name={plan.name} />
         <SubscriptionDisclosure title="Voir toutes les fonctionnalités">
           <SubscriptionFeatures rows={offer.rows} color={plan.color} />
