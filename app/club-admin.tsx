@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { sendInvitationEmail } from '@/services/inviteEmailService';
 import { markClubStaffGroup } from '@/services/clubPlanService';
+import { useClubCoachStatusSync } from '@/hooks/useClubCoachStatusSync';
 import { Colors, Typography, Spacing, Radius, Shadow } from '@/constants/theme';
 import { useApp } from '@/hooks/useApp';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -394,6 +395,7 @@ export default function ClubAdminScreen() {
   // Opened from the profile's « Ajouter un coach » button: the form shows right away.
   const [showInviteModal, setShowInviteModal] = useState(params.invite === '1');
   const shared = useSharedGroups();
+  useClubCoachStatusSync();
   const higherPlan = useHigherPlanNavigation();
   const [activeFilter, setActiveFilter] = useState<'all' | CoachStatus>('all');
 
