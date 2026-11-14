@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadow } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '@/hooks/useApp';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useI18n } from '@/hooks/useI18n';
@@ -80,27 +81,27 @@ export default function CompetitionsScreen() {
             />
 
             {/* Season summary */}
-            <View style={[styles.summaryStrip, Shadow.card]}>
+            <LinearGradient colors={['#FF7A4D', '#FF5722', '#D93C10']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.summaryStrip, Shadow.card]}>
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryVal, { color: Colors.primary }]}>{wins}</Text>
+                <Text style={styles.summaryVal}>{wins}</Text>
                 <Text style={styles.summaryLabel}>{t('event_wins')}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryVal, { color: '#F59E0B' }]}>{totalPBs}</Text>
+                <Text style={styles.summaryVal}>{totalPBs}</Text>
                 <Text style={styles.summaryLabel}>{t('pbs_set')}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryVal, { color: Colors.success }]}>{competitions.filter(c => c.status === 'completed').length}</Text>
-                <Text style={[styles.summaryLabel, styles.completedLabel]}>{t('meets_done')}</Text>
+                <Text style={styles.summaryVal}>{competitions.filter(c => c.status === 'completed').length}</Text>
+                <Text style={styles.summaryLabel}>{t('meets_done')}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryVal, { color: Colors.info }]}>{competitions.filter(c => c.status === 'upcoming').length}</Text>
+                <Text style={styles.summaryVal}>{competitions.filter(c => c.status === 'upcoming').length}</Text>
                 <Text style={styles.summaryLabel}>{t('upcoming')}</Text>
               </View>
-            </View>
+            </LinearGradient>
 
             {/* Status filter */}
             <View style={styles.tabRow}>
@@ -121,8 +122,8 @@ export default function CompetitionsScreen() {
             {/* Swiss Athletics links */}
             <View style={styles.swissRow}>
               {[
-                { title: 'Résultats en direct', sub: 'Swiss Athletics Live', color: Colors.info, onPress: openSwissAthletics },
-                { title: 'Inscriptions en ligne', sub: 'Swiss Athletics', color: Colors.primary, onPress: openInscriptions },
+                { title: 'Résultats', sub: 'Swiss Athletics', color: Colors.info, onPress: openSwissAthletics },
+                { title: 'Inscriptions', sub: 'Swiss Athletics', color: Colors.primary, onPress: openInscriptions },
               ].map(link => (
                 <Pressable key={link.title} accessibilityRole="link" onPress={link.onPress}
                   style={({ pressed }) => [styles.swissBtn, !isPhone && styles.swissBtnWide, pressed && { opacity: 0.8 }]}>
@@ -195,15 +196,15 @@ export default function CompetitionsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   summaryStrip: {
-    flexDirection: 'row', backgroundColor: Colors.surface,
+    flexDirection: 'row', overflow: 'hidden',
     marginHorizontal: Spacing.screenPadding as any, borderRadius: Radius.lg,
-    padding: Spacing.md, marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.border,
+    padding: Spacing.md, marginBottom: Spacing.md,
   },
   summaryItem: { flex: 1, alignItems: 'center' },
-  summaryVal: { fontSize: Typography.fontSizeLG, fontWeight: Typography.weightExtrabold },
-  summaryLabel: { fontSize: Typography.fontSizeXS, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
+  summaryVal: { fontSize: Typography.fontSizeLG, fontWeight: Typography.weightExtrabold, color: '#FFFFFF' },
+  summaryLabel: { fontSize: Typography.fontSizeXS, color: 'rgba(255,255,255,0.88)', fontWeight: Typography.weightSemibold, marginTop: 2, textAlign: 'center' },
   completedLabel: { color: Colors.success, fontWeight: Typography.weightSemibold },
-  divider: { width: 1, backgroundColor: Colors.border },
+  divider: { width: 1, backgroundColor: 'rgba(255,255,255,0.3)' },
   tabRow: { flexDirection: 'row', paddingHorizontal: Spacing.screenPadding, marginBottom: Spacing.md, gap: Spacing.sm },
   tab: {
     paddingHorizontal: Spacing.lg, paddingVertical: 10, borderRadius: Radius.full,

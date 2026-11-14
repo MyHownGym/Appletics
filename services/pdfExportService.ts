@@ -17,11 +17,71 @@ function documentHtml(title: string, subtitle: string, content: string, language
   const t = translator(language);
   return `<!DOCTYPE html><html lang="${language}"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="brand"><img src="${PDF_LOGO}" alt="Appletics"><span>APPLETICS</span></div><h1>${escape(title)}</h1><p class="meta">${escape(subtitle)} · ${t('Exporté le')} ${escape(new Date().toLocaleDateString(localeFor(language), { day: 'numeric', month: 'long', year: 'numeric' }))}</p>${content}<footer>Appletics · appletics.ch</footer></body></html>`;
 }
-// Web (browser / iPhone home-screen app): expo-print cannot build a file there. The document is shown
-// full screen inside the app (no pop-up, works in the installed app) with a button that opens the
-// system print sheet, where « Enregistrer en PDF » / « Partager » is offered.
+// Web (browser / iPhone home-screen app): the system print sheet does not open from an installed
+// iPhone app, so the PDF file is built in the page (html2canvas + jsPDF) while the preview shows,
+// then handed to the share sheet (« Enregistrer dans Fichiers », AirDrop, Mail…) or downloaded.
+// Loaded on demand from cdnjs (not bundled: jsPDF breaks the static web build).
+const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+  if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+  const tag = document.createElement('script');
+  tag.src = src; tag.async = true; tag.crossOrigin = 'anonymous';
+  tag.onload = () => resolve(); tag.onerror = () => reject(new Error(`load ${src}`));
+  document.head.appendChild(tag);
+});
+type PdfLibs = { html2canvas: (element: HTMLElement, options: Record<string, unknown>) => Promise<HTMLCanvasElement>; jsPDF: any };
+async function pdfLibs(): Promise<PdfLibs> {
+  await Promise.all([
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js'),
+  ]);
+  const scope = window as unknown as { html2canvas: PdfLibs['html2canvas']; jspdf: { jsPDF: any } };
+  return { html2canvas: scope.html2canvas, jsPDF: scope.jspdf.jsPDF };
+}
+async function buildPdfBlob(html: string): Promise<Blob> {
+  const { html2canvas, jsPDF } = await pdfLibs();
+  // Laid out off screen at A4 width (794 px), whatever the phone width.
+  const sheet = document.createElement('iframe');
+  sheet.setAttribute('aria-hidden', 'true');
+  sheet.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;visibility:hidden';
+  document.body.appendChild(sheet);
+  try {
+    await new Promise<void>(resolve => { sheet.onload = () => resolve(); sheet.srcdoc = html; });
+    const doc = sheet.contentDocument;
+    if (!doc?.body) throw new Error('sheet not ready');
+    await Promise.all(Array.from(doc.images).map(image => image.complete ? null : new Promise(done => { image.onload = image.onerror = done; })));
+    const canvas = await html2canvas(doc.body, { scale: 2, backgroundColor: '#ffffff', windowWidth: 794 });
+    return toPdf(canvas, jsPDF);
+  } finally { sheet.remove(); }
+}
+function toPdf(canvas: HTMLCanvasElement, jsPDF: any): Blob {
+  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageWidth = pdf.internal.pageSize.getWidth(), pageHeight = pdf.internal.pageSize.getHeight();
+  const sliceHeight = Math.floor(canvas.width * (pageHeight / pageWidth));
+  for (let top = 0, page = 0; top < canvas.height; top += sliceHeight, page++) {
+    const slice = document.createElement('canvas');
+    slice.width = canvas.width; slice.height = Math.min(sliceHeight, canvas.height - top);
+    slice.getContext('2d')?.drawImage(canvas, 0, top, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+    if (page > 0) pdf.addPage();
+    pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageWidth, slice.height * (pageWidth / canvas.width));
+  }
+  return pdf.output('blob');
+}
+function saveBlob(blob: Blob, filename: string) {
+  const file = new File([blob], filename, { type: 'application/pdf' });
+  const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+  if (nav.share && nav.canShare?.({ files: [file] })) {
+    nav.share({ files: [file], title: filename }).catch(() => {});
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = filename; link.rel = 'noopener';
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
 function printOnWeb(html: string, filename: string) {
   document.getElementById('appletics-print')?.remove();
+  const safeName = filename.replace(/[\\/:*?"<>|]+/g, '-');
   const overlay = document.createElement('div');
   overlay.id = 'appletics-print';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;flex-direction:column';
@@ -36,12 +96,25 @@ function printOnWeb(html: string, filename: string) {
     element.style.cssText = `font:600 15px -apple-system,Arial;padding:11px 16px;border-radius:10px;border:${primary ? '0' : '1px solid #EAEDF2'};background:${primary ? '#FF5722' : '#fff'};color:${primary ? '#fff' : '#0F172A'}`;
     return element;
   };
-  const save = button('Enregistrer en PDF', true), close = button('Fermer', false);
+  const save = button('Préparation…', true), close = button('Fermer', false);
+  save.disabled = true; save.style.opacity = '0.6';
   const frame = document.createElement('iframe');
   frame.title = title.textContent;
   frame.style.cssText = 'flex:1;width:100%;border:0;background:#fff';
   frame.srcdoc = html.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
-  save.onclick = () => { try { frame.contentWindow?.focus(); frame.contentWindow?.print(); } catch { window.print(); } };
+  // Built ahead of the tap: the share sheet only opens straight from a tap, not after a long wait.
+  let ready: Blob | null = null;
+  {
+    buildPdfBlob(html).then(blob => {
+      ready = blob; save.textContent = 'Enregistrer en PDF'; save.disabled = false; save.style.opacity = '1';
+    }).catch(() => {
+      save.textContent = 'Imprimer / PDF'; save.disabled = false; save.style.opacity = '1';
+    });
+  }
+  save.onclick = () => {
+    if (ready) { saveBlob(ready, safeName); return; }
+    try { frame.contentWindow?.focus(); frame.contentWindow?.print(); } catch { window.print(); }
+  };
   close.onclick = () => overlay.remove();
   bar.append(title, save, close);
   overlay.append(bar, frame);

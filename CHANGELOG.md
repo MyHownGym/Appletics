@@ -4,6 +4,13 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.1.2 — 14 novembre 2026
+- Enregistrer en PDF fonctionne depuis l'app installée sur iPhone (vrai fichier PDF, partage ou téléchargement)
+- Compétitions : bandeau des chiffres en dégradé orange, liens « Résultats » et « Inscriptions » en entier
+- Accueil sur iPhone : tout l'écran répond au défilement, jusqu'en bas
+- La carte d'essai gratuit n'apparaît plus une fraction de seconde pour un compte abonné
+- Mode test Stripe : carte de test affichée avec bouton Copier sur la page des formules
+
 ## 1.1.1 — 11 novembre 2026
 - Fenêtres sur ordinateur : largeur limitée et centrées (ex. « Changer de profil »)
 - Site : mentions légales et FAQ précisent les hébergeurs (données à Zurich, Cloudflare, Stripe, Hostpoint)
