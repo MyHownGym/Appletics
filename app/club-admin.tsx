@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSharedGroups } from '@/hooks/useSharedGroups';
 import { sendInvitationEmail } from '@/services/inviteEmailService';
+import { markClubStaffGroup } from '@/services/clubPlanService';
 import { Colors, Typography, Spacing, Radius, Shadow } from '@/constants/theme';
 import { useApp } from '@/hooks/useApp';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -416,8 +417,10 @@ export default function ClubAdminScreen() {
   const staffGroupName = `${(user.club && user.club !== 'Athletics Club' ? user.club : 'Mon club').trim()} · Coachs`;
   const ensureStaffGroup = async (): Promise<string> => {
     const existing = shared.data.groups.find(group => group.name === staffGroupName && group.owner_id === shared.userId);
-    if (existing) return existing.id;
-    return shared.operate<string>('shared_create_group', { p_name: staffGroupName });
+    const id = existing ? existing.id : await shared.operate<string>('shared_create_group', { p_name: staffGroupName });
+    // Marks it as the club's coach group: its coaches then follow the club plan (SQL n° 18).
+    await markClubStaffGroup(id).catch(() => {});
+    return id;
   };
   const handleInvite = async (name: string, email: string, role: CoachRole) => {
     if (!ensureQuota('coaches', usedQuota)) return;

@@ -19,6 +19,7 @@ import { markUserEdit, resultEditKey, sessionEditKey } from '@/services/userEdit
 import { markWorkspaceDirty, mergeWorkspaces, reconcileWithCloud, saveCloudWorkspace } from '@/services/workspaceCloudService';
 import { Platform } from 'react-native';
 import { trialInfo, type TrialInfo } from '@/services/trialService';
+import { fetchClubPlan, leaveClub as leaveClubRequest, noClubPlan, coachTierForClub, type ClubPlan } from '@/services/clubPlanService';
 import { emptyLocalWorkspace, loadLocalWorkspace, saveLocalWorkspace, claimLegacyWorkspace, clearLocalWorkspace, type LocalWorkspace } from '@/services/localWorkspaceService';
 const onboardingKey = '@appletics_onboarding_done';
 const legacyUserKey = '@appletics_user';
@@ -27,7 +28,7 @@ const emptyUser: User = { id: '', name: '', firstName: '', lastName: '', email: 
 const defaultNotifications: NotifSettings = { notif_new_plan: true, notif_session_reminder: true, notif_plan_updated: true, notif_new_competition: true, notif_competition_reminder: true, notif_result_posted: true, notif_new_message: true, notif_athlete_added: false, notif_weekly_summary: true };
 interface AppContextType {
  user: User; athletes: Athlete[]; trainingPlans: TrainingPlan[]; competitions: Competition[]; results: CompResult[]; channels: ChatChannel[]; messages: Record<string,ChatMessage[]>; sessionPerformances: SessionPerformance[];
- onboardingDone: boolean; onboardingLoading: boolean; accountProfileLoading: boolean; startupError: string; startupAwaitingConsent: boolean; isLocked: boolean; subscription: SubscriptionTier; trial: TrialInfo; trialLocked: boolean; notifSettings: NotifSettings;
+ onboardingDone: boolean; onboardingLoading: boolean; accountProfileLoading: boolean; startupError: string; startupAwaitingConsent: boolean; isLocked: boolean; subscription: SubscriptionTier; trial: TrialInfo; trialLocked: boolean; clubPlan: ClubPlan; clubCoach: boolean; leaveClub: () => Promise<void>; refreshClubPlan: () => Promise<void>; notifSettings: NotifSettings;
  setOnboardingDone: (done: boolean) => void; setSubscription: (tier: SubscriptionTier) => void; setLocked: (locked: boolean) => void; setNotifSettings: (settings: NotifSettings) => void;
  addTrainingPlan: (plan: TrainingPlan) => void; updateTrainingPlan: (plan: TrainingPlan) => void; deleteTrainingPlan: (id: string) => void;
  addSession: (planId: string,session: TrainingSession) => void; updateSession: (planId: string,session: TrainingSession) => void; deleteSession: (planId: string,id: string) => void;
@@ -83,7 +84,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const trainingPlans = useMemo(() => data.trainingPlans.map(item => ({ ...item,group: normalizeGroupId(item.group) })),[data.trainingPlans]);
  const competitions = useMemo(() => data.competitions.map(item => withAutomaticCompetitionStatus(item,today)),[data.competitions,today]);
  // Paid (or founder) plan from Stripe; otherwise the 30-day trial gives Pro (Club Pro for clubs).
- const trial = useMemo(() => trialInfo(auth.user?.created_at), [auth.user?.created_at, today]);
+ // Coaches in a club's « Coachs » group follow the club plan; after leaving, no new trial.
+ const [clubPlan, setClubPlan] = useState<ClubPlan>(noClubPlan);
+ const refreshClubPlan = useCallback(async () => { if (!authId) { setClubPlan(noClubPlan); return; } setClubPlan(await fetchClubPlan()); }, [authId]);
+ useEffect(() => { void refreshClubPlan(); }, [refreshClubPlan, today]);
+ const leaveClub = useCallback(async () => { await leaveClubRequest(); await refreshClubPlan(); }, [refreshClubPlan]);
+ const baseTrial = useMemo(() => trialInfo(auth.user?.created_at), [auth.user?.created_at, today]);
+ const clubCoach = user.accountType !== 'club' && user.userType !== 'athlete' && !!clubPlan.tier;
+ const trial = useMemo(() => (clubCoach || (clubPlan.leftAt && user.accountType !== 'club')) && baseTrial.active ? { ...baseTrial, active: false, expired: true, daysLeft: 0 } : baseTrial, [baseTrial, clubCoach, clubPlan.leftAt, user.accountType]);
  const paid = billing.state.subscribed && !!billing.state.tier;
  const isClubAccount = user.accountType === 'club';
  // A plan bought for the other kind of account (a coach plan on a club account, e.g. after a role
@@ -91,8 +99,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
  const paidTier = paid ? billing.state.tier! : null;
  const matchesAccount = !!paidTier && paidTier.startsWith('club_') === isClubAccount;
  const equivalent: Record<string, SubscriptionTier> = { basic: 'club_basic', pro: 'club_pro', elite: 'club_elite', club_basic: 'basic', club_pro: 'pro', club_elite: 'elite' };
- const subscription: SubscriptionTier = paidTier && matchesAccount ? paidTier : trial.active ? (isClubAccount ? 'club_pro' : 'pro') : paidTier ? equivalent[paidTier] : 'basic';
- const trialLocked = !paid && trial.expired && user.userType !== 'athlete' && !billing.loading && !!billing.state.checkedAt;
+ const subscription: SubscriptionTier = paidTier && matchesAccount ? paidTier : clubCoach ? coachTierForClub[clubPlan.tier!] ?? 'pro' : trial.active ? (isClubAccount ? 'club_pro' : 'pro') : paidTier ? equivalent[paidTier] : 'basic';
+ const trialLocked = !paid && !clubCoach && trial.expired && user.userType !== 'athlete' && !billing.loading && !!billing.state.checkedAt;
  useEffect(() => {
   let cancelled = false;
   void withStartupDeadline(Promise.all([AsyncStorage.getItem(onboardingKey),AsyncStorage.getItem(legacyUserKey)]), 'La lecture des réglages de cet appareil prend trop de temps. Réessayez sans supprimer l’app.').then(([done,saved]) => {
@@ -320,5 +328,5 @@ export function AppProvider({ children }: { children: ReactNode }) {
    if (cleanup.some(result => result.status === 'rejected')) showAlert('Compte supprimé','Le compte Cloud est supprimé. Une partie du nettoyage sur cet appareil a échoué ; fermez l’app et effacez ses données locales si nécessaire.');
   } finally { deleting.current = false; }
  },[showAlert]);
- return <AppContext.Provider value={{ user,athletes,trainingPlans,competitions,results:data.results,channels:data.channels,messages:data.messages,sessionPerformances:data.sessionPerformances,onboardingDone,onboardingLoading,accountProfileLoading,startupError,startupAwaitingConsent,isLocked,subscription,trial,trialLocked,notifSettings,setOnboardingDone,setSubscription,setLocked,setNotifSettings,addTrainingPlan,updateTrainingPlan,deleteTrainingPlan,addSession,updateSession,deleteSession,addSessionPerformance,deleteSessionPerformance,addCompetition,updateCompetition,deleteCompetition,addResult,updateResult,mergeAthletes,mergeCompetitions,addAthlete,updateAthlete,deleteAthlete,addChannel,updateChannel,deleteChannel,sendMessage,markChannelRead,updateUser,deleteAccount }}>{children}</AppContext.Provider>;
+ return <AppContext.Provider value={{ user,athletes,trainingPlans,competitions,results:data.results,channels:data.channels,messages:data.messages,sessionPerformances:data.sessionPerformances,onboardingDone,onboardingLoading,accountProfileLoading,startupError,startupAwaitingConsent,isLocked,subscription,trial,trialLocked,clubPlan,clubCoach,leaveClub,refreshClubPlan,notifSettings,setOnboardingDone,setSubscription,setLocked,setNotifSettings,addTrainingPlan,updateTrainingPlan,deleteTrainingPlan,addSession,updateSession,deleteSession,addSessionPerformance,deleteSessionPerformance,addCompetition,updateCompetition,deleteCompetition,addResult,updateResult,mergeAthletes,mergeCompetitions,addAthlete,updateAthlete,deleteAthlete,addChannel,updateChannel,deleteChannel,sendMessage,markChannelRead,updateUser,deleteAccount }}>{children}</AppContext.Provider>;
 }
