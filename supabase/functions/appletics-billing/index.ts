@@ -276,10 +276,14 @@ Deno.serve(async req => {
       if (next.priceId === sub.items.data[0].price.id) throw new BillingError('Cette formule est déjà active.');
       if (body.timing === 'now') {
         // Immediate change: Stripe bills (or credits) the difference pro rata right away.
-        const monthly = (amount: number, cycle: string) => cycle === 'annual' ? amount / 12 : amount;
-        const downgrade = monthly(next.amount, body.billingCycle) < monthly(offer!.amount, offer!.cycle);
+        // During a 12-month commitment, an immediate change may not lower the level nor drop the commitment
+        // (going from « 12 mois » to « Annuel » on the same or a higher level is fine).
+        const rank = ['basic', 'pro', 'elite', 'club_basic', 'club_pro', 'club_elite'];
+        const level = (tier: string) => rank.indexOf(tier) % 3;
+        const lowerLevel = level(body.tier) < level(offer!.tier);
         const committed = (commitmentEnd(sub, offer!.cycle) ?? 0) > now();
-        if (downgrade && committed) throw new BillingError('Pendant l’engagement de 12 mois, une formule inférieure s’applique à l’échéance. Choisissez « À la fin de mon abonnement ».');
+        if (committed && lowerLevel) throw new BillingError('Pendant l’engagement de 12 mois, une formule inférieure ne peut s’appliquer qu’à l’échéance. Choisissez « À la fin de mon abonnement ».');
+        if (committed && body.billingCycle === 'monthly') throw new BillingError('Pendant l’engagement de 12 mois, le passage au mensuel sans engagement se fait à l’échéance. Choisissez « À la fin de mon abonnement ».');
         if (sub.schedule) await stripe.subscriptionSchedules.release(idOf(sub.schedule)!);
         const updated = await stripe.subscriptions.update(sub.id, {
           items: [{ id: sub.items.data[0].id, price: next.priceId }],

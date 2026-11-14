@@ -4,6 +4,9 @@ Numérotation : MAJEUR.MINEUR.CORRECTIF
 - MINEUR (1.x.0) : nouvelles fonctions
 - CORRECTIF (1.1.x) : corrections et retouches visuelles
 
+## 1.4.3 — 14 novembre 2026
+- Changement immédiat : passer de « 12 mois » à « Annuel » (même formule ou supérieure) n'est plus bloqué par erreur
+
 ## 1.4.2 — 14 novembre 2026
 - Après un paiement : écran de confirmation « Paiement confirmé », puis retour automatique au profil
 
