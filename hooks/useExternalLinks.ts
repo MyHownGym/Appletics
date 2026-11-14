@@ -6,6 +6,13 @@ import { useLocalizedAlert as useAlert } from '@/hooks/useLocalizedAlert';
 import { Colors } from '@/constants/theme';
 import { normalizeWebUrl, getLinkHost, isSystemLink } from '@/services/linkService';
 
+function openInNewTab(url: string) {
+  // No 'noopener' feature here: with it, window.open returns null and a blocked pop-up can't be detected.
+  const opened = window.open(url, '_blank');
+  if (opened) { try { opened.opener = null; } catch { /* cross-origin */ } }
+  else window.location.assign(url);
+}
+
 // Native uses Safari View Controller / Android Custom Tabs, never openURL for web pages.
 // The web preview uses an internal route; external opening is always an explicit choice.
 export function useExternalLinks() {
@@ -16,7 +23,8 @@ export function useExternalLinks() {
     if (url) {
       try {
         if (Platform.OS === 'web') {
-          router.push({ pathname: '/browser', params: { url } } as any);
+          // Pages that refuse to load inside the app: straight to the browser, in a new tab/window.
+          openInNewTab(url);
         } else {
           await WebBrowser.openBrowserAsync(url, {
             toolbarColor: Colors.surface,
@@ -47,6 +55,7 @@ export function useExternalLinks() {
   const openInExternalBrowser = useCallback((value: string) => {
     const url = normalizeWebUrl(value);
     if (!url) return;
+    if (Platform.OS === 'web') { openInNewTab(url); return; }
     showAlert('Navigateur externe', `Quitter la vue intégrée pour ouvrir ${getLinkHost(url)} ?`, [
       { text: 'Rester dans l’app', style: 'cancel' },
       { text: 'Ouvrir', onPress: () => { void Linking.openURL(url).catch(() => showAlert('Lien indisponible', 'Impossible d’ouvrir le navigateur externe.')); } },
